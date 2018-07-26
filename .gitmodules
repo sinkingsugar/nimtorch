@@ -1,0 +1,3 @@
+[submodule "deps/fragments"]
+	path = deps/fragments
+	url = ssh://git@git.fragcolor.xyz:27030/fragcolor/fragments.git
