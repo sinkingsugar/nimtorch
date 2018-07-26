@@ -1,4 +1,4 @@
-include torch_cpp
+include torch/torch_cpp
 import macros, sequtils
 
 type

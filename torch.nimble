@@ -1,1 +1,11 @@
-# empty for now, used just to have proper torch_ prefix during compilation
+# Package
+
+version     = "0.1.0"
+author      = "Giovanni Petrantoni"
+description = "A nim flavor of pytorch"
+license     = "MIT"
+
+# Deps
+
+requires "nim >= 0.18.0"
+requires "fragments >= 0.1.0"

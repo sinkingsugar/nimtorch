@@ -1,4 +1,4 @@
-import deps/fragments/core/ffi/cpp as cpp
+import fragments/ffi/cpp as cpp
 export cpp
 
 # when defined(linux) and not defined(nimsuggest):
