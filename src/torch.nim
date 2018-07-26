@@ -52,6 +52,8 @@ proc tensor*(_: typedesc[torch], data: openarray): Tensor {.inline.} =
   else:
     result = ACPU().dynamicCppCall(tensorFromBlob, addr(flatData[0]), shape).to(ATensor)
   
+  result = result.clone() # avoid GC issues since seq memory is GC memory
+  
 when isMainModule:
   var
     z = torch.zeros(2, 1, 4)
