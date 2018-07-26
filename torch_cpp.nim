@@ -19,7 +19,7 @@ defineCppTYpe(ATensors, "std::vector<at::Tensor>", "vector")
 
 proc ACPU(): CppProxy {.importcpp: "at::CPU(at::kFloat)".}
 proc ACUDA(): CppProxy {.importcpp: "at::CUDA(at::kFloat)".}
-proc printTensor(t: var ATensor) {.importcpp: "at::print(#)".}
+proc printTensor(t: ATensor) {.importcpp: "at::print(#)".}
 
 {.passC: "-I../aten/include".}
 

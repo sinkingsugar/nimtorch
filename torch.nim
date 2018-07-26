@@ -4,6 +4,8 @@ import macros, sequtils
 type
   Tensor* = ATensor
 
+template inPlace* {.pragma.} ## Note: equivalent of torch _ suffix
+
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
 
 proc zeros*(size: varargs[int, toIntListType]): Tensor {.inline.} =
@@ -116,7 +118,42 @@ proc `-`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp - b.toCpp).to(ATensor)
 
 proc t*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(t).to(ATensor)
 
-proc print*(a: var Tensor) = printTensor(a)
+proc ndimension*(a: Tensor): int {.inline.} = a.dynamicCppCall(ndimension).to(int)
+
+proc dim*(a: Tensor): int {.inline.} = a.dynamicCppCall(dim).to(int)
+
+proc size*(a: Tensor; dim: int): int {.inline.} = a.dynamicCppCall(size, dim).to(int)
+
+proc numel*(a: Tensor): int {.inline.} = a.dynamicCppCall(numel).to(int)
+
+proc uniform*(a: Tensor; fromValue, toValue: float): Tensor {.inline, inPlace.} = a.dynamicCppCall("uniform_", fromValue, toValue).to(ATensor)
+
+proc `$`*(a: Tensor): string {.inline.} = $a.dynamicCppCall(toString).to(cstring)
+
+proc contiguous*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(contiguous).to(ATensor)
+
+proc data_ptr*(a: Tensor): pointer {.inline.} = a.dynamicCppCall(data_ptr).to(pointer)
+
+proc print*(a: Tensor) = printTensor(a)
+
+proc toSeq*[T](a: Tensor): seq[T] {.inline.} =
+  let
+    cont = a.contiguous()
+    elements = a.numel()
+  result = newSeq[T](elements)
+  copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
+
+proc tensor*[T](s: var seq[T], size: varargs[int, toIntListType]): Tensor =
+  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  
+  # create a temporary CPU tensor with our GCed data
+  var tmp = ACPU().dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
+  
+  # finally write into a tensor
+  when defined cuda:
+    result = ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
+  else:
+    result = ACPU().dynamicCppCall(copy, tmp).to(ATensor)
 
 when isMainModule:
   var
@@ -220,6 +257,13 @@ when isMainModule:
     hy = newgate + inputgate * (hidden - newgate)
 
   hy.printTensor()
+
+  var
+    tos = toSeq[float32](hy)
+    froms = torch.tensor(tos, 2, 3, 2)
+
+  echo tos
+  froms.printTensor()
 
   # tensor([[-0.5317, -0.4753],
   #         [-0.3930, -0.3210],
