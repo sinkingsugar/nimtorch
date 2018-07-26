@@ -162,6 +162,11 @@ converter toFloat32*(a: Tensor): float32 {.inline.} =
   let scalar = cppinit(AScalar, a)
   return scalar.scalarToF32()
 
+proc manual_seed*(seed: int) =
+  globalContext().defaultGenerator(BackendCPU).manualSeed(seed).to(void)
+  if globalContext().hasCUDA().to(bool):
+    globalContext().defaultGenerator(BackendCUDA).manualSeed(seed).to(void)
+
 when isMainModule:
   var
     z = torch.zeros(2, 1, 4)
