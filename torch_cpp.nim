@@ -14,6 +14,7 @@ export cpp
 #       doAssert(check.exitCode == 0, check.output)
 
 defineCppType(ATensor, "at::Tensor", "ATen/ATen.h")
+defineCppType(AScalar, "at::Scalar", "ATen/ATen.h")
 defineCppType(IntList, "at::IntList", "ATen/ATen.h")
 defineCppTYpe(ATensors, "std::vector<at::Tensor>", "vector")
 

@@ -143,7 +143,7 @@ proc toSeq*[T](a: Tensor): seq[T] {.inline.} =
   result = newSeq[T](elements)
   copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
 
-proc tensor*[T](s: var seq[T], size: varargs[int, toIntListType]): Tensor =
+proc fromSeq*[T](s: var seq[T], size: varargs[int, toIntListType]): Tensor =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
@@ -154,6 +154,13 @@ proc tensor*[T](s: var seq[T], size: varargs[int, toIntListType]): Tensor =
     result = ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
   else:
     result = ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+
+proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.toCpp()[index].to(ATensor)
+
+converter toFloat32*(a: Tensor): float32 {.inline.} =
+  proc scalarToF32(s: AScalar): float32 {.importcpp: "#.to<float>()".}
+  let scalar = cppinit(AScalar, a)
+  return scalar.scalarToF32()
 
 when isMainModule:
   var
@@ -260,7 +267,7 @@ when isMainModule:
 
   var
     tos = toSeq[float32](hy)
-    froms = torch.tensor(tos, 2, 3, 2)
+    froms = torch.fromSeq(tos, 2, 3, 2)
 
   echo tos
   froms.printTensor()
