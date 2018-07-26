@@ -4,7 +4,7 @@ import macros, sequtils
 type
   Tensor* = ATensor
 
-proc toIntListType(x: int): ilsize {.inline.} = x.ilsize
+proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
 
 proc zeros*(size: varargs[int, toIntListType]): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
@@ -113,6 +113,10 @@ proc `*`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp * b.toCpp).to(ATensor)
 proc tanh*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(tanh).to(ATensor)
 
 proc `-`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp - b.toCpp).to(ATensor)
+
+proc t*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(t).to(ATensor)
+
+proc print*(a: var Tensor) = printTensor(a)
 
 when isMainModule:
   var
