@@ -2,12 +2,11 @@ include torch_cpp
 import macros, sequtils
 
 type
-  torch* = pointer
   Tensor* = ATensor
 
 proc toIntListType(x: int): ilsize {.inline.} = x.ilsize
 
-proc zeros*(_: typedesc[torch], size: varargs[int, toIntListType]): Tensor {.inline.} =
+proc zeros*(size: varargs[int, toIntListType]): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   when defined cuda:
     result = ACUDA().dynamicCppCall(zeros, shape)
@@ -34,7 +33,11 @@ iterator flatIter[T](s: openarray[T]): float32 {.inline.} =
     else:
       yield item.float32
 
-proc tensor*(_: typedesc[torch], data: openarray): Tensor {.inline.} =
+proc tensor*(data: openarray; dummy_bugfix: static[int] = 0): Tensor {.inline.} =
+  # as noticed in Arraymancer as well:
+  ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
+  # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
+
   # figure out size of array/seq
   var size = newSeq[ilsize]()
   for length in lenIter(data):
@@ -105,13 +108,9 @@ macro chunk*(a: Tensor; chunks, dim: int): tuple {.inline.} =
 
 proc sigmoid*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(sigmoid).to(ATensor)
 
-template sigmoid*(_: typedesc[torch]; a: Tensor): Tensor = a.sigmoid()
-
 proc `*`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp * b.toCpp).to(ATensor)
 
 proc tanh*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(tanh).to(ATensor)
-
-template tanh*(_: typedesc[torch]; a: Tensor): Tensor = a.tanh()
 
 proc `-`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp - b.toCpp).to(ATensor)
 
