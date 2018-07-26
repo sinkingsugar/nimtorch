@@ -43,34 +43,181 @@ proc tensor*(_: typedesc[torch], data: openarray): Tensor {.inline.} =
   # make shape out of size
   let shape = cppinit(IntList, cast[ptr ilsize](addr(size[0])), size.len.csize) 
   
+  # TODO avoid some of those copies and iterations
+   
   # flatten and eventually cast data
   var flatData = toSeq(flatIter(data))
+
+  # create a temporary CPU tensor with our GCed data
+  var tmp = ACPU().dynamicCppCall(tensorFromBlob, addr(flatData[0]), shape).to(ATensor)
   
   # finally write into a tensor
   when defined cuda:
-    result = ACUDA().dynamicCppCall(tensorFromBlob, addr(flatData[0]), shape).to(ATensor)
+    result = ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
   else:
-    result = ACPU().dynamicCppCall(tensorFromBlob, addr(flatData[0]), shape).to(ATensor)
+    result = ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+
+proc cpu*(tensor: var Tensor): Tensor {.inline.} = ACPU().dynamicCppCall(copy, tensor).to(ATensor)
+
+proc cuda*(tensor: var Tensor): Tensor {.inline.} = ACUDA().dynamicCppCall(copy, tensor).to(ATensor)
+
+proc matmul*(a, b: Tensor): Tensor {.inline.} = a.dynamicCppCall(matmul, b).to(ATensor)
+
+proc `+`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp + b.toCpp).to(ATensor)
+
+proc transpose*(a: Tensor; dim0, dim1: int): Tensor {.inline.} = a.dynamicCppCall(transpose, dim0, dim1).to(ATensor)
+
+macro chunk*(a: Tensor; chunks, dim: int): tuple {.inline.} =
+  # dumpAstGen:
+  #   proc helper(a: Tensor): (Tensor, Tensor) {.gensym.} =
+  #     let
+  #       tensors = a.dynamicCppCall(chunk, chunks, dim).to(ATensors)
+  #     return (tensors[0].to(ATensor), tensors[1].to(ATensor))
+  #   helper(a)
+
+  var tupleResTree1 = nnkPar.newTree()
+  for _ in 0..<chunks.intVal:
+    tupleResTree1.add(newIdentNode("Tensor"))
   
-  result = result.clone() # avoid GC issues since seq memory is GC memory
-  
+  var tensors = genSym()
+  var tupleResTree2 = nnkPar.newTree()
+  for i in 0..<chunks.intVal:
+    tupleResTree2.add(nnkCall.newTree(
+      nnkDotExpr.newTree(
+        nnkBracketExpr.newTree(
+          tensors,
+          newLit(i)
+        ),
+        newIdentNode("to")
+      ),
+      newIdentNode("ATensor")
+    ))
+
+  result = quote do:
+    proc helper(a: Tensor): pointer {.gensym, inline, noinit.} =
+      let
+        `tensors` = a.dynamicCppCall(chunk, `chunks`, `dim`).to(ATensors)
+      return nil
+    helper(`a`)
+
+  result[0][3][0] = tupleResTree1
+  result[0][6][1] = tupleResTree2
+
+proc sigmoid*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(sigmoid).to(ATensor)
+
+template sigmoid*(_: typedesc[torch]; a: Tensor): Tensor = a.sigmoid()
+
+proc `*`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp * b.toCpp).to(ATensor)
+
+proc tanh*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(tanh).to(ATensor)
+
+template tanh*(_: typedesc[torch]; a: Tensor): Tensor = a.tanh()
+
+proc `-`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp - b.toCpp).to(ATensor)
+
 when isMainModule:
   var
     z = torch.zeros(2, 1, 4)
-    data = [
-      [
-        [ 0.1,  0.2,  0.3,  0.4],
-        [-0.1, -0.2, -0.3, -0.4],
-        [ 0.5,  0.6,  0.7,  0.8]
-      ],
-      [
-        [ 0.1,  0.2,  0.3,  0.4],
-        [-0.1, -0.2, -0.3, -0.4],
-        [ 0.5,  0.6,  0.7,  0.8]
-      ]
-    ]
-    x = torch.tensor(data)
+
+    x = torch.tensor([
+        [
+          [ 0.1,  0.2,  0.3,  0.4],
+          [-0.1, -0.2, -0.3, -0.4],
+          [ 0.5,  0.6,  0.7,  0.8]
+        ],
+        [
+          [ 0.1,  0.2,  0.3,  0.4],
+          [-0.1, -0.2, -0.3, -0.4],
+          [ 0.5,  0.6,  0.7,  0.8]
+        ]
+      ])
+
+    hidden = torch.tensor([
+        [
+          [ -1.0, -1.0],
+          [ -1.0, -1.0],
+          [ -1.0, -1.0]
+        ],
+        [
+          [ -1.0, -1.0],
+          [ -1.0, -1.0],
+          [ -1.0, -1.0]
+        ]
+      ])
+
+    w_input = torch.tensor([
+        [
+          [0.9, 0.8, 0.7, 0.6],
+          [0.8, 0.7, 0.6, 0.5],
+          [0.7, 0.6, 0.5, 0.4],
+          [0.6, 0.5, 0.4, 0.3],
+          [0.5, 0.4, 0.3, 0.2],
+          [0.4, 0.3, 0.2, 0.1]
+        ],
+        [
+          [0.9, 0.8, 0.7, 0.6],
+          [0.8, 0.7, 0.6, 0.5],
+          [0.7, 0.6, 0.5, 0.4],
+          [0.6, 0.5, 0.4, 0.3],
+          [0.5, 0.4, 0.3, 0.2],
+          [0.4, 0.3, 0.2, 0.1]
+        ]
+      ])
+
+    w_recur = torch.tensor([
+        [
+          [-0.3, -0.1],
+          [-0.2,  0.0],
+          [-0.3, -0.1],
+          [-0.2,  0.0],
+          [-0.3, -0.1],
+          [-0.2,  0.0],
+        ],
+        [
+          [-0.3, -0.1],
+          [-0.2,  0.0],
+          [-0.3, -0.1],
+          [-0.2,  0.0],
+          [-0.3, -0.1],
+          [-0.2,  0.0],
+        ]
+      ])
+
+    b_input = torch.tensor([
+        [
+          [0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+        ],
+        [
+          [0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+        ]
+      ])
+
+    b_recur = torch.tensor([
+        [
+          [-0.1, -0.2, -0.3, -0.4, -0.5, -0.6],
+        ],
+        [
+          [-0.1, -0.2, -0.3, -0.4, -0.5, -0.6],
+        ]
+      ])
   
   z.printTensor()
   echo ""
   x.printTensor()
+
+  # grucell
+  var
+    gi = x.matmul(w_input.transpose(1, 2)) + b_input
+    gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
+    (i_r, i_i, i_nn) = gi.chunk(3, 2)
+    (h_r, h_i, h_n) = gh.chunk(3, 2)
+    resetgate = (i_r + h_r).sigmoid()
+    inputgate = torch.sigmoid(i_i + h_i)
+    newgate = (i_nn + resetgate * h_n).tanh()
+    hy = newgate + inputgate * (hidden - newgate)
+
+  hy.printTensor()
+
+  # tensor([[-0.5317, -0.4753],
+  #         [-0.3930, -0.3210],
+  #         [-0.7325, -0.6430]])
