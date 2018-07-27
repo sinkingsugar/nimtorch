@@ -3,17 +3,28 @@ import macros, sequtils
 
 type
   Tensor* = ATensor
+  Device* {.pure.} = enum
+    CPU, CUDA
 
 template inPlace* {.pragma.} ## Note: equivalent of torch _ suffix
 
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
 
+proc device*(deviceName: string): Device =
+  case deviceName
+  of "cpu", "CPU": return Device.CPU
+  of "cuda", "CUDA": return Device.CUDA
+  else: raiseAssert("Unknown device")
+
 proc zeros*(size: varargs[int, toIntListType]): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
-  when defined cuda:
-    result = ACUDA().dynamicCppCall(zeros, shape)
-  else:
-    result = ACPU().dynamicCppCall(zeros, shape)
+  return ACPU().dynamicCppCall(zeros, shape)
+
+proc zeros*(size: varargs[int, toIntListType]; device: Device): Tensor {.inline.} =
+  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  case device:
+  of Device.CUDA: return ACUDA().dynamicCppCall(zeros, shape)
+  of Device.CPU: return ACPU().dynamicCppCall(zeros, shape)
 
 iterator lenIter[T](s: openarray[T]): int {.inline.} =
   ## Inline iterator on any-depth seq or array
@@ -35,7 +46,7 @@ iterator flatIter[T](s: openarray[T]): float32 {.inline.} =
     else:
       yield item.float32
 
-proc tensor*(data: openarray; dummy_bugfix: static[int] = 0): Tensor {.inline.} =
+proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
   # as noticed in Arraymancer as well:
   ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
@@ -57,10 +68,9 @@ proc tensor*(data: openarray; dummy_bugfix: static[int] = 0): Tensor {.inline.} 
   var tmp = ACPU().dynamicCppCall(tensorFromBlob, addr(flatData[0]), shape).to(ATensor)
   
   # finally write into a tensor
-  when defined cuda:
-    result = ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
-  else:
-    result = ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+  case device:
+  of Device.CUDA: return ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CPU: return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
 
 proc cpu*(tensor: var Tensor): Tensor {.inline.} = ACPU().dynamicCppCall(copy, tensor).to(ATensor)
 
@@ -150,10 +160,18 @@ proc fromSeq*[T](s: var seq[T], size: varargs[int, toIntListType]): Tensor =
   var tmp = ACPU().dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
-  when defined cuda:
-    result = ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
-  else:
-    result = ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+  return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+
+proc fromSeq*[T](s: var seq[T], size: varargs[int, toIntListType]; device: Device): Tensor =
+  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  
+  # create a temporary CPU tensor with our GCed data
+  var tmp = ACPU().dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
+  
+  # finally write into a tensor
+  case device:
+  of Device.CUDA: return ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CPU: return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
 
 proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.toCpp()[index].to(ATensor)
 
