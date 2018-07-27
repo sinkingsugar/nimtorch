@@ -8,4 +8,4 @@ license     = "MIT"
 # Deps
 
 requires "nim >= 0.18.0"
-requires "fragments#c2c6013a"
+requires "fragments >= 0.1.1"
