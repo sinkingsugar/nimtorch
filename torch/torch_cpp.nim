@@ -1,17 +1,6 @@
 import fragments/ffi/cpp as cpp
 export cpp
-
-# when defined(linux) and not defined(nimsuggest):
-#   static:
-#     echo "Checking if aten folder is in artifacts and populated"
-#     var check = gorgeEx("ls ../artifacts/aten/lib")
-#     if check.exitCode != 0:
-#       check = gorgeEx("""mkdir -p ../artifacts/aten && \
-# cd ../artifacts/aten && \
-# emconfigure cmake -DAT_LINK_STYLE=STATIC -DCAFFE2_CMAKE_BUILDING_WITH_MAIN_REPO=OFF -DCMAKE_C_FLAGS="-Wno-implicit-function-declaration \
-# -DEMSCRIPTEN -s DISABLE_EXCEPTION_CATCHING=0" -DCMAKE_CXX_FLAGS="-Wno-implicit-function-declaration -DEMSCRIPTEN -s DISABLE_EXCEPTION_CATCHING=0" \
-# -DCMAKE_INSTALL_PREFIX=/home/sugar/aten-wasm ../../deps/pytorch/aten""")
-#       doAssert(check.exitCode == 0, check.output)
+import os
 
 defineCppType(ATensor, "at::Tensor", "ATen/ATen.h")
 defineCppType(AScalar, "at::Scalar", "ATen/ATen.h")
@@ -27,11 +16,14 @@ proc globalContext(): AContext {.importcpp: "at::globalContext()".}
 var BackendCPU* {.importcpp: "at::Backend::CPU", nodecl.}: cint
 var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
 
-{.passC: "-I../aten/include".}
+{.passC: "-I$ATEN/include".}
+
+static:
+  doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
 
 when defined wasm:
   type ilsize = clonglong
-  {.passL: "../pytorch/aten/built/src/ATen/libATen_cpu.a ../pytorch/aten/built/confu-deps/cpuinfo/libcpuinfo.a".}
+  {.passL: "$ATEN/lib/libATen_cpu.a $ATEN/lib/libcpuinfo.a".}
 else:
-  {.passL: "-L../aten/lib -lATen_cpu".}
+  {.passL: "$ATEN/lib/libATen_cpu.a $ATEN/lib/libsleef.a $ATEN/lib64/libcpuinfo.a -pthread -fopenmp".}
   type ilsize = clong
