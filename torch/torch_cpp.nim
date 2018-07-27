@@ -18,12 +18,22 @@ var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
 
 {.passC: "-I$ATEN/include".}
 
+var haslib64cpuinfo {.compileTime.} = false
+
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
+  
+  if gorge("ls " & getenv("ATEN") & "/lib64") == "libcpuinfo.a":
+    haslib64cpuinfo = true
 
 when defined wasm:
-  type ilsize = clonglong
   {.passL: "$ATEN/lib/libATen_cpu.a $ATEN/lib/libcpuinfo.a".}
+  
+  type ilsize = clonglong
 else:
-  {.passL: "$ATEN/lib/libATen_cpu.a $ATEN/lib/libsleef.a $ATEN/lib64/libcpuinfo.a -pthread -fopenmp".}
+  when haslib64cpuinfo:
+    {.passL: "$ATEN/lib/libATen_cpu.a $ATEN/lib/libsleef.a $ATEN/lib64/libcpuinfo.a -pthread -fopenmp".}
+  else:
+    {.passL: "$ATEN/lib/libATen_cpu.a $ATEN/lib/libsleef.a $ATEN/lib/libcpuinfo.a -pthread -fopenmp".}
+
   type ilsize = clong
