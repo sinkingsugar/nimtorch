@@ -22,18 +22,12 @@ var haslib64cpuinfo {.compileTime, nodecl.} = false
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
-  
-  if gorge("ls " & getenv("ATEN") & "/lib64/libcpuinfo.a") == getenv("ATEN") & "/lib64/libcpuinfo.a":
-    haslib64cpuinfo = true
 
 when defined wasm:
-  {.passL: "$ATEN/lib/libATen_cpu.a $ATEN/lib/libcpuinfo.a".}
+  {.passL: "-L$ATEN/lib -lATen_cpu -lcpuinfo".}
   
   type ilsize = clonglong
 else:
-  when haslib64cpuinfo:
-    {.passL: "$ATEN/lib/libATen_cpu.a $ATEN/lib/libsleef.a $ATEN/lib64/libcpuinfo.a -pthread -fopenmp".}
-  else:
-    {.passL: "$ATEN/lib/libATen_cpu.a $ATEN/lib/libsleef.a $ATEN/lib/libcpuinfo.a -pthread -fopenmp".}
+  {.passL: "-L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lsleef -lcpuinfo -pthread -fopenmp".}
 
   type ilsize = clong

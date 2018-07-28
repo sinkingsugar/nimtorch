@@ -1,6 +1,6 @@
 # Package
 
-version     = "0.1.7"
+version     = "0.1.8"
 author      = "Giovanni Petrantoni"
 description = "A nim flavor of pytorch"
 license     = "MIT"
