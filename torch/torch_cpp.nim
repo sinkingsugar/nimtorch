@@ -18,12 +18,12 @@ var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
 
 {.passC: "-I$ATEN/include".}
 
-var haslib64cpuinfo {.compileTime.} = false
+var haslib64cpuinfo {.compileTime, nodecl.} = false
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
   
-  if gorge("ls " & getenv("ATEN") & "/lib64") == "libcpuinfo.a":
+  if gorge("ls " & getenv("ATEN") & "/lib64/libcpuinfo.a") == getenv("ATEN") & "/lib64/libcpuinfo.a":
     haslib64cpuinfo = true
 
 when defined wasm:
