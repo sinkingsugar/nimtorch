@@ -302,7 +302,24 @@ when isMainModule:
     cudaTensor.printTensor()
 
     froms = froms.cuda()
-    froms.printTensor() 
+    froms.printTensor()
+
+    x = x.cuda()
+    hidden = hidden.cuda()
+    b_input = b_input.cuda()
+    b_recur = b_recur.cuda()
+    w_input = w_input.cuda()
+    w_recur = w_recur.cuda()
+    gi = x.matmul(w_input.transpose(1, 2)) + b_input
+    gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
+    (i_r, i_i, i_nn) = gi.chunk(3, 2)
+    (h_r, h_i, h_n) = gh.chunk(3, 2)
+    resetgate = (i_r + h_r).sigmoid()
+    inputgate = torch.sigmoid(i_i + h_i)
+    newgate = (i_nn + resetgate * h_n).tanh()
+    hy = newgate + inputgate * (hidden - newgate)
+
+    hy.printTensor()
 
 
   # tensor([[-0.5317, -0.4753],
