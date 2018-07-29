@@ -27,11 +27,19 @@ when defined wasm:
   {.passL: "-L$ATEN/lib -lATen_cpu -lcpuinfo".}
   
   type ilsize = clonglong
+  
 elif defined cuda:
   # cuda needs dynamic libraries
   {.passL: "-Wl,--no-as-needed -L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lATen_cuda -lsleef -lcpuinfo -lcuda -pthread -fopenmp -lrt".}
 
   type ilsize = clong
+
+  # add some cudart utility
+  import dynlib
+
+  proc cudaProfilerStart*() {.importc, dynlib: "libcudart.so".}
+  proc cudaProfilerStop*() {.importc, dynlib: "libcudart.so".}
+
 else:
   {.passL: "-L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lsleef -lcpuinfo -pthread -fopenmp -lrt".}
 
