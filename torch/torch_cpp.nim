@@ -16,7 +16,7 @@ proc globalContext(): AContext {.importcpp: "at::globalContext()".}
 var BackendCPU* {.importcpp: "at::Backend::CPU", nodecl.}: cint
 var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
 
-{.passC: "-I$ATEN/include".}
+{.passC: "-I$ATEN/include -std=c++11".}
 
 var haslib64cpuinfo {.compileTime, nodecl.} = false
 
@@ -27,7 +27,11 @@ when defined wasm:
   {.passL: "-L$ATEN/lib -lATen_cpu -lcpuinfo".}
   
   type ilsize = clonglong
+elif defined cuda:
+  {.passL: "-L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lATen_cuda -lsleef -lcpuinfo -Wl,--no-as-needed -lcuda -pthread -fopenmp -lrt".}
+
+  type ilsize = clong
 else:
-  {.passL: "-L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lsleef -lcpuinfo -pthread -fopenmp".}
+  {.passL: "-L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lsleef -lcpuinfo -pthread -fopenmp -lrt".}
 
   type ilsize = clong
