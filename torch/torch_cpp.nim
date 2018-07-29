@@ -37,6 +37,9 @@ elif defined cuda:
   # add some cudart utility
   import dynlib
 
+  # profiling, you also need to instruct the profiling tool to disable profiling at the start of the application. 
+  # For nvprof you do this with the --profile-from-start off flag. 
+  # For the Visual Profiler you use the Start execution with profiling enabled checkbox in the Settings View
   proc cudaProfilerStart*() {.importc, dynlib: "libcudart.so".}
   proc cudaProfilerStop*() {.importc, dynlib: "libcudart.so".}
 
