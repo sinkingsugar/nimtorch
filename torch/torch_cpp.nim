@@ -28,7 +28,8 @@ when defined wasm:
   
   type ilsize = clonglong
 elif defined cuda:
-  {.passL: "-L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lATen_cuda -lsleef -lcpuinfo -Wl,--no-as-needed -lcuda -pthread -fopenmp -lrt".}
+  # cuda needs dynamic libraries
+  {.passL: "-Wl,--no-as-needed -L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lATen_cuda -lsleef -lcpuinfo -lcuda -pthread -fopenmp -lrt".}
 
   type ilsize = clong
 else:

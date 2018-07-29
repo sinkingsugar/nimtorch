@@ -299,6 +299,11 @@ when isMainModule:
     echo "Cuda available"
     echo "Cuda device ", globalContext().current_device().to(int)
     var cudaTensor = torch.zeros(7, 7, 7, device = torch.device("cuda"))
+    cudaTensor.printTensor()
+
+    froms = froms.cuda()
+    froms.printTensor() 
+
 
   # tensor([[-0.5317, -0.4753],
   #         [-0.3930, -0.3210],
