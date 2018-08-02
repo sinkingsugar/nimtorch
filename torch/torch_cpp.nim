@@ -9,12 +9,21 @@ defineCppType(AGenerator, "at::Generator", "ATen/ATen.h")
 defineCppType(AContext, "at::Context", "ATen/ATen.h")
 defineCppTYpe(ATensors, "std::vector<at::Tensor>", "vector")
 
+when defined cuda:
+  defineCppTYpe(ACUDAStream, "at::cuda::CUDAStream", "ATen/cuda/CUDAContext.h")
+
 proc ACPU(): CppProxy {.importcpp: "at::CPU(at::kFloat)".}
 proc ACUDA(): CppProxy {.importcpp: "at::CUDA(at::kFloat)".}
 proc printTensor(t: ATensor) {.importcpp: "at::print(#)".}
 proc globalContext(): AContext {.importcpp: "at::globalContext()".}
 var BackendCPU* {.importcpp: "at::Backend::CPU", nodecl.}: cint
 var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
+
+when defined cuda:
+  proc createCUDAStream(): ACUDAStream {.importcpp: "at::cuda::createCUDAStream()".}
+  proc getDefaultCUDAStream(): ACUDAStream {.importcpp: "at::cuda::getDefaultCUDAStream()".}
+  proc getCurrentCUDAStream(): ACUDAStream {.importcpp: "at::cuda::getCurrentCUDAStream()".}
+  proc setCurrentCUDAStream(stream: ACUDAStream) {.importcpp: "at::cuda::setCurrentCUDAStream()".}
 
 {.passC: "-I$ATEN/include -std=c++11".}
 
@@ -33,15 +42,6 @@ elif defined cuda:
   {.passL: "-Wl,--no-as-needed -L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lATen_cuda -lsleef -lcpuinfo -lcuda -pthread -fopenmp -lrt".}
 
   type ilsize = clong
-
-  # add some cudart utility
-  import dynlib
-
-  # profiling, you also need to instruct the profiling tool to disable profiling at the start of the application. 
-  # For nvprof you do this with the --profile-from-start off flag. 
-  # For the Visual Profiler you use the Start execution with profiling enabled checkbox in the Settings View
-  proc cudaProfilerStart*() {.importc, dynlib: "libcudart.so".}
-  proc cudaProfilerStop*() {.importc, dynlib: "libcudart.so".}
 
 else:
   {.passL: "-L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lsleef -lcpuinfo -pthread -fopenmp -lrt".}

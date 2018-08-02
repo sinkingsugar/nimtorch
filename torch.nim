@@ -60,7 +60,7 @@ proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[
   let shape = cppinit(IntList, cast[ptr ilsize](addr(size[0])), size.len.csize) 
   
   # TODO avoid some of those copies and iterations
-   
+  
   # flatten and eventually cast data
   var flatData = toSeq(flatIter(data))
 
