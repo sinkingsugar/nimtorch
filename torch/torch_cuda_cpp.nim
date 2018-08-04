@@ -19,7 +19,7 @@ proc cudaProfilerStop*() {.importc, dynlib: "libcudart.so".}
 
 proc cudaDeviceSynchronize*() {.importc, dynlib: "libcudart.so".}
 
-{.passC: "-I$CUDA_INCLUDE".}
+{.passC: "-I$CUDA_INCLUDE -I$ATEN/include/TH".}
 
 static:
   doAssert(getenv("CUDA_INCLUDE") != "", "Please add $CUDA_INCLUDE variable specifying cuda include folder to the environment")

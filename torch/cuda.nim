@@ -13,6 +13,10 @@ proc stream*(stream: CudaStream): CudaStream {.inline.} = stream
 
 proc synchronize*() {.inline.} = cudaDeviceSynchronize()
 
+proc empty_cache*() {.inline.} =
+  proc themptycache() {.importc: "THCCachingAllocator_emptyCache", header: "THC/THCCachingAllocator.h".}
+  themptycache()
+
 template with*(stream: CudaStream; code: untyped): untyped =
   let previousStream = getCurrentCUDAStream()
   setCurrentCUDAStream(stream.cudaStream)
