@@ -20,10 +20,10 @@ proc empty_cache*() {.inline.} =
   themptycache()
 
 template with*(stream: CudaStream; code: untyped): untyped =
-  let defaultStream = getDefaultCUDAStream()
+  let previousStream = getCurrentCUDAStream()
   setCurrentCUDAStream(stream.cudaStream)
   code
-  setCurrentCUDAStream(defaultStream)
+  setCurrentCUDAStream(previousStream)
 
 template with*(pycode, code: untyped): untyped =
   let stream = pycode
