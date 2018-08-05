@@ -6,6 +6,14 @@ type
   CudaStream* = object
     cudaStream: ACUDAStream
 
+proc `!=`*(a, b: CudaStream): bool = a.cudaStream == b.cudaStream
+
+proc setStream*(stream: CudaStream) = setCurrentCUDAStream(stream.cudaStream)
+
+proc defaultStream*(): CudaStream = result.cudaStream = getDefaultCUDAStream()
+
+proc current_stream*(): CudaStream = result.cudaStream = getCurrentCUDAStream()
+
 proc Stream*(): CudaStream =
   result.cudaStream = createCUDAStream()
 
@@ -21,9 +29,15 @@ proc empty_cache*() {.inline.} =
 
 template with*(stream: CudaStream; code: untyped): untyped =
   let previousStream = getCurrentCUDAStream()
+  
   setCurrentCUDAStream(stream.cudaStream)
+  assert(getCurrentCUDAStream() == stream.cudaStream)
+
   code
+  assert(getCurrentCUDAStream() == stream.cudaStream)
+  
   setCurrentCUDAStream(previousStream)
+  assert(getCurrentCUDAStream() == previousStream)
 
 template with*(pycode, code: untyped): untyped =
   let stream = pycode
@@ -34,10 +48,16 @@ when isMainModule:
   var myStream = Stream()
 
   with myStream:
+    assert(myStream == cuda.current_stream())
     discard
+  
+  assert(myStream != cuda.current_stream())
 
   with cuda.stream(myStream):
+    assert(myStream == cuda.current_stream())
     discard
+
+  assert(myStream != cuda.current_stream())
   
   myStream.synchronize()
   cuda.synchronize()
