@@ -17,7 +17,9 @@ proc setCurrentCUDAStream(stream: ACUDAStream) {.importcpp: "at::cuda::setCurren
 proc cudaProfilerStart*() {.importc, dynlib: "libcudart.so".}
 proc cudaProfilerStop*() {.importc, dynlib: "libcudart.so".}
 
+type cudaStream_t {.importc: "cudaStream_t".} = object
 proc cudaDeviceSynchronize*() {.importc, dynlib: "libcudart.so".}
+proc cudaStreamSynchronize*(stream: cudaStream_t) {.importc, dynlib: "libcudart.so".}
 
 {.passC: "-I$CUDA_INCLUDE -I$ATEN/include/TH".}
 

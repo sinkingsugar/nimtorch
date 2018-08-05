@@ -13,15 +13,17 @@ proc stream*(stream: CudaStream): CudaStream {.inline.} = stream
 
 proc synchronize*() {.inline.} = cudaDeviceSynchronize()
 
+proc synchronize*(stream: CudaStream) {.inline.} = cudaStreamSynchronize(stream.cudaStream.toCpp.to(cudaStream_t))
+
 proc empty_cache*() {.inline.} =
   proc themptycache() {.importc: "THCCachingAllocator_emptyCache", header: "THC/THCCachingAllocator.h".}
   themptycache()
 
 template with*(stream: CudaStream; code: untyped): untyped =
-  let previousStream = getCurrentCUDAStream()
+  let defaultStream = getDefaultCUDAStream()
   setCurrentCUDAStream(stream.cudaStream)
   code
-  setCurrentCUDAStream(previousStream)
+  setCurrentCUDAStream(defaultStream)
 
 template with*(pycode, code: untyped): untyped =
   let stream = pycode
@@ -37,4 +39,6 @@ when isMainModule:
   with cuda.stream(myStream):
     discard
   
+  myStream.synchronize()
   cuda.synchronize()
+  cuda.empty_cache()
