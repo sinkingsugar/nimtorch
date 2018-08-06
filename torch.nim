@@ -16,15 +16,18 @@ proc device*(deviceName: string): Device =
   of "cuda", "CUDA": return Device.CUDA
   else: raiseAssert("Unknown device")
 
-proc zeros*(size: varargs[int, toIntListType]): Tensor {.inline.} =
+proc internalZeros(size: openarray[ilsize]): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   return ACPU().dynamicCppCall(zeros, shape)
 
-proc zeros*(size: varargs[int, toIntListType]; device: Device): Tensor {.inline.} =
+proc internalZeros(size: openarray[ilsize]; device: Device): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   case device:
   of Device.CUDA: return ACUDA().dynamicCppCall(zeros, shape)
   of Device.CPU: return ACPU().dynamicCppCall(zeros, shape)
+
+proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]): Tensor {.inline.} = internalZeros(size)
+proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]; device: Device): Tensor {.inline.} = internalZeros(size, device)
 
 iterator lenIter[T](s: openarray[T]): int {.inline.} =
   ## Inline iterator on any-depth seq or array
@@ -162,7 +165,7 @@ proc toSeq*[T](a: Tensor): seq[T] {.inline.} =
   else:
     copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
 
-proc fromSeq*[T](s: var seq[T], size: varargs[int, toIntListType]): Tensor =
+proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
@@ -171,7 +174,7 @@ proc fromSeq*[T](s: var seq[T], size: varargs[int, toIntListType]): Tensor =
   # finally write into a tensor
   return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
 
-proc fromSeq*[T](s: var seq[T], size: varargs[int, toIntListType]; device: Device): Tensor =
+proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
@@ -181,6 +184,9 @@ proc fromSeq*[T](s: var seq[T], size: varargs[int, toIntListType]; device: Devic
   case device:
   of Device.CUDA: return ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+
+proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeq(s, size)
+proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeq(s, size, device)
 
 proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.toCpp()[index].to(ATensor)
 
@@ -195,6 +201,9 @@ proc manual_seed*(seed: int) =
     globalContext().defaultGenerator(BackendCUDA).manualSeed(seed).to(void)
 
 when isMainModule:
+  # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim
+  # nim cpp -d:wasm --nimcache=nimcache-wasm -o:nimcache-wasm/test.js torch.nim && node nimcache-wasm/test.js
+
   var
     z = torch.zeros(2, 1, 4)
 
@@ -280,9 +289,8 @@ when isMainModule:
         ]
       ])
   
-  z.printTensor()
-  echo ""
-  x.printTensor()
+  z.print()
+  x.print()
 
   # grucell
   var
@@ -295,40 +303,41 @@ when isMainModule:
     newgate = (i_nn + resetgate * h_n).tanh()
     hy = newgate + inputgate * (hidden - newgate)
 
-  hy.printTensor()
+  hy.print()
 
   var
     tos = toSeq[float32](hy)
     froms = torch.fromSeq(tos, 2, 3, 2)
 
   echo tos
-  froms.printTensor()
+  froms.print()
+  
+  when not defined(wasm) and defined(cuda):
+    if globalContext().hasCUDA().to(bool):
+      echo "Cuda available"
+      echo "Cuda device ", globalContext().current_device().to(int)
+      var cudaTensor = torch.zeros(7, 7, 7, device = torch.device("cuda"))
+      cudaTensor.printTensor()
 
-  if globalContext().hasCUDA().to(bool):
-    echo "Cuda available"
-    echo "Cuda device ", globalContext().current_device().to(int)
-    var cudaTensor = torch.zeros(7, 7, 7, device = torch.device("cuda"))
-    cudaTensor.printTensor()
+      froms = froms.cuda()
+      froms.printTensor()
 
-    froms = froms.cuda()
-    froms.printTensor()
+      x = x.cuda()
+      hidden = hidden.cuda()
+      b_input = b_input.cuda()
+      b_recur = b_recur.cuda()
+      w_input = w_input.cuda()
+      w_recur = w_recur.cuda()
+      gi = x.matmul(w_input.transpose(1, 2)) + b_input
+      gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
+      (i_r, i_i, i_nn) = gi.chunk(3, 2)
+      (h_r, h_i, h_n) = gh.chunk(3, 2)
+      resetgate = (i_r + h_r).sigmoid()
+      inputgate = torch.sigmoid(i_i + h_i)
+      newgate = (i_nn + resetgate * h_n).tanh()
+      hy = newgate + inputgate * (hidden - newgate)
 
-    x = x.cuda()
-    hidden = hidden.cuda()
-    b_input = b_input.cuda()
-    b_recur = b_recur.cuda()
-    w_input = w_input.cuda()
-    w_recur = w_recur.cuda()
-    gi = x.matmul(w_input.transpose(1, 2)) + b_input
-    gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
-    (i_r, i_i, i_nn) = gi.chunk(3, 2)
-    (h_r, h_i, h_n) = gh.chunk(3, 2)
-    resetgate = (i_r + h_r).sigmoid()
-    inputgate = torch.sigmoid(i_i + h_i)
-    newgate = (i_nn + resetgate * h_n).tanh()
-    hy = newgate + inputgate * (hidden - newgate)
-
-    hy.printTensor()
+      hy.printTensor()
 
 
   # tensor([[-0.5317, -0.4753],

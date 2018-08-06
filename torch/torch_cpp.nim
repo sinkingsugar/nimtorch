@@ -33,17 +33,16 @@ static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
 
 when defined wasm:
-  {.passL: "-L$ATEN/lib -lATen_cpu -lcpuinfo".}
+  {.passL: "-L$ATEN/lib -lATen_cpu".}
   
-  type ilsize = clonglong
+  type ilsize* = clonglong
   
 elif defined cuda:
-  # cuda needs dynamic libraries
   {.passL: "-Wl,--no-as-needed -L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lATen_cuda -lsleef -lcpuinfo -lcuda -pthread -fopenmp -lrt".}
 
-  type ilsize = clong
+  type ilsize* = clong
 
 else:
   {.passL: "-L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lsleef -lcpuinfo -pthread -fopenmp -lrt".}
 
-  type ilsize = clong
+  type ilsize* = clong
