@@ -72,15 +72,21 @@ proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[
   of Device.CUDA: return ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
 
-proc cpu*(tensor: var Tensor): Tensor {.inline.} = ACPU().dynamicCppCall(copy, tensor).to(ATensor)
+proc cpu*(tensor: Tensor): Tensor {.inline.} = ACPU().dynamicCppCall(copy, tensor).to(ATensor)
 
-proc cuda*(tensor: var Tensor): Tensor {.inline.} = ACUDA().dynamicCppCall(copy, tensor).to(ATensor)
+proc cuda*(tensor: Tensor): Tensor {.inline.} = ACUDA().dynamicCppCall(copy, tensor).to(ATensor)
+
+proc is_cuda*(tensor: Tensor): bool {.inline.} = tensor.dynamicCppCall(is_cuda).to(bool)
+
+proc is_defined*(tensor: Tensor): bool {.inline.} = tensor.dynamicCppCall("defined").to(bool)
 
 proc matmul*(a, b: Tensor): Tensor {.inline.} = a.dynamicCppCall(matmul, b).to(ATensor)
 
 proc `+`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp + b.toCpp).to(ATensor)
 
 proc transpose*(a: Tensor; dim0, dim1: int): Tensor {.inline.} = a.dynamicCppCall(transpose, dim0, dim1).to(ATensor)
+
+proc take*(a, indices: Tensor): Tensor {.inline.} = a.dynamicCppCall(take, indices).to(ATensor)
 
 macro chunk*(a: Tensor; chunks, dim: int): tuple {.inline.} =
   # dumpAstGen:
@@ -147,11 +153,14 @@ proc data_ptr*(a: Tensor): pointer {.inline.} = a.dynamicCppCall(data_ptr).to(po
 proc print*(a: Tensor) = printTensor(a)
 
 proc toSeq*[T](a: Tensor): seq[T] {.inline.} =
-  let
-    cont = a.contiguous()
-    elements = a.numel()
+  let elements = a.numel()
   result = newSeq[T](elements)
-  copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
+
+  if a.is_cuda():
+    var tmp = a.cpu()
+    copyMem(addr(result[0]), tmp.data_ptr(), sizeof(T) * elements)
+  else:
+    copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
 
 proc fromSeq*[T](s: var seq[T], size: varargs[int, toIntListType]): Tensor =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
