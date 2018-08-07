@@ -200,6 +200,10 @@ proc manual_seed*(seed: int) =
   if globalContext().hasCUDA().to(bool):
     globalContext().defaultGenerator(BackendCUDA).manualSeed(seed).to(void)
 
+proc set_num_threads*(num: int) {.importcpp: "at::set_num_threads(#)".}
+
+proc get_num_threads*(): int {.importcpp: "at::get_num_threads(#)".}
+
 when isMainModule:
   # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim
   # nim cpp -d:wasm --nimcache=nimcache-wasm -o:nimcache-wasm/test.js torch.nim && node nimcache-wasm/test.js
