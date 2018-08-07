@@ -27,8 +27,6 @@ when defined cuda:
 
 {.passC: "-I$ATEN/include -std=c++11".}
 
-var haslib64cpuinfo {.compileTime, nodecl.} = false
-
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
 
