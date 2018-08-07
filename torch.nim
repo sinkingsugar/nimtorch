@@ -91,22 +91,19 @@ proc transpose*(a: Tensor; dim0, dim1: int): Tensor {.inline.} = a.dynamicCppCal
 
 proc take*(a, indices: Tensor): Tensor {.inline.} = a.dynamicCppCall(take, indices).to(ATensor)
 
-macro chunk*(a: Tensor; chunks, dim: int): tuple {.inline.} =
+macro chunk*(a: Tensor; chunks, dim: int): untyped =
   # dumpAstGen:
   #   proc helper(a: Tensor): (Tensor, Tensor) {.gensym.} =
   #     let
   #       tensors = a.dynamicCppCall(chunk, chunks, dim).to(ATensors)
   #     return (tensors[0].to(ATensor), tensors[1].to(ATensor))
   #   helper(a)
-
-  var tupleResTree1 = nnkPar.newTree()
-  for _ in 0..<chunks.intVal:
-    tupleResTree1.add(newIdentNode("Tensor"))
-  
+ 
   var tensors = genSym()
-  var tupleResTree2 = nnkPar.newTree()
+  var tupleTree = nnkTupleConstr.newTree()
+
   for i in 0..<chunks.intVal:
-    tupleResTree2.add(nnkCall.newTree(
+    tupleTree.add(nnkCall.newTree(
       nnkDotExpr.newTree(
         nnkBracketExpr.newTree(
           tensors,
@@ -118,14 +115,8 @@ macro chunk*(a: Tensor; chunks, dim: int): tuple {.inline.} =
     ))
 
   result = quote do:
-    proc helper(a: Tensor): pointer {.gensym, inline, noinit.} =
-      let
-        `tensors` = a.dynamicCppCall(chunk, `chunks`, `dim`).to(ATensors)
-      return nil
-    helper(`a`)
-
-  result[0][3][0] = tupleResTree1
-  result[0][6][1] = tupleResTree2
+    let `tensors` = `a`.dynamicCppCall(chunk, `chunks`, `dim`).to(ATensors)
+    `tupleTree`
 
 proc sigmoid*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(sigmoid).to(ATensor)
 
