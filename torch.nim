@@ -75,9 +75,9 @@ proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[
   of Device.CUDA: return ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
 
-proc cpu*(tensor: Tensor): Tensor {.inline.} = ACPU().dynamicCppCall(copy, tensor).to(ATensor)
+proc cpu*(tensor: Tensor): Tensor {.inline.} = tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
 
-proc cuda*(tensor: Tensor): Tensor {.inline.} = ACUDA().dynamicCppCall(copy, tensor).to(ATensor)
+proc cuda*(tensor: Tensor): Tensor {.inline.} = tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
 
 proc is_cuda*(tensor: Tensor): bool {.inline.} = tensor.dynamicCppCall(is_cuda).to(bool)
 
