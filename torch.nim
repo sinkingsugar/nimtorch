@@ -87,6 +87,8 @@ proc matmul*(a, b: Tensor): Tensor {.inline.} = a.dynamicCppCall(matmul, b).to(A
 
 proc `+`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp + b.toCpp).to(ATensor)
 
+proc `==`*(a, b: Tensor): bool {.inline.} =  a.dynamicCppCall(equal, b).to(bool)
+
 proc transpose*(a: Tensor; dim0, dim1: int): Tensor {.inline.} = a.dynamicCppCall(transpose, dim0, dim1).to(ATensor)
 
 proc take*(a, indices: Tensor): Tensor {.inline.} = a.dynamicCppCall(take, indices).to(ATensor)
@@ -98,7 +100,7 @@ macro chunk*(a: Tensor; chunks, dim: int): untyped =
   #       tensors = a.dynamicCppCall(chunk, chunks, dim).to(ATensors)
   #     return (tensors[0].to(ATensor), tensors[1].to(ATensor))
   #   helper(a)
- 
+
   var tensors = genSym()
   var tupleTree = nnkTupleConstr.newTree()
 
