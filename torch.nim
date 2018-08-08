@@ -79,6 +79,8 @@ proc cpu*(tensor: Tensor): Tensor {.inline.} = tensor.dynamicCppCall(toBackend, 
 
 proc cuda*(tensor: Tensor): Tensor {.inline.} = tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
 
+proc copy*(tensor: Tensor; non_blocking: bool = false): Tensor {.inline.} = tensor.dynamicCppCall("type").dynamicCppCall("copy", tensor, non_blocking).to(ATensor)
+
 proc is_cuda*(tensor: Tensor): bool {.inline.} = tensor.dynamicCppCall(is_cuda).to(bool)
 
 proc is_defined*(tensor: Tensor): bool {.inline.} = tensor.dynamicCppCall("defined").to(bool)

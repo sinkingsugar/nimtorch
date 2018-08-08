@@ -8,6 +8,8 @@ type
 
 proc `!=`*(a, b: CudaStream): bool = a.cudaStream == b.cudaStream
 
+proc `==`*(a, b: CudaStream): bool = a.cudaStream == b.cudaStream
+
 proc setStream*(stream: CudaStream) = setCurrentCUDAStream(stream.cudaStream)
 
 proc defaultStream*(): CudaStream = result.cudaStream = getDefaultCUDAStream()
