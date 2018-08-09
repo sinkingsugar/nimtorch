@@ -7,10 +7,10 @@ defineCppType(AScalar, "at::Scalar", "ATen/ATen.h")
 defineCppType(IntList, "at::IntList", "ATen/ATen.h")
 defineCppType(AGenerator, "at::Generator", "ATen/ATen.h")
 defineCppType(AContext, "at::Context", "ATen/ATen.h")
-defineCppTYpe(ATensors, "std::vector<at::Tensor>", "vector")
+defineCppType(ATensors, "std::vector<at::Tensor>", "vector")
 
 when defined cuda:
-  defineCppTYpe(ACUDAStream, "at::cuda::CUDAStream", "ATen/cuda/CUDAContext.h")
+  defineCppType(ACUDAStream, "at::cuda::CUDAStream", "ATen/cuda/CUDAContext.h")
 
 proc ACPU(): CppProxy {.importcpp: "at::CPU(at::kFloat)".}
 proc ACUDA(): CppProxy {.importcpp: "at::CUDA(at::kFloat)".}
@@ -25,7 +25,7 @@ when defined cuda:
   proc getCurrentCUDAStream(): ACUDAStream {.importcpp: "at::cuda::getCurrentCUDAStream()".}
   proc setCurrentCUDAStream(stream: ACUDAStream) {.importcpp: "at::cuda::setCurrentCUDAStream()".}
 
-{.passC: "-I$ATEN/include -std=c++11".}
+{.passC: "-I$ATEN/include".}
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
