@@ -39,12 +39,6 @@ proc globalContext(): AContext {.importcpp: "at::globalContext()".}
 var BackendCPU* {.importcpp: "at::Backend::CPU", nodecl.}: cint
 var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
 
-when defined cuda:
-  proc createCUDAStream(): ACUDAStream {.importcpp: "at::cuda::createCUDAStream()".}
-  proc getDefaultCUDAStream(): ACUDAStream {.importcpp: "at::cuda::getDefaultCUDAStream()".}
-  proc getCurrentCUDAStream(): ACUDAStream {.importcpp: "at::cuda::getCurrentCUDAStream()".}
-  proc setCurrentCUDAStream(stream: ACUDAStream) {.importcpp: "at::cuda::setCurrentCUDAStream()".}
-
 {.passC: "-I$ATEN/include".}
 
 static:
