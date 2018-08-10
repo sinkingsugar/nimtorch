@@ -160,7 +160,9 @@ proc toSeq*[T](a: Tensor): seq[T] {.inline.} =
   else:
     copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
 
-proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]): Tensor {.inline.} =
+type SeqOrArray[T] = seq[T] | openarray[T]
+
+proc internalFromSeqArr*[T](s: var SeqOrArray[T], size: openarray[ilsize]): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
@@ -169,7 +171,7 @@ proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]): Tensor {.inlin
   # finally write into a tensor
   return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
 
-proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
+proc internalFromSeqArr*[T](s: var SeqOrArray[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
@@ -180,8 +182,10 @@ proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]; device: Device)
   of Device.CUDA: return ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
 
-proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeq(s, size)
-proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeq(s, size, device)
+proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeqArr(s, size)
+proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeqArr(s, size, device)
+proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeqArr(s, size)
+proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeqArr(s, size, device)
 
 proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.toCpp()[index].to(ATensor)
 
