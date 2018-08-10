@@ -2,7 +2,7 @@ import os, dynlib
 import fragments/ffi/cpp as cpp
 export cpp
 
-defineCppTYpe(ACUDAStream, "at::cuda::CUDAStream", "ATen/cuda/CUDAContext.h")
+defineCppType(ACUDAStream, "at::cuda::CUDAStream", "ATen/cuda/CUDAContext.h")
 
 proc createCUDAStream(): ACUDAStream {.importcpp: "at::cuda::createCUDAStream()".}
 proc getDefaultCUDAStream(): ACUDAStream {.importcpp: "at::cuda::getDefaultCUDAStream()".}
