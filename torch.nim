@@ -5,10 +5,30 @@ type
   Tensor* = ATensor
   Device* {.pure.} = enum
     CPU, CUDA
+  TensorKind* = enum
+    FloatTensor, DoubleTensor, HalfTensor, ByteTensor, 
+    CharTensor, ShortTensor, IntTensor, LongTensor
 
 template inPlace* {.pragma.} ## Note: equivalent of torch _ suffix
 
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
+
+var defaultType = FloatTensor
+
+proc set_default_dtype*(dtype: TensorKind) {.inline.} = defaultType = dtype
+proc get_default_dtype*(): TensorKind {.inline.} = defaultType
+
+proc toATenType(kind: TensorKind): AScalarType {.inline.} =
+  case kind
+  of FloatTensor: return ATkFloat
+  of DoubleTensor: return ATkDouble
+  of HalfTensor: return ATkHalf
+  of ByteTensor: return ATkByte
+  of CharTensor: return ATkChar
+  of ShortTensor: return ATkShort
+  of IntTensor: return ATkInt
+  of LongTensor: return ATkLong
+  else: raiseAssert("Unknown type")
 
 proc device*(deviceName: string): Device =
   case deviceName
@@ -18,16 +38,42 @@ proc device*(deviceName: string): Device =
 
 proc internalZeros(size: openarray[ilsize]): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
-  return ACPU().dynamicCppCall(zeros, shape)
+  return ACPU(defaultType.toATenType()).dynamicCppCall(zeros, shape)
 
 proc internalZeros(size: openarray[ilsize]; device: Device): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   case device:
-  of Device.CUDA: return ACUDA().dynamicCppCall(zeros, shape)
-  of Device.CPU: return ACPU().dynamicCppCall(zeros, shape)
+  of Device.CUDA: return ACUDA(defaultType.toATenType()).dynamicCppCall(zeros, shape)
+  of Device.CPU: return ACPU(defaultType.toATenType()).dynamicCppCall(zeros, shape)
+
+proc internalZeros(size: openarray[ilsize]; dtype: TensorKind; device: Device = Device.CPU): Tensor {.inline.} =
+  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  case device:
+    of Device.CUDA:
+      case dtype:
+        of FloatTensor: return ACUDA(ATkFloat).dynamicCppCall(zeros, shape)
+        of DoubleTensor: return ACUDA(ATkDouble).dynamicCppCall(zeros, shape)
+        of HalfTensor: return ACUDA(ATkHalf).dynamicCppCall(zeros, shape)
+        of ByteTensor: return ACUDA(ATkByte).dynamicCppCall(zeros, shape)
+        of CharTensor: return ACUDA(ATkChar).dynamicCppCall(zeros, shape)
+        of ShortTensor: return ACUDA(ATkShort).dynamicCppCall(zeros, shape)
+        of IntTensor: return ACUDA(ATkInt).dynamicCppCall(zeros, shape)
+        of LongTensor: return ACUDA(ATkLong).dynamicCppCall(zeros, shape)
+    of Device.CPU:
+      case dtype:
+        of FloatTensor: return ACPU(ATkFloat).dynamicCppCall(zeros, shape)
+        of DoubleTensor: return ACPU(ATkDouble).dynamicCppCall(zeros, shape)
+        of HalfTensor: return ACPU(ATkHalf).dynamicCppCall(zeros, shape)
+        of ByteTensor: return ACPU(ATkByte).dynamicCppCall(zeros, shape)
+        of CharTensor: return ACPU(ATkChar).dynamicCppCall(zeros, shape)
+        of ShortTensor: return ACPU(ATkShort).dynamicCppCall(zeros, shape)
+        of IntTensor: return ACPU(ATkInt).dynamicCppCall(zeros, shape)
+        of LongTensor: return ACPU(ATkLong).dynamicCppCall(zeros, shape)
 
 proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]): Tensor {.inline.} = internalZeros(size)
 proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]; device: Device): Tensor {.inline.} = internalZeros(size, device)
+proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]; dtype: TensorKind): Tensor {.inline.} = internalZeros(size, dtype)
+proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]; dtype: TensorKind; device: Device): Tensor {.inline.} = internalZeros(size, dtype, device)
 
 iterator lenIter[T](s: openarray[T]): int {.inline.} =
   ## Inline iterator on any-depth seq or array
@@ -39,17 +85,17 @@ iterator lenIter[T](s: openarray[T]): int {.inline.} =
         yield subitem
       break
 
-iterator flatIter[T](s: openarray[T]): float32 {.inline.} =
+iterator flatIter[T](s: openarray[T]): auto {.inline.} =
   ## Inline iterator on any-depth seq or array
   ## Returns values in order
   for item in s:
     when item is array|seq:
       for subitem in flatIter(item):
-        yield subitem.float32
+        yield subitem
     else:
-      yield item.float32
+      yield item
 
-proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
+proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
   # as noticed in Arraymancer as well:
   ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
@@ -66,14 +112,17 @@ proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[
   
   # flatten and eventually cast data
   var flatData = toSeq(flatIter(data))
-
-  # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU().dynamicCppCall(tensorFromBlob, addr(flatData[0]), shape).to(ATensor)
   
-  # finally write into a tensor
+  # create a temporary CPU tensor with our GCed data
+  var tmp = ACPU(type(flatData[0]).toATenType()).dynamicCppCall(tensorFromBlob, addr(flatData[0]), shape).to(ATensor)
+  
+  # finally write into a tensor (notice: casting happens aten side!)
   case device:
-  of Device.CUDA: return ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
-  of Device.CPU: return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CUDA: return ACUDA(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CPU: return ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+
+proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
+  return tensor(data, defaultType, device)
 
 proc cpu*(tensor: Tensor): Tensor {.inline.} = tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
 
@@ -164,41 +213,41 @@ proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]): Tensor {.inlin
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU().dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
-  return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+  return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU().dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
   case device:
-  of Device.CUDA: return ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
-  of Device.CPU: return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CUDA: return ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CPU: return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU().dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
-  return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+  return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU().dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
   case device:
-  of Device.CUDA: return ACUDA().dynamicCppCall(copy, tmp).to(ATensor)
-  of Device.CPU: return ACPU().dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CUDA: return ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CPU: return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeq(s, size)
 proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeq(s, size, device)
@@ -313,6 +362,12 @@ when isMainModule:
   z.print()
   x.print()
 
+  var lt = torch.zeros(1, 1, 1, dtype = LongTensor)
+  lt.print()
+
+  var ht = torch.zeros(1, 1, 1, dtype = ByteTensor)
+  ht.print()
+
   # grucell
   var
     gi = x.matmul(w_input.transpose(1, 2)) + b_input
@@ -337,7 +392,7 @@ when isMainModule:
     if globalContext().hasCUDA().to(bool):
       echo "Cuda available"
       echo "Cuda device ", globalContext().current_device().to(int)
-      var cudaTensor = torch.zeros(7, 7, 7, device = torch.device("cuda"))
+      var cudaTensor = torch.zeros(7, 7, 7, device = torch.device("cuda"), dtype = torch.DoubleTensor)
       cudaTensor.printTensor()
 
       froms = froms.cuda()
