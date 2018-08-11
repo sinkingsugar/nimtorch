@@ -30,7 +30,7 @@ proc toATenType(kind: TensorKind): AScalarType {.inline.} =
   of LongTensor: return ATkLong
   else: raiseAssert("Unknown type")
 
-proc device*(deviceName: string): Device =
+proc device*(deviceName: string): Device {.inline.} =
   case deviceName
   of "cpu", "CPU": return Device.CPU
   of "cuda", "CUDA": return Device.CUDA
@@ -46,7 +46,7 @@ proc internalZeros(size: openarray[ilsize]; device: Device): Tensor {.inline.} =
   of Device.CUDA: return ACUDA(defaultType.toATenType()).dynamicCppCall(zeros, shape)
   of Device.CPU: return ACPU(defaultType.toATenType()).dynamicCppCall(zeros, shape)
 
-proc internalZeros(size: openarray[ilsize]; dtype: TensorKind; device: Device = Device.CPU): Tensor {.inline.} =
+proc internalZeros(size: openarray[ilsize]; dtype: TensorKind; device: Device = Device.CPU): Tensor =
   let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   case device:
     of Device.CUDA:

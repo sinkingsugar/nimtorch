@@ -8,10 +8,7 @@ defineCppType(AScalarType, "at::ScalarType", "ATen/ATen.h")
 defineCppType(IntList, "at::IntList", "ATen/ATen.h")
 defineCppType(AGenerator, "at::Generator", "ATen/ATen.h")
 defineCppType(AContext, "at::Context", "ATen/ATen.h")
-defineCppType(ATensors, "std::vector<at::Tensor>", "vector")
-
-when defined cuda:
-  defineCppType(ACUDAStream, "at::cuda::CUDAStream", "ATen/cuda/CUDAContext.h")
+defineCppType(ATensors, "std::vector<at::Tensor>", "vector")  
 
 var ATkByte {.importcpp: "at::kByte", nodecl.}: AScalarType
 var ATkChar {.importcpp: "at::kChar", nodecl.}: AScalarType
