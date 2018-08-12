@@ -50,7 +50,7 @@ static:
     
     let
       declYaml = "../" & getenv("ATEN") & "/share/ATen/Declarations.yaml"
-      cmd = "python -c 'import json, sys, yaml ; " & # needs python3
+      cmd = "python3 -c 'import json, sys, yaml ; " & # needs python3
         "stream = open(\"" & declYaml & "\", \"r\") ; " & # replace open with file for python2.. maybe
         "y=yaml.safe_load(stream) ; " & 
         "print(json.dumps(y))'"
