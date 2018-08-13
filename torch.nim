@@ -131,8 +131,6 @@ proc cuda*(tensor: Tensor): Tensor {.inline.} = tensor.dynamicCppCall(toBackend,
 
 proc copy*(tensor: Tensor; non_blocking: bool = false): Tensor {.inline.} = tensor.dynamicCppCall("type").dynamicCppCall("copy", tensor, non_blocking).to(ATensor)
 
-proc is_cuda*(tensor: Tensor): bool {.inline.} = tensor.dynamicCppCall(is_cuda).to(bool)
-
 proc is_defined*(tensor: Tensor): bool {.inline.} = tensor.dynamicCppCall("defined").to(bool)
 
 proc `+`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp + b.toCpp).to(ATensor)
@@ -351,8 +349,8 @@ when isMainModule:
   z.print()
   x.print()
 
-  var lt = torch.zeros(1, 1, 1, dtype = LongTensor)
-  lt.print()
+  var longt = torch.zeros(1, 1, 1, dtype = LongTensor)
+  longt.print()
 
   var ht = torch.zeros(1, 1, 1, dtype = ByteTensor)
   ht.print()

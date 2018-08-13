@@ -1,5 +1,9 @@
 import os, strutils, macros, osproc, json, sequtils, streams
-  
+
+# nim naming issues:
+# if a name is a nim keyword, like "var", the name will be prefixed by "a", and so it will be "avar"
+# underscores are replaced with "u_", "_" = "u_"
+
 const
   ofTensorToTensor = "proc $1*(self: Tensor): Tensor {.inline.} = self.dynamicCppCall(\"$2\"$3).to(ATensor)"
   ofTensorTo = "proc $1*(self: Tensor$4): $2 {.inline.} = self.dynamicCppCall(\"$3\"$5).to($2)"
@@ -28,69 +32,77 @@ doAssert(exitCode == 0, "Failed to convert Declarations.yaml to JSON, failed wit
 type
   MethodOfKind = enum
     Type, Tensor, Namespace
-  Argument = object
-    name: string
-    dynamic_type: string
-  Declaration = object
-    name: string
-    method_of: seq[string]
-    deprecated: bool
-    arguments: seq[Argument]
-    returns: seq[Argument]
 
 var rootNode = parseJson(declJson)
-var declarations = rootNode.to(seq[Declaration])
 
 proc toNimType(typeName: string): string =
   case typeName
   of "Tensor", "BoolTensor": return "Tensor"
   of "int64_t": return "int64"
+  of "bool": return "bool"
   else: raiseAssert("Type not supported")
 
-for declaration in declarations:
-  if declaration.name == nil or declaration.name == "":
+for node in rootNode:
+  if not node.hasKey("name"):
     break
+    
+  let name = node["name"].getStr()
 
-  if declaration.deprecated:
-    stderr.writeLine "Skipping deprecated declaration: " & declaration.name
+  if node.hasKey("deprecated") and node["deprecated"].getBool():
+    stderr.writeLine "Skipping deprecated declaration: " & name
     continue
 
+  assert(node.hasKey("method_of"))
+
   var methodKind: set[MethodOfKind]
-  for strValue in declaration.method_of:
-    if strValue == "Tensor":
-      methodKind = methodKind + {Tensor}
-    elif strValue == "Type":
-      methodKind = methodKind + {Type}
-    elif strValue == "namespace":
-      methodKind = methodKind + {Namespace}
+  for ofNode in node["method_of"]:
+    case ofNode.getStr()
+    of "Tensor": methodKind = methodKind + {Tensor}
+    of "Type": methodKind = methodKind + {Type}
+    of "namespace": methodKind = methodKind + {Namespace}
 
   if methodKind.contains(Tensor):
-    let hasSelf = declaration.arguments.any do (x: Argument) -> bool:
-      x.name == "self" and x.dynamic_type == "Tensor"
+    echo "Processing Tensor method: ", name
+    
+    assert(node.hasKey("arguments"))
+    
+    let arguments = toSeq(node["arguments"])
+    let hasSelf = arguments.any do (x: JsonNode) -> bool:
+      assert(x.hasKey("name") and x.hasKey("dynamic_type"))
+      return x["name"].getStr() == "self" and x["dynamic_type"].getStr() == "Tensor"
+      
     if not hasSelf:
-      stderr.writeLine "Skipping method of Tensor without self Tensor: " & declaration.name
+      echo arguments
+      stderr.writeLine "Skipping method of Tensor without self Tensor: " & name
       continue
     
-    if declaration.arguments.len > 1:
-      let hasValidArguments = declaration.arguments.all do (x: Argument) -> bool:
-        x.dynamic_type == "Tensor"
+    if arguments.len > 1:
+      let hasValidArguments = arguments.all do (x: JsonNode) -> bool:
+        assert(x.hasKey("dynamic_type"))
+        let dynType = x["dynamic_type"].getStr()
+        return  dynType == "Tensor" or
+                dynType == "BoolTensor" or
+                dynType == "int64_t" or 
+                dynType == "bool"
+        
       if not hasValidArguments:
-        stderr.writeLine "Skipping method of Tensor with invalid argument/s: " & declaration.name
+        stderr.writeLine "Skipping method of Tensor with invalid argument/s: " & name
         continue
     
-    let validResults = declaration.returns.len == 0 or 
-      declaration.returns.len == 1 and
-      declaration.returns[0].name == "result" and (
-        declaration.returns[0].dynamic_type == "Tensor" or
-        declaration.returns[0].dynamic_type == "BoolTensor" or
-        declaration.returns[0].dynamic_type == "int64_t"
+    let validResults = not node.hasKey("returns") or 
+        node["returns"].len == 1 and
+        node["returns"][0]["name"].getStr() == "result" and (
+        node["returns"][0]["dynamic_type"].getStr() == "Tensor" or
+        node["returns"][0]["dynamic_type"].getStr() == "BoolTensor" or
+        node["returns"][0]["dynamic_type"].getStr() == "int64_t" or 
+        node["returns"][0]["dynamic_type"].getStr() == "bool"
         )
     if not validResults:
-      stderr.writeLine "Skipping method of Tensor with invalid results: " & declaration.name
+      stderr.writeLine "Skipping method of Tensor with invalid results: " & name
       continue
     
-    var validName = declaration.name
-    const invalidNames = ["div"]
+    var validName = name
+    const invalidNames = ["div", "var"]
     if validName.endsWith("_"):
       validName &= "u"
     if validName.startsWith("_"):
@@ -101,18 +113,18 @@ for declaration in declarations:
     
     var argsStr1 = ""
     var argsStr2 = ""
-    for i in 1..declaration.arguments.high:
-      argsStr1 &= ", arg$1: $2" % [$i, toNimType(declaration.arguments[i].dynamic_type)]
+    for i in 1..arguments.high:
+      var nimType = toNimType(arguments[i]["dynamic_type"].getStr())
+      var defaultStr = ""
+      if arguments[i].hasKey("default") and nimType != "Tensor":
+        defaultStr = " = " & $arguments[i]["default"]
+      argsStr1 &= ", arg$1: $2$3" % [$i, nimType, defaultStr]
       argsStr2 &= ", arg$1" % [$i]
     
-    if declaration.returns.len == 0:
-      output.writeLine ofTensor % [validName, declaration.name, argsStr1, argsStr2]
+    if not node.hasKey("returns") or node["returns"].len == 0:
+      output.writeLine ofTensor % [validName, name, argsStr1, argsStr2]
     else:
-      case declaration.returns[0].dynamic_type
-      of "Tensor", "BoolTensor":
-        output.writeLine ofTensorTo % [validName, "Tensor", declaration.name, argsStr1, argsStr2]
-      of "int64_t":
-        output.writeLine ofTensorTo % [validName, "int64", declaration.name, argsStr1, argsStr2]
+      output.writeLine ofTensorTo % [validName, toNimType(node["returns"][0]["dynamic_type"].getStr()), name, argsStr1, argsStr2]
     
 output.flush()
 output.close()
