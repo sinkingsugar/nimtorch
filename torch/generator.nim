@@ -2,7 +2,7 @@ import os, strutils, macros, osproc, json, sequtils, streams
 
 # nim naming issues:
 # if a name is a nim keyword, like "var", the name will be prefixed by "a", and so it will be "avar"
-# underscores are replaced with "u_", "_" = "u_"
+# underscores are replaced with "u_", "_" = "u_" or "_u"
 
 const
   ofTensorToTensor = "proc $1*(self: Tensor): Tensor {.inline.} = self.dynamicCppCall(\"$2\"$3).to(ATensor)"
@@ -37,9 +37,10 @@ var rootNode = parseJson(declJson)
 
 proc toNimType(typeName: string): string =
   case typeName
-  of "Tensor", "BoolTensor": return "Tensor"
+  of "Tensor", "BoolTensor", "IndexTensor": return "Tensor"
   of "int64_t": return "int64"
   of "bool": return "bool"
+  of "real": return "float"
   else: raiseAssert("Type not supported")
   
 proc validate(validName: var string) =
@@ -56,10 +57,11 @@ for node in rootNode:
   if not node.hasKey("name"):
     break
     
-  let name = node["name"].getStr()
+  let
+    name = node["name"].getStr()
 
   if node.hasKey("deprecated") and node["deprecated"].getBool():
-    stderr.writeLine "Skipping deprecated declaration: " & name
+    echo "Skipping deprecated declaration: " & name
     continue
 
   assert(node.hasKey("method_of"))
@@ -72,8 +74,6 @@ for node in rootNode:
     of "namespace": methodKind = methodKind + {Namespace}
 
   if methodKind.contains(Tensor):
-    echo "Processing Tensor method: ", name
-    
     assert(node.hasKey("arguments"))
     
     let arguments = toSeq(node["arguments"])
@@ -83,7 +83,7 @@ for node in rootNode:
       
     if not hasSelf:
       echo arguments
-      stderr.writeLine "Skipping method of Tensor without self Tensor: " & name
+      echo "Skipping method of Tensor without self Tensor: " & name
       continue
     
     if arguments.len > 1:
@@ -92,23 +92,27 @@ for node in rootNode:
         let dynType = x["dynamic_type"].getStr()
         return  dynType == "Tensor" or
                 dynType == "BoolTensor" or
+                dynType == "IndexTensor" or
                 dynType == "int64_t" or 
-                dynType == "bool"
+                dynType == "bool" or
+                dynType == "real"
         
       if not hasValidArguments:
-        stderr.writeLine "Skipping method of Tensor with invalid argument/s: " & name
+        echo "Skipping method of Tensor with invalid argument/s: " & name
         continue
     
     let validResults = not node.hasKey("returns") or 
         node["returns"].len == 1 and
-        node["returns"][0]["name"].getStr() == "result" and (
+        (node["returns"][0]["name"].getStr() == "result" or node["returns"][0]["name"].getStr() == "self") and (
         node["returns"][0]["dynamic_type"].getStr() == "Tensor" or
         node["returns"][0]["dynamic_type"].getStr() == "BoolTensor" or
+        node["returns"][0]["dynamic_type"].getStr() == "IndexTensor" or
         node["returns"][0]["dynamic_type"].getStr() == "int64_t" or 
-        node["returns"][0]["dynamic_type"].getStr() == "bool"
+        node["returns"][0]["dynamic_type"].getStr() == "bool" or
+        node["returns"][0]["dynamic_type"].getStr() == "real"
         )
     if not validResults:
-      stderr.writeLine "Skipping method of Tensor with invalid results: " & name
+      echo "Skipping method of Tensor with invalid results: " & name
       continue
     
     var validName = name
