@@ -38,8 +38,6 @@ var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
 
 {.passC: "-I$ATEN/include".}
 
-var declCache {.compileTime.}: string
-var declCacheTokens {.compileTime.}: seq[JsmnToken]
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
 
