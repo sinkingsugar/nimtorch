@@ -41,6 +41,16 @@ proc toNimType(typeName: string): string =
   of "int64_t": return "int64"
   of "bool": return "bool"
   else: raiseAssert("Type not supported")
+  
+proc validate(validName: var string) =
+  const invalidNames = ["div", "var", "end"]
+  if validName.endsWith("_"):
+    validName &= "u"
+  if validName.startsWith("_"):
+    validName = "u" & validName
+  if invalidNames.contains(validName):
+    validName = "a" & validName  
+  validName = validName.replace("__", "_u_")
 
 for node in rootNode:
   if not node.hasKey("name"):
@@ -102,24 +112,25 @@ for node in rootNode:
       continue
     
     var validName = name
-    const invalidNames = ["div", "var"]
-    if validName.endsWith("_"):
-      validName &= "u"
-    if validName.startsWith("_"):
-      validName = "u" & validName
-    if invalidNames.contains(validName):
-      validName = "a" & validName  
-    validName = validName.replace("__", "_u_")
+    validName.validate()
     
     var argsStr1 = ""
     var argsStr2 = ""
-    for i in 1..arguments.high:
-      var nimType = toNimType(arguments[i]["dynamic_type"].getStr())
-      var defaultStr = ""
+    for i in 0..arguments.high:
+      var
+        nimType = toNimType(arguments[i]["dynamic_type"].getStr())
+        argName = arguments[i]["name"].getStr()
+        defaultStr = ""
+      
+      if argName == "self":
+        continue
+      
+      argName.validate()
+      
       if arguments[i].hasKey("default") and nimType != "Tensor":
         defaultStr = " = " & $arguments[i]["default"]
-      argsStr1 &= ", arg$1: $2$3" % [$i, nimType, defaultStr]
-      argsStr2 &= ", arg$1" % [$i]
+      argsStr1 &= ", $1: $2$3" % [argName, nimType, defaultStr]
+      argsStr2 &= ", $1" % [argName]
     
     if not node.hasKey("returns") or node["returns"].len == 0:
       output.writeLine ofTensor % [validName, name, argsStr1, argsStr2]
