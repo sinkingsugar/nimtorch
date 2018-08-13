@@ -383,6 +383,14 @@ when isMainModule:
   tensorSeq.add(x)
   tensorList = tensorSeq
   tensorList = @[z, x]
+  
+  var
+    c0 = torch.tensor([1.0, 0.0])
+    c1 = torch.tensor([0.2, 1.1])
+    c2 = torch.cat(@[c0, c1])
+  
+  echo "cat test:"
+  c2.print()
 
   # grucell
   var

@@ -6,7 +6,9 @@ import os, strutils, macros, osproc, json, sequtils, streams
 
 const
   ofTensorTo = "proc $1*(self: Tensor$4): $2 {.inline.} = self.dynamicCppCall(\"$3\"$5).to($2)"
-  ofTensor = "proc $1*(self: Tensor$3) {.inline.} = self.dynamicCppCall(\"$2\"$4).to(void)"
+  ofTensor = "proc $1*(self: Tensor$3) {.inline.} = self.dynamicCppCall(\"$2\"$4).to(void)" # does not exist
+  ofNamespaceTo = "proc $1*($4): $2 {.inline.} = dynamicCCall(\"at::$3\"$5).to($2)"
+  ofNamespace = "proc $1*($3) {.inline.} = dynamicCCall(\"at::$2\"$4).to(void)" # does not exist
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
@@ -44,14 +46,14 @@ proc toNimType(typeName: string): string =
   else: raiseAssert("Type not supported")
   
 proc validate(validName: var string) =
-  const invalidNames = ["div", "var", "end"]
+  const invalidNames = ["div", "var", "end", "result"]
   if validName.endsWith("_"):
     validName &= "u"
   if validName.startsWith("_"):
     validName = "u" & validName
   if invalidNames.contains(validName):
-    validName = "a" & validName  
-  validName = validName.replace("__", "_u_")
+    validName = "a" & validName
+  validName = validName.replace("__", "_u_u")
 
 for node in rootNode:
   if not node.hasKey("name"):
@@ -86,7 +88,7 @@ for node in rootNode:
                 dynType == "real"
 
     if not hasValidArguments:
-      echo "Skipping method of Tensor with invalid argument/s: " & name
+      echo "Skipping method with invalid argument/s: " & name
       continue
       
   template validateReturns: untyped =
@@ -103,7 +105,7 @@ for node in rootNode:
         )
     
     if not validResults:
-      echo "Skipping method of Tensor with invalid results: " & name
+      echo "Skipping method with invalid results: " & name
       continue
 
   assert(node.hasKey("arguments"))
@@ -140,8 +142,11 @@ for node in rootNode:
       
       argName.validate()
       
-      if arguments[i].hasKey("default") and nimType != "Tensor":
+      if  arguments[i].hasKey("default") and 
+          (arguments[i]["default"].kind == JInt or 
+          arguments[i]["default"].kind == JBool):
         defaultStr = " = " & $arguments[i]["default"]
+      
       argsStr1 &= ", $1: $2$3" % [argName, nimType, defaultStr]
       argsStr2 &= ", $1" % [argName]
     
@@ -149,6 +154,38 @@ for node in rootNode:
       output.writeLine ofTensor % [validName, name, argsStr1, argsStr2]
     else:
       output.writeLine ofTensorTo % [validName, toNimType(node["returns"][0]["dynamic_type"].getStr()), name, argsStr1, argsStr2]
+  elif methodKind.contains(Namespace):
+    if arguments.len > 0:
+      validateArguments()
+    
+    validateReturns()
+    
+    var validName = name
+    validName.validate()
+    
+    var argsStr1 = ""
+    var argsStr2 = ""
+    for i in 0..arguments.high:
+      var
+        nimType = toNimType(arguments[i]["dynamic_type"].getStr())
+        argName = arguments[i]["name"].getStr()
+        defaultStr = ""
+        
+      argName.validate()
+      
+      if  arguments[i].hasKey("default") and 
+          (arguments[i]["default"].kind == JInt or 
+          arguments[i]["default"].kind == JBool):
+        defaultStr = " = " & $arguments[i]["default"]
+      
+      var prefix = if i == 0: "" else: ", "
+      argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
+      argsStr2 &= ", $1" % [argName]
+    
+    if not node.hasKey("returns") or node["returns"].len == 0:
+      output.writeLine ofNamespace % [validName, name, argsStr1, argsStr2]
+    else:
+      output.writeLine ofNamespaceTo % [validName, toNimType(node["returns"][0]["dynamic_type"].getStr()), name, argsStr1, argsStr2]
     
 output.flush()
 output.close()
