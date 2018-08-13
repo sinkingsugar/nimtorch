@@ -3,11 +3,40 @@ import macros, sequtils
 
 type
   Tensor* = ATensor
+  TensorList* = ATensors
+  
   Device* {.pure.} = enum
     CPU, CUDA
+  
   TensorKind* = enum
     FloatTensor, DoubleTensor, HalfTensor, ByteTensor, 
     CharTensor, ShortTensor, IntTensor, LongTensor
+
+proc high*(v: TensorList): int {.inline.} = v.size().to(int) - 1
+
+proc len*(v: TensorList): int {.inline.} = v.size().to(int)
+
+proc `[]`*(v: TensorList; index: int): Tensor {.inline.} = v[index].toCpp.to(Tensor)
+
+proc `[]=`*(v: TensorList; index: int; value: Tensor) {.inline.} = v[index] = value
+
+proc add*(v: TensorList; value: Tensor) {.inline.} = v.push_back(value).to(void)
+
+iterator items*(tensors: TensorList): Tensor {.inline.} =
+  var cppTensors = tensors
+  for x in cppItems[TensorList, Tensor](cppTensors):
+    yield x
+    
+proc `@`*[IDX](a: array[IDX, Tensor]): TensorList =
+  for tensor in a:
+    result.add(tensor)
+    
+converter toTensorSeq*(tensors: TensorList): seq[Tensor] =
+  sequtils.toSeq(tensors.items)
+  
+converter toTensorList*(tensors: seq[Tensor]): TensorList =
+  for tensor in tensors:
+    result.add(tensor)
 
 # append all the auto generated procs
 include torch/declarations
@@ -354,6 +383,13 @@ when isMainModule:
 
   var ht = torch.zeros(1, 1, 1, dtype = ByteTensor)
   ht.print()
+
+  var tensorList: TensorList
+  var tensorSeq = newSeq[Tensor]()
+  tensorSeq.add(z)
+  tensorSeq.add(x)
+  tensorList = tensorSeq
+  tensorList = @[z, x]
 
   # grucell
   var

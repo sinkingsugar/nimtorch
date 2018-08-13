@@ -5,7 +5,6 @@ import os, strutils, macros, osproc, json, sequtils, streams
 # underscores are replaced with "u_", "_" = "u_" or "_u"
 
 const
-  ofTensorToTensor = "proc $1*(self: Tensor): Tensor {.inline.} = self.dynamicCppCall(\"$2\"$3).to(ATensor)"
   ofTensorTo = "proc $1*(self: Tensor$4): $2 {.inline.} = self.dynamicCppCall(\"$3\"$5).to($2)"
   ofTensor = "proc $1*(self: Tensor$3) {.inline.} = self.dynamicCppCall(\"$2\"$4).to(void)"
 
@@ -38,6 +37,7 @@ var rootNode = parseJson(declJson)
 proc toNimType(typeName: string): string =
   case typeName
   of "Tensor", "BoolTensor", "IndexTensor": return "Tensor"
+  of "TensorList": return "TensorList"
   of "int64_t": return "int64"
   of "bool": return "bool"
   of "real": return "float"
@@ -93,6 +93,7 @@ for node in rootNode:
         return  dynType == "Tensor" or
                 dynType == "BoolTensor" or
                 dynType == "IndexTensor" or
+                dynType == "TensorList" or
                 dynType == "int64_t" or 
                 dynType == "bool" or
                 dynType == "real"
@@ -107,6 +108,7 @@ for node in rootNode:
         node["returns"][0]["dynamic_type"].getStr() == "Tensor" or
         node["returns"][0]["dynamic_type"].getStr() == "BoolTensor" or
         node["returns"][0]["dynamic_type"].getStr() == "IndexTensor" or
+        node["returns"][0]["dynamic_type"].getStr() == "TensorList" or
         node["returns"][0]["dynamic_type"].getStr() == "int64_t" or 
         node["returns"][0]["dynamic_type"].getStr() == "bool" or
         node["returns"][0]["dynamic_type"].getStr() == "real"
