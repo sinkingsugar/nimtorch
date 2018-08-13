@@ -166,10 +166,6 @@ proc `+`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp + b.toCpp).to(ATensor)
 
 proc `==`*(a, b: Tensor): bool {.inline.} =  a.dynamicCppCall(equal, b).to(bool)
 
-proc transpose*(a: Tensor; dim0, dim1: int): Tensor {.inline.} = a.dynamicCppCall(transpose, dim0, dim1).to(ATensor)
-
-proc take*(a, indices: Tensor): Tensor {.inline.} = a.dynamicCppCall(take, indices).to(ATensor)
-
 macro chunk*(a: Tensor; chunks, dim: int): untyped =
   # dumpAstGen:
   #   proc helper(a: Tensor): (Tensor, Tensor) {.gensym.} =
@@ -201,15 +197,11 @@ proc `*`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp * b.toCpp).to(ATensor)
 
 proc `-`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp - b.toCpp).to(ATensor)
 
-proc ndimension*(a: Tensor): int {.inline.} = a.dynamicCppCall(ndimension).to(int)
+proc ndimension*(a: Tensor): int64 {.inline.} = a.dynamicCppCall(ndimension).to(int64)
 
-proc dim*(a: Tensor): int {.inline.} = a.dynamicCppCall(dim).to(int)
-
-proc size*(a: Tensor; dim: int): int {.inline.} = a.dynamicCppCall(size, dim).to(int)
+proc dim*(a: Tensor): int64 {.inline.} = a.dynamicCppCall(dim).to(int64)
 
 proc `$`*(a: Tensor): string {.inline.} = $a.dynamicCppCall(toString).to(cstring)
-
-proc contiguous*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(contiguous).to(ATensor)
 
 proc data_ptr*(a: Tensor): pointer {.inline.} = a.dynamicCppCall(data_ptr).to(pointer)
 
@@ -377,6 +369,7 @@ when isMainModule:
   
   z.print()
   x.print()
+  echo z.size(0)
 
   var longt = torch.zeros(1, 1, 1, dtype = LongTensor)
   longt.print()

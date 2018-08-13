@@ -72,22 +72,9 @@ for node in rootNode:
     of "Tensor": methodKind = methodKind + {Tensor}
     of "Type": methodKind = methodKind + {Type}
     of "namespace": methodKind = methodKind + {Namespace}
-
-  if methodKind.contains(Tensor):
-    assert(node.hasKey("arguments"))
     
-    let arguments = toSeq(node["arguments"])
-    let hasSelf = arguments.any do (x: JsonNode) -> bool:
-      assert(x.hasKey("name") and x.hasKey("dynamic_type"))
-      return x["name"].getStr() == "self" and x["dynamic_type"].getStr() == "Tensor"
-      
-    if not hasSelf:
-      echo arguments
-      echo "Skipping method of Tensor without self Tensor: " & name
-      continue
-    
-    if arguments.len > 1:
-      let hasValidArguments = arguments.all do (x: JsonNode) -> bool:
+  template validateArguments: untyped =
+    let hasValidArguments = arguments.all do (x: JsonNode) -> bool:
         assert(x.hasKey("dynamic_type"))
         let dynType = x["dynamic_type"].getStr()
         return  dynType == "Tensor" or
@@ -97,11 +84,12 @@ for node in rootNode:
                 dynType == "int64_t" or 
                 dynType == "bool" or
                 dynType == "real"
-        
-      if not hasValidArguments:
-        echo "Skipping method of Tensor with invalid argument/s: " & name
-        continue
-    
+
+    if not hasValidArguments:
+      echo "Skipping method of Tensor with invalid argument/s: " & name
+      continue
+      
+  template validateReturns: untyped =
     let validResults = not node.hasKey("returns") or 
         node["returns"].len == 1 and
         (node["returns"][0]["name"].getStr() == "result" or node["returns"][0]["name"].getStr() == "self") and (
@@ -113,9 +101,28 @@ for node in rootNode:
         node["returns"][0]["dynamic_type"].getStr() == "bool" or
         node["returns"][0]["dynamic_type"].getStr() == "real"
         )
+    
     if not validResults:
       echo "Skipping method of Tensor with invalid results: " & name
       continue
+
+  assert(node.hasKey("arguments"))
+  let arguments = toSeq(node["arguments"])
+
+  if methodKind.contains(Tensor):
+    let hasSelf = arguments.any do (x: JsonNode) -> bool:
+      assert(x.hasKey("name") and x.hasKey("dynamic_type"))
+      return x["name"].getStr() == "self" and x["dynamic_type"].getStr() == "Tensor"
+      
+    if not hasSelf:
+      echo arguments
+      echo "Skipping method of Tensor without self Tensor: " & name
+      continue
+    
+    if arguments.len > 1:
+      validateArguments()
+    
+    validateReturns()
     
     var validName = name
     validName.validate()
