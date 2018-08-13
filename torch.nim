@@ -9,8 +9,6 @@ type
     FloatTensor, DoubleTensor, HalfTensor, ByteTensor, 
     CharTensor, ShortTensor, IntTensor, LongTensor
 
-template inPlace* {.pragma.} ## Note: equivalent of torch _ suffix
-
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
 
 var defaultType = FloatTensor
@@ -171,15 +169,9 @@ macro chunk*(a: Tensor; chunks, dim: int): untyped =
     let `tensors` = `a`.dynamicCppCall(chunk, `chunks`, `dim`).to(ATensors)
     `tupleTree`
 
-proc sigmoid*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(sigmoid).to(ATensor)
-
 proc `*`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp * b.toCpp).to(ATensor)
 
-proc tanh*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(tanh).to(ATensor)
-
 proc `-`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp - b.toCpp).to(ATensor)
-
-proc t*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(t).to(ATensor)
 
 proc ndimension*(a: Tensor): int {.inline.} = a.dynamicCppCall(ndimension).to(int)
 
@@ -189,7 +181,7 @@ proc size*(a: Tensor; dim: int): int {.inline.} = a.dynamicCppCall(size, dim).to
 
 proc numel*(a: Tensor): int {.inline.} = a.dynamicCppCall(numel).to(int)
 
-proc uniform*(a: Tensor; fromValue, toValue: float): Tensor {.inline, inPlace.} = a.dynamicCppCall("uniform_", fromValue, toValue).to(ATensor)
+proc uniform_u*(a: Tensor; fromValue, toValue: float): Tensor {.inline, inPlace.} = a.dynamicCppCall("uniform_", fromValue, toValue).to(ATensor)
 
 proc `$`*(a: Tensor): string {.inline.} = $a.dynamicCppCall(toString).to(cstring)
 
@@ -269,6 +261,9 @@ proc manual_seed*(seed: int) =
 proc set_num_threads*(num: int) {.importcpp: "at::set_num_threads(#)".}
 
 proc get_num_threads*(): int {.importcpp: "at::get_num_threads(#)".}
+
+# append all the auto generated procs
+include torch/declarations
 
 when isMainModule:
   # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim

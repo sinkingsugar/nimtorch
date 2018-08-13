@@ -1,6 +1,6 @@
 import fragments/ffi/cpp as cpp
 export cpp
-import os, jsmn
+import os
 
 defineCppType(ATensor, "at::Tensor", "ATen/ATen.h")
 defineCppType(AScalar, "at::Scalar", "ATen/ATen.h")
@@ -42,28 +42,6 @@ var declCache {.compileTime.}: string
 var declCacheTokens {.compileTime.}: seq[JsmnToken]
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
-  
-  let declCacheFile = "Declarations-cache.json"
-  if not fileExists(declCacheFile):
-    # convert from yaml to json to load at compile time
-    echo "Declarations cache is missing, building it now..."
-    
-    let
-      declYaml = "../" & getenv("ATEN") & "/share/ATen/Declarations.yaml"
-      cmd = "python3 -c 'import json, sys, yaml ; " & # needs python3
-        "stream = open(\"" & declYaml & "\", \"r\") ; " & # replace open with file for python2.. maybe
-        "y=yaml.safe_load(stream) ; " & 
-        "print(json.dumps(y))'"
-      declJson = staticExec(cmd)
-    
-    # Finally write in the command path the cache
-    writeFile("Declarations-cache.json", declJson)
-  else:
-    # we generate procs on the flight from Declarations.yaml
-    declCache = staticRead(declCacheFile)
-    declCacheTokens = newSeq[JsmnToken](250000)
-    echo parseJson(declCache, declCacheTokens)
-    echo "Loaded Declarations-cache.json"
 
 when defined wasm:
   {.passL: "-L$ATEN/lib -lATen_cpu".}
