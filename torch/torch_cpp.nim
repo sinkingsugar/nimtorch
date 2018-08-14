@@ -5,7 +5,7 @@ import os
 defineCppType(ATensor, "at::Tensor", "ATen/ATen.h")
 defineCppType(AScalar, "at::Scalar", "ATen/ATen.h")
 defineCppType(AScalarType, "at::ScalarType", "ATen/ATen.h")
-defineCppType(IntList, "at::IntList", "ATen/ATen.h")
+defineCppType(AIntList, "at::IntList", "ATen/ATen.h")
 defineCppType(AGenerator, "at::Generator", "ATen/ATen.h")
 defineCppType(AContext, "at::Context", "ATen/ATen.h")
 defineCppType(ATensors, "std::vector<at::Tensor>", "vector")  
