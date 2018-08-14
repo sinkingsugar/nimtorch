@@ -52,7 +52,7 @@ iterator items*(ints: IntList): int64 {.inline.} =
     yield ints[i]
 
 # ArrayRef (IntList) does not store data, so we need this magic trick
-template `@`*[IDX](a: array[IDX, SomeInteger]): untyped =
+template `@`*[IDX](a: array[IDX, SomeInteger]): IntList =
   var res {.noinit.}: array[IDX, ilsize]
   for i in 0..a.high:
     res[i] = a[i].ilsize
