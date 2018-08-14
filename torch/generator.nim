@@ -43,10 +43,12 @@ proc toNimType(typeName: string): string =
   of "int64_t": return "int64"
   of "bool": return "bool"
   of "real": return "float"
+  of "double": return "float64"
+  of "Generator*": return "pointer"
   else: raiseAssert("Type not supported")
   
 proc validate(validName: var string) =
-  const invalidNames = ["div", "var", "end", "result"]
+  const invalidNames = ["div", "var", "end", "result", "to", "from"]
   if validName.endsWith("_"):
     validName &= "u"
   if validName.startsWith("_"):
@@ -85,7 +87,9 @@ for node in rootNode:
                 dynType == "TensorList" or
                 dynType == "int64_t" or 
                 dynType == "bool" or
-                dynType == "real"
+                dynType == "real" or
+                dynType == "double" or
+                dynType == "Generator*"
 
     if not hasValidArguments:
       echo "Skipping method with invalid argument/s: " & name
@@ -101,13 +105,30 @@ for node in rootNode:
         node["returns"][0]["dynamic_type"].getStr() == "TensorList" or
         node["returns"][0]["dynamic_type"].getStr() == "int64_t" or 
         node["returns"][0]["dynamic_type"].getStr() == "bool" or
-        node["returns"][0]["dynamic_type"].getStr() == "real"
+        node["returns"][0]["dynamic_type"].getStr() == "real" or
+        node["returns"][0]["dynamic_type"].getStr() == "double" or
+        node["returns"][0]["dynamic_type"].getStr() == "Generator*"
         )
     
     if not validResults:
       echo "Skipping method with invalid results: " & name
       continue
-
+      
+  template fillArgumentDefaults: untyped =
+    if arguments[i].hasKey("default"):
+      let defaultNode = arguments[i]["default"]
+      case defaultNode.kind
+      of JInt, JBool:
+        # easy case, no need to transform
+        defaultStr = " = " & $arguments[i]["default"]
+      of JString:
+        let stringValue = arguments[i]["default"].getStr()
+        case stringValue
+        of "nullptr": defaultStr = " = nil"
+      else:
+        # skipping defaults, might cause integration issues tho
+        discard
+  
   assert(node.hasKey("arguments"))
   let arguments = toSeq(node["arguments"])
 
@@ -142,10 +163,7 @@ for node in rootNode:
       
       argName.validate()
       
-      if  arguments[i].hasKey("default") and 
-          (arguments[i]["default"].kind == JInt or 
-          arguments[i]["default"].kind == JBool):
-        defaultStr = " = " & $arguments[i]["default"]
+      fillArgumentDefaults()
       
       argsStr1 &= ", $1: $2$3" % [argName, nimType, defaultStr]
       argsStr2 &= ", $1" % [argName]
@@ -173,10 +191,7 @@ for node in rootNode:
         
       argName.validate()
       
-      if  arguments[i].hasKey("default") and 
-          (arguments[i]["default"].kind == JInt or 
-          arguments[i]["default"].kind == JBool):
-        defaultStr = " = " & $arguments[i]["default"]
+      fillArgumentDefaults()
       
       var prefix = if i == 0: "" else: ", "
       argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
