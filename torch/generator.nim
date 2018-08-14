@@ -45,6 +45,7 @@ proc toNimType(typeName: string): string =
   of "real": return "float"
   of "double": return "float64"
   of "Generator*": return "pointer"
+  of "IntList": return "IntList"
   else: raiseAssert("Type not supported")
   
 proc validate(validName: var string) =
@@ -89,7 +90,8 @@ for node in rootNode:
                 dynType == "bool" or
                 dynType == "real" or
                 dynType == "double" or
-                dynType == "Generator*"
+                dynType == "Generator*" or
+                dynType == "IntList"
 
     if not hasValidArguments:
       echo "Skipping method with invalid argument/s: " & name
@@ -107,7 +109,8 @@ for node in rootNode:
         node["returns"][0]["dynamic_type"].getStr() == "bool" or
         node["returns"][0]["dynamic_type"].getStr() == "real" or
         node["returns"][0]["dynamic_type"].getStr() == "double" or
-        node["returns"][0]["dynamic_type"].getStr() == "Generator*"
+        node["returns"][0]["dynamic_type"].getStr() == "Generator*" or
+        node["returns"][0]["dynamic_type"].getStr() == "IntList"
         )
     
     if not validResults:
@@ -120,7 +123,9 @@ for node in rootNode:
       case defaultNode.kind
       of JInt, JBool:
         # easy case, no need to transform
-        defaultStr = " = " & $arguments[i]["default"]
+        case nimType
+        of "IntList": defaultStr = " = @[" & $arguments[i]["default"] & "]"
+        else: defaultStr = " = " & $arguments[i]["default"]
       of JString:
         let stringValue = arguments[i]["default"].getStr()
         case stringValue
