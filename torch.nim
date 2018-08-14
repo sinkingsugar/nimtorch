@@ -3,13 +3,65 @@ import macros, sequtils
 
 type
   Tensor* = ATensor
+  TensorList* = ATensors
+  IntList* = AIntList
+  
   Device* {.pure.} = enum
     CPU, CUDA
+  
   TensorKind* = enum
     FloatTensor, DoubleTensor, HalfTensor, ByteTensor, 
     CharTensor, ShortTensor, IntTensor, LongTensor
 
-template inPlace* {.pragma.} ## Note: equivalent of torch _ suffix
+proc high*(v: TensorList): int {.inline.} = v.size().to(int) - 1
+
+proc len*(v: TensorList): int {.inline.} = v.size().to(int)
+
+proc `[]`*(v: TensorList; index: int): Tensor {.inline.} = v.toCpp[index].to(Tensor)
+
+proc `[]=`*(v: TensorList; index: int; value: Tensor) {.inline.} = v.toCpp[index] = value
+
+proc add*(v: TensorList; value: Tensor) {.inline.} = v.push_back(value).to(void)
+
+iterator items*(tensors: TensorList): Tensor {.inline.} =
+  var cppTensors = tensors
+  for x in cppItems[TensorList, Tensor](cppTensors):
+    yield x
+    
+proc `@`*[IDX](a: array[IDX, Tensor]): TensorList =
+  for tensor in a:
+    result.add(tensor)
+    
+converter toTensorSeq*(tensors: TensorList): seq[Tensor] =
+  sequtils.toSeq(tensors.items)
+  
+converter toTensorList*(tensors: seq[Tensor]): TensorList =
+  for tensor in tensors:
+    result.add(tensor)
+
+proc high*(v: IntList): int {.inline.} = v.size().to(int) - 1
+
+proc len*(v: IntList): int {.inline.} = v.size().to(int)
+
+proc `[]`*(v: IntList; index: int): int64 {.inline.} = v.toCpp[index].to(int64)
+
+proc `[]=`*(v: IntList; index: int; value: int64) {.inline.} = v.toCpp[index] = value
+
+iterator items*(ints: IntList): int64 {.inline.} =
+  for i in 0..ints.high:
+    yield ints[i]
+
+# ArrayRef (IntList) does not store data, so we need this magic trick
+template `@`*[IDX](a: array[IDX, SomeInteger]): untyped =
+  var res {.noinit.}: array[IDX, ilsize]
+  for i in 0..a.high:
+    res[i] = a[i].ilsize
+  # cannot use cppinit for some reasons
+  dynamicCCall("at::IntList", cast[ptr ilsize](addr(res)), res.len.csize)
+
+# Auto generated #
+# append all the auto generated procs
+include torch/declarations
 
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
 
@@ -37,17 +89,17 @@ proc device*(deviceName: string): Device {.inline.} =
   else: raiseAssert("Unknown device")
 
 proc internalZeros(size: openarray[ilsize]): Tensor {.inline.} =
-  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   return ACPU(defaultType.toATenType()).dynamicCppCall(zeros, shape)
 
 proc internalZeros(size: openarray[ilsize]; device: Device): Tensor {.inline.} =
-  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   case device:
   of Device.CUDA: return ACUDA(defaultType.toATenType()).dynamicCppCall(zeros, shape)
   of Device.CPU: return ACPU(defaultType.toATenType()).dynamicCppCall(zeros, shape)
 
 proc internalZeros(size: openarray[ilsize]; dtype: TensorKind; device: Device = Device.CPU): Tensor =
-  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   case device:
     of Device.CUDA:
       case dtype:
@@ -106,7 +158,7 @@ proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; du
     size.add(length)
   
   # make shape out of size
-  let shape = cppinit(IntList, cast[ptr ilsize](addr(size[0])), size.len.csize) 
+  let shape = cppinit(AIntList, cast[ptr ilsize](addr(size[0])), size.len.csize)
   
   # TODO avoid some of those copies and iterations
   
@@ -130,19 +182,11 @@ proc cuda*(tensor: Tensor): Tensor {.inline.} = tensor.dynamicCppCall(toBackend,
 
 proc copy*(tensor: Tensor; non_blocking: bool = false): Tensor {.inline.} = tensor.dynamicCppCall("type").dynamicCppCall("copy", tensor, non_blocking).to(ATensor)
 
-proc is_cuda*(tensor: Tensor): bool {.inline.} = tensor.dynamicCppCall(is_cuda).to(bool)
-
 proc is_defined*(tensor: Tensor): bool {.inline.} = tensor.dynamicCppCall("defined").to(bool)
-
-proc matmul*(a, b: Tensor): Tensor {.inline.} = a.dynamicCppCall(matmul, b).to(ATensor)
 
 proc `+`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp + b.toCpp).to(ATensor)
 
 proc `==`*(a, b: Tensor): bool {.inline.} =  a.dynamicCppCall(equal, b).to(bool)
-
-proc transpose*(a: Tensor; dim0, dim1: int): Tensor {.inline.} = a.dynamicCppCall(transpose, dim0, dim1).to(ATensor)
-
-proc take*(a, indices: Tensor): Tensor {.inline.} = a.dynamicCppCall(take, indices).to(ATensor)
 
 macro chunk*(a: Tensor; chunks, dim: int): untyped =
   # dumpAstGen:
@@ -171,33 +215,21 @@ macro chunk*(a: Tensor; chunks, dim: int): untyped =
     let `tensors` = `a`.dynamicCppCall(chunk, `chunks`, `dim`).to(ATensors)
     `tupleTree`
 
-proc sigmoid*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(sigmoid).to(ATensor)
-
 proc `*`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp * b.toCpp).to(ATensor)
-
-proc tanh*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(tanh).to(ATensor)
 
 proc `-`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp - b.toCpp).to(ATensor)
 
-proc t*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(t).to(ATensor)
+proc ndimension*(a: Tensor): int64 {.inline.} = a.dynamicCppCall(ndimension).to(int64)
 
-proc ndimension*(a: Tensor): int {.inline.} = a.dynamicCppCall(ndimension).to(int)
-
-proc dim*(a: Tensor): int {.inline.} = a.dynamicCppCall(dim).to(int)
-
-proc size*(a: Tensor; dim: int): int {.inline.} = a.dynamicCppCall(size, dim).to(int)
-
-proc numel*(a: Tensor): int {.inline.} = a.dynamicCppCall(numel).to(int)
-
-proc uniform*(a: Tensor; fromValue, toValue: float): Tensor {.inline, inPlace.} = a.dynamicCppCall("uniform_", fromValue, toValue).to(ATensor)
+proc dim*(a: Tensor): int64 {.inline.} = a.dynamicCppCall(dim).to(int64)
 
 proc `$`*(a: Tensor): string {.inline.} = $a.dynamicCppCall(toString).to(cstring)
 
-proc contiguous*(a: Tensor): Tensor {.inline.} = a.dynamicCppCall(contiguous).to(ATensor)
-
 proc data_ptr*(a: Tensor): pointer {.inline.} = a.dynamicCppCall(data_ptr).to(pointer)
 
-proc print*(a: Tensor) = printTensor(a)
+proc print*(a: Tensor) =
+  printTensor(a)
+  echo ""
 
 proc toSeq*[T](a: Tensor): seq[T] {.inline.} =
   let elements = a.numel()
@@ -210,7 +242,7 @@ proc toSeq*[T](a: Tensor): seq[T] {.inline.} =
     copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
 
 proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]): Tensor {.inline.} =
-  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
@@ -219,7 +251,7 @@ proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]): Tensor {.inlin
   return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
-  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
@@ -230,7 +262,7 @@ proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]; device: Device)
   of Device.CPU: return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]): Tensor {.inline.} =
-  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
@@ -239,7 +271,7 @@ proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]): Tensor
   return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
-  let shape = cppinit(IntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
@@ -361,12 +393,37 @@ when isMainModule:
   
   z.print()
   x.print()
+  echo z.size(0)
 
-  var lt = torch.zeros(1, 1, 1, dtype = LongTensor)
-  lt.print()
+  var longt = torch.zeros(1, 1, 1, dtype = LongTensor)
+  longt.print()
 
   var ht = torch.zeros(1, 1, 1, dtype = ByteTensor)
   ht.print()
+
+  var tensorList: TensorList
+  var tensorSeq = newSeq[Tensor]()
+  tensorSeq.add(z)
+  tensorSeq.add(x)
+  tensorList = tensorSeq
+  tensorList = @[z, x]
+  for i in 0..tensorList.high:
+    tensorList[i].print()
+  
+  var
+    c0 = torch.tensor([1.0, 0.0])
+    c1 = torch.tensor([0.2, 1.1])
+    c2 = torch.cat(@[c0, c1])
+  
+  echo "cat test:"
+  c2.print()
+  
+  var intList: IntList = @[10, 20, 30]
+  for i in 0..intList.high:
+    echo "IntList[", i, "] = ", intList[i]
+  
+  for item in intList:
+    echo item
 
   # grucell
   var
@@ -374,9 +431,9 @@ when isMainModule:
     gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
     (i_r, i_i, i_nn) = gi.chunk(3, 2)
     (h_r, h_i, h_n) = gh.chunk(3, 2)
-    resetgate = (i_r + h_r).sigmoid()
-    inputgate = torch.sigmoid(i_i + h_i)
-    newgate = (i_nn + resetgate * h_n).tanh()
+    resetgate = (i_r + h_r).sigmoid_u()
+    inputgate = torch.sigmoid_u(i_i + h_i)
+    newgate = (i_nn + resetgate * h_n).tanh_u()
     hy = newgate + inputgate * (hidden - newgate)
 
   hy.print()
