@@ -59,6 +59,14 @@ template `@`*[IDX](a: array[IDX, SomeInteger]): IntList =
   # cannot use cppinit for some reasons
   dynamicCCall("at::IntList", cast[ptr ilsize](addr(res)), res.len.csize)
 
+proc toNimTensorTuple(cppTuple: ATensorTuple2 | ATensorRTuple2): (Tensor, Tensor) {.inline.} =
+  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp))
+
+proc toNimTensorTuple(cppTuple: ATensorTuple3 | ATensorRTuple3): (Tensor, Tensor, Tensor) {.inline.} = discard
+proc toNimTensorTuple(cppTuple: ATensorTuple4 | ATensorRTuple4): (Tensor, Tensor, Tensor, Tensor) {.inline.} = discard
+proc toNimTensorTuple(cppTuple: ATensorTuple5 | ATensorRTuple5): (Tensor, Tensor, Tensor, Tensor, Tensor) {.inline.} = discard
+proc toNimTensorTuple(cppTuple: ATensorTuple3v1): (Tensor, Tensor, Tensor, TensorList) {.inline.} = discard
+
 # Auto generated #
 # append all the auto generated procs
 include torch/declarations
@@ -176,17 +184,17 @@ proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; du
 proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
   return tensor(data, defaultType, device)
 
-proc cpu*(tensor: Tensor): Tensor {.inline.} = tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
+template cpu*(tensor: Tensor): Tensor = tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
 
-proc cuda*(tensor: Tensor): Tensor {.inline.} = tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
+template cuda*(tensor: Tensor): Tensor = tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
 
-proc copy*(tensor: Tensor; non_blocking: bool = false): Tensor {.inline.} = tensor.dynamicCppCall("type").dynamicCppCall("copy", tensor, non_blocking).to(ATensor)
+template copy*(tensor: Tensor; non_blocking: bool = false): Tensor = tensor.dynamicCppCall("type").dynamicCppCall("copy", tensor, non_blocking).to(ATensor)
 
-proc is_defined*(tensor: Tensor): bool {.inline.} = tensor.dynamicCppCall("defined").to(bool)
+template is_defined*(tensor: Tensor): bool = tensor.dynamicCppCall("defined").to(bool)
 
-proc `+`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp + b.toCpp).to(ATensor)
+template `+`*(a, b: Tensor): Tensor = (a.toCpp + b.toCpp).to(ATensor)
 
-proc `==`*(a, b: Tensor): bool {.inline.} =  a.dynamicCppCall(equal, b).to(bool)
+template `==`*(a, b: Tensor): bool =  a.dynamicCppCall(equal, b).to(bool)
 
 macro chunk*(a: Tensor; chunks, dim: int): untyped =
   # dumpAstGen:
@@ -215,17 +223,17 @@ macro chunk*(a: Tensor; chunks, dim: int): untyped =
     let `tensors` = `a`.dynamicCppCall(chunk, `chunks`, `dim`).to(ATensors)
     `tupleTree`
 
-proc `*`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp * b.toCpp).to(ATensor)
+template `*`*(a, b: Tensor): Tensor = (a.toCpp * b.toCpp).to(ATensor)
 
-proc `-`*(a, b: Tensor): Tensor {.inline.} = (a.toCpp - b.toCpp).to(ATensor)
+template `-`*(a, b: Tensor): Tensor = (a.toCpp - b.toCpp).to(ATensor)
 
-proc ndimension*(a: Tensor): int64 {.inline.} = a.dynamicCppCall(ndimension).to(int64)
+template ndimension*(a: Tensor): int64 = a.dynamicCppCall(ndimension).to(int64)
 
-proc dim*(a: Tensor): int64 {.inline.} = a.dynamicCppCall(dim).to(int64)
+template dim*(a: Tensor): int64 = a.dynamicCppCall(dim).to(int64)
 
-proc `$`*(a: Tensor): string {.inline.} = $a.dynamicCppCall(toString).to(cstring)
+template `$`*(a: Tensor): string = $a.dynamicCppCall(toString).to(cstring)
 
-proc data_ptr*(a: Tensor): pointer {.inline.} = a.dynamicCppCall(data_ptr).to(pointer)
+template data_ptr*(a: Tensor): pointer = a.dynamicCppCall(data_ptr).to(pointer)
 
 proc print*(a: Tensor) =
   printTensor(a)
@@ -417,6 +425,8 @@ when isMainModule:
   
   echo "cat test:"
   c2.print()
+  
+  # var tupleTest = torch.multilabel_margin_loss_forward(c0, c1, 0)
   
   var intList: IntList = @[10, 20, 30]
   for i in 0..intList.high:

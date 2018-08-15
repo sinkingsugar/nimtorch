@@ -5,10 +5,8 @@ import os, strutils, macros, osproc, json, sequtils, streams
 # underscores are replaced with "u_", "_" = "u_" or "_u"
 
 const
-  ofTensorTo = "proc $1*(self: Tensor$4): $2 {.inline.} = self.dynamicCppCall(\"$3\"$5).to($2)"
-  ofTensor = "proc $1*(self: Tensor$3) {.inline.} = self.dynamicCppCall(\"$2\"$4).to(void)" # does not exist
-  ofNamespaceTo = "proc $1*($4): $2 {.inline.} = dynamicCCall(\"at::$3\"$5).to($2)"
-  ofNamespace = "proc $1*($3) {.inline.} = dynamicCCall(\"at::$2\"$4).to(void)" # does not exist
+  ofTensorTo = "template $1*(self: Tensor$4): $2 = self.dynamicCppCall(\"$3\"$5).$6"
+  ofNamespaceTo = "template $1*($4): $2 = dynamicCCall(\"at::$3\"$5).$6"
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
@@ -33,20 +31,22 @@ doAssert(exitCode == 0, "Failed to convert Declarations.yaml to JSON, failed wit
 type
   MethodOfKind = enum
     Type, Tensor, Namespace
+    
+  InvalidReturnException = object of Exception
 
 var rootNode = parseJson(declJson)
 
 proc toNimType(typeName: string): string =
   case typeName
-  of "Tensor", "BoolTensor", "IndexTensor": return "Tensor"
+  of "Tensor", "BoolTensor", "IndexTensor", "IntegerTensor": return "Tensor"
   of "TensorList": return "TensorList"
   of "int64_t": return "int64"
   of "bool": return "bool"
-  of "real": return "float"
+  of "real", "accreal": return "float"
   of "double": return "float64"
   of "Generator*": return "pointer"
   of "IntList": return "IntList"
-  else: raiseAssert("Type not supported")
+  else: raise newException(InvalidReturnException, "Invalid return type")
   
 proc validate(validName: var string) =
   const invalidNames = ["div", "var", "end", "result", "to", "from"]
@@ -85,38 +85,20 @@ for node in rootNode:
         return  dynType == "Tensor" or
                 dynType == "BoolTensor" or
                 dynType == "IndexTensor" or
+                dynType == "IntegerTensor" or
                 dynType == "TensorList" or
                 dynType == "int64_t" or 
                 dynType == "bool" or
                 dynType == "real" or
                 dynType == "double" or
                 dynType == "Generator*" or
-                dynType == "IntList"
+                dynType == "IntList" or
+                dynType == "accreal"
 
     if not hasValidArguments:
-      echo "Skipping method with invalid argument/s: " & name
+      echo "Skipping method with invalid argument/s: ", name, " arguments: ", arguments
       continue
-      
-  template validateReturns: untyped =
-    let validResults = not node.hasKey("returns") or 
-        node["returns"].len == 1 and
-        (node["returns"][0]["name"].getStr() == "result" or node["returns"][0]["name"].getStr() == "self") and (
-        node["returns"][0]["dynamic_type"].getStr() == "Tensor" or
-        node["returns"][0]["dynamic_type"].getStr() == "BoolTensor" or
-        node["returns"][0]["dynamic_type"].getStr() == "IndexTensor" or
-        node["returns"][0]["dynamic_type"].getStr() == "TensorList" or
-        node["returns"][0]["dynamic_type"].getStr() == "int64_t" or 
-        node["returns"][0]["dynamic_type"].getStr() == "bool" or
-        node["returns"][0]["dynamic_type"].getStr() == "real" or
-        node["returns"][0]["dynamic_type"].getStr() == "double" or
-        node["returns"][0]["dynamic_type"].getStr() == "Generator*" or
-        node["returns"][0]["dynamic_type"].getStr() == "IntList"
-        )
-    
-    if not validResults:
-      echo "Skipping method with invalid results: " & name
-      continue
-      
+        
   template fillArgumentDefaults: untyped =
     if arguments[i].hasKey("default"):
       let defaultNode = arguments[i]["default"]
@@ -133,6 +115,28 @@ for node in rootNode:
       else:
         # skipping defaults, might cause integration issues tho
         discard
+        
+  template generateProc(ofTemplateTo: untyped): untyped =
+    try:
+      if not node.hasKey("returns") or node["returns"].len == 0:
+        raise newException(InvalidReturnException, "method returns void")
+      elif node["returns"].len == 1:
+        let outputType = toNimType(node["returns"][0]["dynamic_type"].getStr())
+        output.writeLine ofTemplateTo % [validName, outputType, name, argsStr1, argsStr2, "to(" & outputType & ")"]
+      elif node["returns"].len == 2:
+        let
+          firstRes = node["returns"][0]["dynamic_type"].getStr()
+          firstResType = node["returns"][0]["type"].getStr()
+          secondRes = node["returns"][1]["dynamic_type"].getStr()
+          secondResType = node["returns"][1]["type"].getStr()
+          
+        if firstRes == "Tensor" and secondRes == "Tensor" and firstResType == "Tensor" and secondResType == "Tensor":
+          output.writeLine ofTemplateTo % [validName, "(Tensor, Tensor)", name, argsStr1, argsStr2, "to(ATensorTuple2).toNimTensorTuple()"]
+        elif firstRes == "Tensor" and secondRes == "Tensor" and firstResType == "Tensor &" and secondResType == "Tensor &":
+          output.writeLine ofTemplateTo % [validName, "(Tensor, Tensor)", name, argsStr1, argsStr2, "to(ATensorRTuple2).toNimTensorTuple()"]
+    
+    except InvalidReturnException:
+      echo "Skipping method with invalid results: ", name, " type: ", node["returns"][0]["dynamic_type"].getStr()
   
   assert(node.hasKey("arguments"))
   let arguments = toSeq(node["arguments"])
@@ -143,14 +147,11 @@ for node in rootNode:
       return x["name"].getStr() == "self" and x["dynamic_type"].getStr() == "Tensor"
       
     if not hasSelf:
-      echo arguments
-      echo "Skipping method of Tensor without self Tensor: " & name
+      echo "Skipping method of Tensor without self Tensor: ", name, " ", arguments
       continue
     
     if arguments.len > 1:
       validateArguments()
-    
-    validateReturns()
     
     var validName = name
     validName.validate()
@@ -173,15 +174,12 @@ for node in rootNode:
       argsStr1 &= ", $1: $2$3" % [argName, nimType, defaultStr]
       argsStr2 &= ", $1" % [argName]
     
-    if not node.hasKey("returns") or node["returns"].len == 0:
-      output.writeLine ofTensor % [validName, name, argsStr1, argsStr2]
-    else:
-      output.writeLine ofTensorTo % [validName, toNimType(node["returns"][0]["dynamic_type"].getStr()), name, argsStr1, argsStr2]
+    generateProc(ofTensorTo)
+      
   elif methodKind.contains(Namespace):
+  
     if arguments.len > 0:
       validateArguments()
-    
-    validateReturns()
     
     var validName = name
     validName.validate()
@@ -202,10 +200,7 @@ for node in rootNode:
       argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
       argsStr2 &= ", $1" % [argName]
     
-    if not node.hasKey("returns") or node["returns"].len == 0:
-      output.writeLine ofNamespace % [validName, name, argsStr1, argsStr2]
-    else:
-      output.writeLine ofNamespaceTo % [validName, toNimType(node["returns"][0]["dynamic_type"].getStr()), name, argsStr1, argsStr2]
+    generateProc(ofNamespaceTo)
     
 output.flush()
 output.close()

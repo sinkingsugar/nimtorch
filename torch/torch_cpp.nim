@@ -9,6 +9,16 @@ defineCppType(AIntList, "at::IntList", "ATen/ATen.h")
 defineCppType(AGenerator, "at::Generator", "ATen/ATen.h")
 defineCppType(AContext, "at::Context", "ATen/ATen.h")
 defineCppType(ATensors, "std::vector<at::Tensor>", "vector")  
+defineCppType(ATensorTuple2, "std::tuple<at::Tensor, at::Tensor>")
+defineCppType(ATensorRTuple2, "std::tuple<at::Tensor&, at::Tensor&>")
+defineCppType(ATensorTuple3, "std::tuple<at::Tensor, at::Tensor, at::Tensor>")
+defineCppType(ATensorRTuple3, "std::tuple<at::Tensor&, at::Tensor&, at::Tensor&>")
+defineCppType(ATensorTuple4, "std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>")
+defineCppType(ATensorRTuple4, "std::tuple<at::Tensor&, at::Tensor&, at::Tensor&, at::Tensor&>")
+defineCppType(ATensorTuple5, "std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>")
+defineCppType(ATensorRTuple5, "std::tuple<at::Tensor&, at::Tensor&, at::Tensor&, at::Tensor&, at::Tensor&>")
+defineCppType(ATensorTuple3v1, "std::tuple<at::Tensor, at::Tensor, at::Tensor, std::vector<at::Tensor>>")
+proc cppTupleGet[T](index: int; obj: CppProxy): T {.importcpp: "std::get<#>(#)".}
 
 var ATkByte {.importcpp: "at::kByte", nodecl.}: AScalarType
 var ATkChar {.importcpp: "at::kChar", nodecl.}: AScalarType
