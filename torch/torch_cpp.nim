@@ -33,29 +33,14 @@ proc cppTupleGet[T](index: int; obj: CppProxy): T {.importcpp: "std::get<#>(#)".
 
 # some issues generating static[int] in cpp
 type
-  BoolArray2*{.importcpp: "std::array<bool, 2>", header: "array".} = object
-  BoolArray3*{.importcpp: "std::array<bool, 3>", header: "array".} = object
-  BoolArray4*{.importcpp: "std::array<bool, 4>", header: "array".} = object
-  BoolArray* = BoolArray2 | BoolArray3 | BoolArray4
+  StdArray* {.importcpp: "std::array<'0, '1>", header: "array".} [T; S: static[int]] = object
 
-proc `[]`*(v: BoolArray; index: int): bool {.inline.} = v.toCpp[index].to(bool)
-proc `[]=`*(v: BoolArray; index: int; value: bool) {.inline.} = v.toCpp[index] = value
+proc `[]`*[T; S: static[int]](v: StdArray[T, S]; index: int): T {.inline.} = v.toCpp[index].to(T)
+proc `[]=`*[T; S: static[int]](v: StdArray[T, S]; index: int; value: T) {.inline.} = v.toCpp[index] = value
 
-template `@`*(a: array[2, bool]): BoolArray2 = 
-  var result: BoolArray2
+template `@`*[SIZE](a: array[SIZE, bool]): StdArray = 
+  var result: StdArray[bool, a.len]
   for i in 0..a.high: 
-    result[i] = a[i]
-  result
-
-template `@`*(a: array[3, bool]): BoolArray3 = 
-  var result: BoolArray3
-  for i in 0..a.high:
-    result[i] = a[i]
-  result
-
-template `@`*(a: array[4, bool]): BoolArray4 =
-  var result: BoolArray4
-  for i in 0..a.high:
     result[i] = a[i]
   result
 
