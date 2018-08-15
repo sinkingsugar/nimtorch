@@ -57,7 +57,7 @@ proc toNimType(typeName: string): string =
   of "ScalarType": return "AScalarType"
   of "std::string": return "StdString"
   of "Type": return "AType"
-  of "SparseTensorRef": return "SparseTensorRef"
+  of "SparseTensorRef": return "ASparseTensorRef"
   else: raise newException(InvalidReturnException, "Invalid return type")
   
 proc validate(validName: var string) =

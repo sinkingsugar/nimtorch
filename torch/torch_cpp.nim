@@ -4,6 +4,7 @@ import os
 
 defineCppType(AType, "at::Type", "ATen/ATen.h")
 defineCppType(ATensor, "at::Tensor", "ATen/ATen.h")
+defineCppType(AStorage, "at::Storage", "ATen/ATen.h")
 defineCppType(ASparseTensorRef, "at::SparseTensorRef", "ATen/ATen.h")
 defineCppType(ATensorOptions, "at::TensorOptions", "ATen/ATen.h")
 defineCppType(AScalar, "at::Scalar", "ATen/ATen.h")
