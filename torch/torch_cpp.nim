@@ -2,13 +2,18 @@ import fragments/ffi/cpp as cpp
 export cpp
 import os
 
+defineCppType(AType, "at::Type", "ATen/ATen.h")
 defineCppType(ATensor, "at::Tensor", "ATen/ATen.h")
+defineCppType(ASparseTensorRef, "at::SparseTensorRef", "ATen/ATen.h")
+defineCppType(ATensorOptions, "at::TensorOptions", "ATen/ATen.h")
 defineCppType(AScalar, "at::Scalar", "ATen/ATen.h")
 defineCppType(AScalarType, "at::ScalarType", "ATen/ATen.h")
 defineCppType(AIntList, "at::IntList", "ATen/ATen.h")
 defineCppType(AGenerator, "at::Generator", "ATen/ATen.h")
 defineCppType(AContext, "at::Context", "ATen/ATen.h")
 defineCppType(ATensors, "std::vector<at::Tensor>", "vector")  
+
+# hard coded tuples, find for now, if they increase need to do something
 defineCppType(ATensorTuple2, "std::tuple<at::Tensor, at::Tensor>")
 defineCppType(ATensorRTuple2, "std::tuple<at::Tensor&, at::Tensor&>")
 defineCppType(ATensorTuple3, "std::tuple<at::Tensor, at::Tensor, at::Tensor>")
@@ -18,7 +23,40 @@ defineCppType(ATensorRTuple4, "std::tuple<at::Tensor&, at::Tensor&, at::Tensor&,
 defineCppType(ATensorTuple5, "std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>")
 defineCppType(ATensorRTuple5, "std::tuple<at::Tensor&, at::Tensor&, at::Tensor&, at::Tensor&, at::Tensor&>")
 defineCppType(ATensorTuple3v1, "std::tuple<at::Tensor, at::Tensor, at::Tensor, std::vector<at::Tensor>>")
+
+# cpp utils
+defineCppType(StdString, "std::string", "string")
+converter toStdString*(s: string): StdString {.inline, noinit.} = cppinit(StdString, s.cstring)
+
 proc cppTupleGet[T](index: int; obj: CppProxy): T {.importcpp: "std::get<#>(#)".}
+
+# some issues generating static[int] in cpp
+type
+  BoolArray2*{.importcpp: "std::array<bool, 2>", header: "array".} = object
+  BoolArray3*{.importcpp: "std::array<bool, 3>", header: "array".} = object
+  BoolArray4*{.importcpp: "std::array<bool, 4>", header: "array".} = object
+  BoolArray* = BoolArray2 | BoolArray3 | BoolArray4
+
+proc `[]`*(v: BoolArray; index: int): bool {.inline.} = v.toCpp[index].to(bool)
+proc `[]=`*(v: BoolArray; index: int; value: bool) {.inline.} = v.toCpp[index] = value
+
+template `@`*(a: array[2, bool]): BoolArray2 = 
+  var result: BoolArray2
+  for i in 0..a.high: 
+    result[i] = a[i]
+  result
+
+template `@`*(a: array[3, bool]): BoolArray3 = 
+  var result: BoolArray3
+  for i in 0..a.high:
+    result[i] = a[i]
+  result
+
+template `@`*(a: array[4, bool]): BoolArray4 =
+  var result: BoolArray4
+  for i in 0..a.high:
+    result[i] = a[i]
+  result
 
 var ATkByte {.importcpp: "at::kByte", nodecl.}: AScalarType
 var ATkChar {.importcpp: "at::kChar", nodecl.}: AScalarType
