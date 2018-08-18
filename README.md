@@ -6,9 +6,37 @@ A pytorch's nim port.
 
 Aiming to be mostly auto-generated, internally using ATen.
 
+## Current status
+
+- [x] Automatically generated, from `Declarations.yaml`, the full ATen's API
+- [x] Cuda support
+- [x] WASM support
+- [ ] Automatically generated, from `derivatives.yaml`, gradient procs
+- [ ] Autograd
+- [ ] ...
+
+The final aim is to be as compatible as possible with the pytorch API
+ 
 ## Why
 
+Ease of use of the python language while keeping fully bare metal native C++ performance
+
+### Python code
+
+```python
+```
+
+### Nim code
+
+```nimrod
+```
+
+also python is a renown mess...
+![python mess](https://camo.githubusercontent.com/953249a42e8fe655a8c1fdfe80744a42b4d25723/68747470733a2f2f696d67732e786b63642e636f6d2f636f6d6963732f707974686f6e5f656e7669726f6e6d656e742e706e67)
+
 ## Build instructions
+
+Windows was tested and works, instructions should be similar to linux.
 
 **Linux only**
 
@@ -22,3 +50,5 @@ Aiming to be mostly auto-generated, internally using ATen.
 ### Hard way
 
 1. Check contents of `docker/Dockerfile` for requirements and cmake command
+
+
