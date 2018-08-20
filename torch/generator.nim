@@ -1,4 +1,4 @@
-import os, strutils, macros, osproc, json, sequtils, streams, tables
+import os, strutils, macros, osproc, json, sequtils, streams, pegs
 
 # nim naming issues:
 # if a name is a nim keyword, like "var", the name will be prefixed by "a", and so it will be "avar"
@@ -10,7 +10,6 @@ const
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
-  
 
 type
   ArgInfo = object
@@ -18,10 +17,40 @@ type
     nimType: string
 
   ProcInfo = object
+    originalName: string
     name: string
     args: seq[ArgInfo]
+
+  MethodOfKind = enum
+    Type, Tensor, Namespace
+
+  InvalidReturnException = object of Exception
+
+proc toNimType(typeName: string): string =
+  case typeName
+  of "Tensor", "BoolTensor", "IndexTensor", "IntegerTensor": return "Tensor"
+  of "TensorOptions": return "ATensorOptions"
+  of "Storage": return "AStorage"
+  of "TensorList": return "TensorList"
+  of "int64_t": return "int64"
+  of "bool": return "bool"
+  of "real", "accreal": return "float"
+  of "double": return "float64"
+  of "Generator*", "Generator *", "Generator": return "pointer"
+  of "IntList": return "IntList"
+  of "void": return "void"
+  of "void*": return "pointer"
+  of "Scalar": return "float"
+  of "std::array<bool,2>": return "StdArray[bool, 2]"
+  of "std::array<bool,3>": return "StdArray[bool, 3]"
+  of "std::array<bool,4>": return "StdArray[bool, 4]"
+  of "ScalarType": return "AScalarType"
+  of "std::string": return "StdString"
+  of "Type": return "AType"
+  of "SparseTensorRef": return "ASparseTensorRef"
+  else: raise newException(InvalidReturnException, "Invalid return type " & typeName)
   
-var generatedProcs = initTable[string, ProcInfo]()
+var generatedProcs = newSeq[ProcInfo]()
 
 block declarations:
   var output = newFileStream("torch/declarations.nim", fmWrite)
@@ -40,38 +69,8 @@ block declarations:
     (declJson, exitCode) = execCmdEx(cmd)
 
   doAssert(exitCode == 0, "Failed to convert Declarations.yaml to JSON, failed with output: " & declJson)
-
-  type
-    MethodOfKind = enum
-      Type, Tensor, Namespace
-      
-    InvalidReturnException = object of Exception
-
+  
   var rootNode = parseJson(declJson)
-
-  proc toNimType(typeName: string): string =
-    case typeName
-    of "Tensor", "BoolTensor", "IndexTensor", "IntegerTensor": return "Tensor"
-    of "TensorOptions": return "ATensorOptions"
-    of "Storage": return "AStorage"
-    of "TensorList": return "TensorList"
-    of "int64_t": return "int64"
-    of "bool": return "bool"
-    of "real", "accreal": return "float"
-    of "double": return "float64"
-    of "Generator*", "Generator *": return "pointer"
-    of "IntList": return "IntList"
-    of "void": return "void"
-    of "void*": return "pointer"
-    of "Scalar": return "float"
-    of "std::array<bool,2>": return "StdArray[bool, 2]"
-    of "std::array<bool,3>": return "StdArray[bool, 3]"
-    of "std::array<bool,4>": return "StdArray[bool, 4]"
-    of "ScalarType": return "AScalarType"
-    of "std::string": return "StdString"
-    of "Type": return "AType"
-    of "SparseTensorRef": return "ASparseTensorRef"
-    else: raise newException(InvalidReturnException, "Invalid return type")
     
   proc validate(validName: var string) =
     const invalidNames = ["div", "var", "end", "result", "to", "from"]
@@ -249,7 +248,7 @@ block declarations:
       var validName = name
       validName.validate()
 
-      var procInfo = ProcInfo(name: validName, args: newSeq[ArgInfo]())
+      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo]())
       
       var argsStr1 = ""
       var argsStr2 = ""
@@ -273,7 +272,7 @@ block declarations:
       
       generateProc(ofTensorTo)
 
-      generatedProcs.add(name, procInfo)
+      generatedProcs.add(procInfo)
         
     elif methodKind.contains(Namespace):
       if arguments.len > 0:
@@ -281,6 +280,8 @@ block declarations:
       
       var validName = name
       validName.validate()
+
+      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo]())
       
       var argsStr1 = ""
       var argsStr2 = ""
@@ -297,8 +298,12 @@ block declarations:
         var prefix = if i == 0: "" else: ", "
         argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
         argsStr2 &= ", $1" % [argName]
+
+        procInfo.args.add(ArgInfo(name: argName, nimType: nimType))
       
       generateProc(ofNamespaceTo)
+
+      generatedProcs.add(procInfo)
       
   output.flush()
   output.close()
@@ -318,6 +323,29 @@ block derivatives:
       "y=yaml.safe_load(stream) ; " & 
       "print(json.dumps(y))'"
     (derJson, exitCode) = execCmdEx(cmd)
+    
+  let namePeg = peg"""
+full <- {Name} func
+Name <- (validChars)*
+validChars <- \ident / \d+
+func <- '(' @ ')'
+"""
+  let nameArgsPeg = peg"""
+full <- {Name} func
+Name <- (validChars)*
+validChars <- \ident / \d+
+func <- '(' {@} ')'
+"""
+
+  let argsPegs = peg"""
+full <- argFull+ argDelim argFull+ / argFull+
+separator <- ','
+ws <- \s
+argDelim <- ws? '*' ws? separator?
+argFull <- ws? arg ws? separator?
+arg <- {validChars} ws+ {validChars}
+validChars <- \ident / \d+
+"""
 
   doAssert(exitCode == 0, "Failed to convert derivatives.yaml to JSON, failed with output: " & derJson)
 
@@ -327,4 +355,41 @@ block derivatives:
     if not node.hasKey("name"):
       continue
     
-    echo node
+    var
+      name = ""
+      info: ProcInfo
+    
+    let nameFull = node["name"].getStr()
+    if nameFull =~ namePeg:
+      name = matches[0]
+
+    assert(name != "", nameFull)
+
+    var candidates = generatedProcs.filter do (x: ProcInfo) -> bool: x.originalName == name
+    if candidates.len == 0:
+      echo "Ignoring not found declaration: ", name
+      continue
+    elif candidates.len == 1:
+      info = candidates[0]
+    else:
+      if nameFull =~ nameArgsPeg:
+        let argsStr = matches[1]
+        if argsStr =~ argsPegs: # notice by design of pegs module, this is limited to 10 args max, we can edit that by making the peg more complex but no need now
+          var index = 0
+          for candidate in candidates:
+            block checkArgs:
+              for argType in candidate.args:
+                if matches[index] == nil or argType.nimType != matches[index].toNimType:
+                  echo nameFull, "|", matches[index], "|", candidate
+                  break checkArgs
+                
+                index = index + 2
+              
+              echo "Accepted ", nameFull
+              info = candidate
+    
+    if info.name == "":
+      echo "Ignoring declaration: ", nameFull
+
+  output.flush()
+  output.close()
