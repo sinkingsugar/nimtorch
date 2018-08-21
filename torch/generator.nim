@@ -336,7 +336,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
     
   let namePeg = peg"""
 full <- dot? {Name} func
-Name <- (validChars)*
+Name <- (validChars)+
 validChars <- \ident / \d+
 dot <- '.'
 func <- '(' @ ')'
@@ -434,26 +434,52 @@ validChars <- \ident / \d+
           names.add(k)
         
         for name in names:
-          var argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name
-          var prefix = if nodeIndex == 0: "" else: ", "
+          var
+            argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name
+            prefix = if nodeIndex == 0: "" else: ", "
+          
           try:
             resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
 
-            # this is amazing :)
-            try:
-              var nimLikeStr = vStr.replace(namePeg) do (match: int; cnt: int; caps: openArray[string]) -> string:
-                if caps[0] == "":
-                  return ""
-                for procInfo in generatedProcs:
-                  if procInfo.originalName == caps[0]:
-                    return procInfo.name
-                
-                raiseAssert("proc not found: " & caps[0])
-            except AssertionError:
-              echo getCurrentExceptionMsg()
-              break generateProc
+            # this is amazing :)            
+            var
+              nimLikeStr = vStr
+              strIndex = 0
+              matches: array[20, string]
+
+            while true:
+              var
+                foundMatch = false
+                (foundAt, endsAt) = nimLikeStr.findBounds(namePeg, matches, strIndex)
+              
+              if foundAt == -1:
+                break
+              
+              strIndex = endsAt
+
+              for procInfo in generatedProcs:
+                if procInfo.originalName == matches[0]:
+                  # replace
+                  let
+                    pre = nimLikeStr[0..foundAt - 1]
+                    post = nimLikeStr[foundAt + matches[0].len + 1..^1]
+                    toReplace = nimLikeStr[foundAt..foundAt + matches[0].len]
+                    replacement = toReplace.replace(matches[0], procInfo.name)
+                    diff = replacement.len - matches[0].len
                   
-            body &= "  result." & argName[0].name & " = " & vStr & "\n"
+                  echo toReplace, " > ", pre, replacement, post
+
+                  nimLikeStr = pre & replacement & post
+
+                  strIndex = endsAt + diff
+                  
+                  foundMatch = true
+              
+              if not foundMatch:
+                echo "proc not found: ", matches[0]
+                break generateProc
+          
+            body &= "  result." & argName[0].name & " = " & nimLikeStr & "\n"
           except:
             echo name
             raise

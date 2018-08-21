@@ -72,7 +72,7 @@ proc conv_tbc_bwd*(grad: Tensor, self: Tensor, weight: Tensor, bias: Tensor, pad
   result.bias = conv_tbc_backward(grad, self, weight, bias, pad)
 
 proc u_ctc_loss_bwd*(grad: Tensor, log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64): tuple[log_probs: Tensor] =
-  result.log_probs = _ctc_loss_backward(grad, log_probs, targets, input_lengths, target_lengths, result0, result1, blank)
+  result.log_probs = u_ctc_loss_backward(grad, log_probs, targets, input_lengths, target_lengths, result0, result1, blank)
 
 proc adiv_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] =
   result.self = grad / other
@@ -163,14 +163,14 @@ proc index_add_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, sou
   result.source = grad.index_select(dim, index)
 
 proc index_copy_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, source: Tensor): tuple[self: Tensor, source: Tensor] =
-  result.self = grad.clone().index_fill_(dim, index, 0)
+  result.self = grad.clone().index_fill_uu(dim, index, 0)
   result.source = grad.index_select(dim, index)
 
 proc index_fill_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, value: float): tuple[self: Tensor] =
-  result.self = grad.clone().index_fill_(dim, index, 0)
+  result.self = grad.clone().index_fill_uu(dim, index, 0)
 
 proc index_fill_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, value: Tensor): tuple[self: Tensor, value: Tensor] =
-  result.self = grad.clone().index_fill_(dim, index, 0)
+  result.self = grad.clone().index_fill_uu(dim, index, 0)
   result.value = grad.index_select(dim, index).sum()
 
 proc inverse_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
@@ -183,10 +183,6 @@ proc le_u_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, o
   result.self = zeros_like(self)
   result.other = zeros_like(other)
 
-proc lerp_bwd*(grad: Tensor, self: Tensor, aend: Tensor, weight: float): tuple[self: Tensor, aend: Tensor] =
-  result.self = grad * (1 - weight.toDouble())
-  result.aend = grad * weight
-
 proc lgamma_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = grad * digamma(self)
 
@@ -197,7 +193,7 @@ proc polygamma_bwd*(grad: Tensor, self: Tensor, n: int64): tuple[self: Tensor] =
   result.self = grad * polygamma(n + 1, self)
 
 proc log_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
-  result.self = grad.div(self)
+  result.self = grad.adiv(self)
 
 proc log10_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = grad / (self * 2.3025850929940456)
@@ -216,28 +212,28 @@ proc lt_u_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, o
   result.other = zeros_like(other)
 
 proc masked_fill_u_bwd*(grad: Tensor, self: Tensor, mask: Tensor, value: float): tuple[self: Tensor] =
-  result.self = grad.clone().masked_fill_(mask, 0)
+  result.self = grad.clone().masked_fill_uu(mask, 0)
 
 proc masked_fill_u_bwd*(grad: Tensor, self: Tensor, mask: Tensor, value: Tensor): tuple[self: Tensor, value: Tensor] =
-  result.self = grad.clone().masked_fill_(mask, 0)
+  result.self = grad.clone().masked_fill_uu(mask, 0)
   result.value = where(mask, grad, zeros_like(grad)).sum()
 
 proc masked_scatter_u_bwd*(grad: Tensor, self: Tensor, mask: Tensor, source: Tensor): tuple[self: Tensor, source: Tensor] =
-  result.self = grad.clone().masked_fill_(mask, 0)
+  result.self = grad.clone().masked_fill_uu(mask, 0)
 
 proc masked_select_bwd*(grad: Tensor, self: Tensor, mask: Tensor): tuple[self: Tensor] =
-  result.self = zeros_like(self).masked_scatter_(mask, grad)
+  result.self = zeros_like(self).masked_scatter_u(mask, grad)
 
 proc max_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] =
-  result.self = grad.clone().masked_fill_(self <= other, 0)
-  result.other = grad.clone().masked_fill_(self > other, 0)
+  result.self = grad.clone().masked_fill_uu(self <= other, 0)
+  result.other = grad.clone().masked_fill_uu(self > other, 0)
 
 proc mean_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = grad.expand(self.sizes()) / self.numel()
 
 proc min_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] =
-  result.self = grad.clone().masked_fill_(self >= other, 0)
-  result.other = grad.clone().masked_fill_(self < other, 0)
+  result.self = grad.clone().masked_fill_uu(self >= other, 0)
+  result.other = grad.clone().masked_fill_uu(self < other, 0)
 
 proc mul_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] =
   result.self = grad * other
@@ -267,7 +263,7 @@ proc poisson_bwd*(grad: Tensor, self: Tensor, generator: pointer): tuple[self: T
   result.self = zeros_like(self)
 
 proc put_u_bwd*(grad: Tensor, self: Tensor, index: Tensor, source: Tensor, accumulate: bool): tuple[self: Tensor, source: Tensor] =
-  result.self = grad.clone().put_(index, zeros_like(source), accumulate)
+  result.self = grad.clone().put_u(index, zeros_like(source), accumulate)
   result.source = grad.take(index)
 
 proc random_u_bwd*(grad: Tensor, self: Tensor, afrom: int64, ato: int64, generator: pointer): tuple[self: Tensor] =
@@ -298,18 +294,18 @@ proc rsqrt_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = -0.5 * grad * result.pow(3)
 
 proc scatter_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, src: Tensor): tuple[self: Tensor, src: Tensor] =
-  result.self = grad.clone().scatter_(dim, index, 0)
+  result.self = grad.clone().scatter_uu(dim, index, 0)
   result.src = grad.gather(dim, index)
 
 proc scatter_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, value: float): tuple[self: Tensor] =
-  result.self = grad.clone().scatter_(dim, index, 0)
+  result.self = grad.clone().scatter_uu(dim, index, 0)
 
 proc scatter_add_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, src: Tensor): tuple[self: Tensor, src: Tensor] =
   result.self = grad
   result.src = grad.gather(dim, index)
 
 proc sigmoid_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
-  result.self = _sigmoid_backward(grad, result)
+  result.self = u_sigmoid_backward(grad, result)
 
 proc sign_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = zeros_like(grad)
@@ -343,13 +339,13 @@ proc rot90_bwd*(grad: Tensor, self: Tensor, k: int64, dims: IntList): tuple[self
   result.self = grad.rot90(-k, dims)
 
 proc take_bwd*(grad: Tensor, self: Tensor, index: Tensor): tuple[self: Tensor] =
-  result.self = zeros_like(self).put_(index, grad, true)
+  result.self = zeros_like(self).put_u(index, grad, true)
 
 proc tan_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = grad * (1 + result.pow(2))
 
 proc tanh_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
-  result.self = _tanh_backward(grad, result)
+  result.self = u_tanh_backward(grad, result)
 
 proc transpose_bwd*(grad: Tensor, self: Tensor, dim0: int64, dim1: int64): tuple[self: Tensor] =
   result.self = grad.transpose(dim0, dim1)
@@ -389,7 +385,7 @@ proc zero_u_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = zeros_like(grad)
 
 proc u_standard_gamma_bwd*(grad: Tensor, self: Tensor, generator: pointer): tuple[self: Tensor] =
-  result.self = grad * self._standard_gamma_grad(result)
+  result.self = grad * self.u_standard_gamma_grad(result)
 
 proc binary_cross_entropy_forward_bwd*(grad: Tensor, self: Tensor, target: Tensor, weight: Tensor, reduction: int64): tuple[self: Tensor] =
   result.self = binary_cross_entropy_backward(grad, self, target, weight, reduction)
@@ -398,7 +394,7 @@ proc embedding_bwd*(grad: Tensor, weight: Tensor, indices: Tensor, padding_idx: 
   result.weight = embedding_backward(grad, indices, weight.size(0), padding_idx, scale_grad_by_freq, sparse)
 
 proc u_embedding_bag_bwd*(grad: Tensor, weight: Tensor, indices: Tensor, offsets: Tensor, scale_grad_by_freq: bool, mode: int64, sparse: bool): tuple[weight: Tensor] =
-  result.weight = _embedding_bag_backward(grad, indices, offsets, result1, result2, result3, weight.size(0), scale_grad_by_freq, mode, sparse)
+  result.weight = u_embedding_bag_backward(grad, indices, offsets, result1, result2, result3, weight.size(0), scale_grad_by_freq, mode, sparse)
 
 proc kl_div_forward_bwd*(grad: Tensor, self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor, target: Tensor] =
   result.self = kl_div_backward(grad, self, target, reduction)
@@ -563,9 +559,9 @@ proc thnn_conv_transpose2d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tens
   result.bias = thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, columns, ones, grad_input_mask)
 
 proc thnn_conv_transpose2d_backward_bwd*(grad: Tensor, grad_output: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList, columns: Tensor, ones: Tensor, output_mask: StdArray[bool, 3]): tuple[grad_output: Tensor, self: Tensor, weight: Tensor] =
-  result.grad_output = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
-  result.self = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
-  result.weight = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
+  result.grad_output = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
+  result.self = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
+  result.weight = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
 
 proc thnn_conv_transpose3d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   result.self = thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, finput, fgrad_input, grad_input_mask)
@@ -573,9 +569,9 @@ proc thnn_conv_transpose3d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tens
   result.bias = thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, finput, fgrad_input, grad_input_mask)
 
 proc thnn_conv_transpose3d_backward_bwd*(grad: Tensor, grad_output: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList, finput: Tensor, fgrad_input: Tensor, output_mask: StdArray[bool, 3]): tuple[grad_output: Tensor, self: Tensor, weight: Tensor] =
-  result.grad_output = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
-  result.self = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
-  result.weight = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
+  result.grad_output = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
+  result.self = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
+  result.weight = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, 1, false, false, false, grad_input_mask)
 
 proc thnn_conv2d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   result.self = thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, finput, fgrad_input, grad_input_mask)
@@ -583,9 +579,9 @@ proc thnn_conv2d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tensor, kernel
   result.bias = thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, finput, fgrad_input, grad_input_mask)
 
 proc thnn_conv2d_backward_bwd*(grad: Tensor, grad_output: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, finput: Tensor, fgrad_input: Tensor, output_mask: StdArray[bool, 3]): tuple[grad_output: Tensor, self: Tensor, weight: Tensor] =
-  result.grad_output = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1}}, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
-  result.self = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1}}, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
-  result.weight = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1}}, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
+  result.grad_output = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1}}, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
+  result.self = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1}}, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
+  result.weight = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1}}, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
 
 proc thnn_conv_depthwise2d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   result.self = thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
@@ -593,9 +589,9 @@ proc thnn_conv_depthwise2d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tens
   result.bias = grad.contiguous().view({grad.size(0), grad.size(1), -1}).sum(0).sum(1)
 
 proc thnn_conv_depthwise2d_backward_bwd*(grad: Tensor, grad_output: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, output_mask: StdArray[bool, 2]): tuple[grad_output: Tensor, self: Tensor, weight: Tensor] =
-  result.grad_output = _convolution_double_backward(grads[0], grads[1], {}, grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, self.size(1), false, false, false, grad_input_mask)
-  result.self = _convolution_double_backward(grads[0], grads[1], {}, grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, self.size(1), false, false, false, grad_input_mask)
-  result.weight = _convolution_double_backward(grads[0], grads[1], {}, grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, self.size(1), false, false, false, grad_input_mask)
+  result.grad_output = u_convolution_double_backward(grads[0], grads[1], {}, grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, self.size(1), false, false, false, grad_input_mask)
+  result.self = u_convolution_double_backward(grads[0], grads[1], {}, grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, self.size(1), false, false, false, grad_input_mask)
+  result.weight = u_convolution_double_backward(grads[0], grads[1], {}, grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, self.size(1), false, false, false, grad_input_mask)
 
 proc thnn_conv3d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   result.self = thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, finput, fgrad_input, grad_input_mask)
@@ -603,9 +599,9 @@ proc thnn_conv3d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tensor, kernel
   result.bias = thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, finput, fgrad_input, grad_input_mask)
 
 proc thnn_conv3d_backward_bwd*(grad: Tensor, grad_output: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, finput: Tensor, fgrad_input: Tensor, output_mask: StdArray[bool, 3]): tuple[grad_output: Tensor, self: Tensor, weight: Tensor] =
-  result.grad_output = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1, 1}}, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
-  result.self = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1, 1}}, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
-  result.weight = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1, 1}}, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
+  result.grad_output = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1, 1}}, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
+  result.self = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1, 1}}, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
+  result.weight = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, {{1, 1, 1}}, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
 
 proc thnn_conv_dilated2d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   result.self = thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, columns, ones, grad_input_mask)
@@ -613,9 +609,9 @@ proc thnn_conv_dilated2d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tensor
   result.bias = thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, columns, ones, grad_input_mask)
 
 proc thnn_conv_dilated2d_backward_bwd*(grad: Tensor, grad_output: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, columns: Tensor, ones: Tensor, output_mask: StdArray[bool, 3]): tuple[grad_output: Tensor, self: Tensor, weight: Tensor] =
-  result.grad_output = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
-  result.self = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
-  result.weight = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
+  result.grad_output = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
+  result.self = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
+  result.weight = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0}}, 1, false, false, false, grad_input_mask)
 
 proc thnn_conv_dilated3d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   result.self = thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, columns, ones, grad_input_mask)
@@ -623,9 +619,9 @@ proc thnn_conv_dilated3d_forward_bwd*(grad: Tensor, self: Tensor, weight: Tensor
   result.bias = thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, columns, ones, grad_input_mask)
 
 proc thnn_conv_dilated3d_backward_bwd*(grad: Tensor, grad_output: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, columns: Tensor, ones: Tensor, output_mask: StdArray[bool, 3]): tuple[grad_output: Tensor, self: Tensor, weight: Tensor] =
-  result.grad_output = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
-  result.self = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
-  result.weight = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
+  result.grad_output = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
+  result.self = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
+  result.weight = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, {{0, 0, 0}}, 1, false, false, false, grad_input_mask)
 
 proc adaptive_avg_pool2d_backward_bwd*(grad: Tensor, grad_output: Tensor, self: Tensor): tuple[grad_output: Tensor, self: Tensor] =
   result.grad_output = adaptive_avg_pool2d(grad, { grad_output.size(-2), grad_output.size(-1) })
@@ -729,11 +725,11 @@ proc upsample_nearest3d_backward_bwd*(grad: Tensor, grad_output: Tensor, output_
   result.grad_output = upsample_nearest3d(grad, output_size)
 
 proc u_sigmoid_backward_bwd*(grad: Tensor, grad_output: Tensor, output: Tensor): tuple[grad_output: Tensor, output: Tensor] =
-  result.grad_output = _sigmoid_backward(grad, output)
+  result.grad_output = u_sigmoid_backward(grad, output)
   result.output = grad * grad_output * (-2 * output + 1)
 
 proc u_tanh_backward_bwd*(grad: Tensor, grad_output: Tensor, output: Tensor): tuple[grad_output: Tensor, output: Tensor] =
-  result.grad_output = _tanh_backward(grad, output)
+  result.grad_output = u_tanh_backward(grad, output)
   result.output = -2 * output * grad * grad_output
 
 proc u_cudnn_ctc_loss_bwd*(grad: Tensor, log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64, deterministic: bool): tuple[log_probs: Tensor] =
@@ -745,9 +741,9 @@ proc cudnn_convolution_transpose_bwd*(grad: Tensor, self: Tensor, weight: Tensor
   result.bias = cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
 
 proc cudnn_convolution_transpose_backward_bwd*(grad: Tensor, self: Tensor, grad_output: Tensor, weight: Tensor, padding: IntList, output_padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool, output_mask: StdArray[bool, 3]): tuple[grad_output: Tensor, self: Tensor, weight: Tensor] =
-  result.grad_output = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, groups, benchmark, deterministic, true, grad_input_mask)
-  result.self = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, groups, benchmark, deterministic, true, grad_input_mask)
-  result.weight = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, groups, benchmark, deterministic, true, grad_input_mask)
+  result.grad_output = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, groups, benchmark, deterministic, true, grad_input_mask)
+  result.self = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, groups, benchmark, deterministic, true, grad_input_mask)
+  result.weight = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, true, output_padding, groups, benchmark, deterministic, true, grad_input_mask)
 
 proc cudnn_convolution_bwd*(grad: Tensor, self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   result.self = cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
@@ -755,9 +751,9 @@ proc cudnn_convolution_bwd*(grad: Tensor, self: Tensor, weight: Tensor, bias: Te
   result.bias = cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
 
 proc cudnn_convolution_backward_bwd*(grad: Tensor, self: Tensor, grad_output: Tensor, weight: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool, output_mask: StdArray[bool, 3]): tuple[grad_output: Tensor, self: Tensor, weight: Tensor] =
-  result.grad_output = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, std::vector<int64_t>(padding.size(), 0), groups, benchmark, deterministic, true, grad_input_mask)
-  result.self = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, std::vector<int64_t>(padding.size(), 0), groups, benchmark, deterministic, true, grad_input_mask)
-  result.weight = _convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, std::vector<int64_t>(padding.size(), 0), groups, benchmark, deterministic, true, grad_input_mask)
+  result.grad_output = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, std::vector<int64_t>(padding.size(), 0), groups, benchmark, deterministic, true, grad_input_mask)
+  result.self = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, std::vector<int64_t>(padding.size(), 0), groups, benchmark, deterministic, true, grad_input_mask)
+  result.weight = u_convolution_double_backward(grads[0], grads[1], grads[2], grad_output, weight, self, stride, padding, dilation, false, std::vector<int64_t>(padding.size(), 0), groups, benchmark, deterministic, true, grad_input_mask)
 
 proc cudnn_grid_sampler_bwd*(grad: Tensor, self: Tensor, grid: Tensor): tuple[self: Tensor, grid: Tensor] =
   result.self = cudnn_grid_sampler_backward(self, grid, grad)
@@ -772,10 +768,10 @@ proc cudnn_batch_norm_bwd*(grad: Tensor, input: Tensor, weight: Tensor, bias: Te
   result.bias = training ? cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, result1, result2, epsilon) : thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, result1, result2, grad_input_mask)
 
 proc u_cudnn_rnn_bwd*(grad: Tensor, input: Tensor, weight: TensorList, weight_stride0: int64, weight_buf: Tensor, hx: Tensor, cx: Tensor, mode: int64, hidden_size: int64, num_layers: int64, batch_first: bool, dropout: float64, train: bool, bidirectional: bool, batch_sizes: IntList, dropout_state: Tensor): tuple[input: Tensor, hx: Tensor, cx: Tensor, weight: TensorList] =
-  result.input = _cudnn_rnn_backward(input, weight, weight_stride0, result4, hx, cx, result0, grads[0], grads[1], grads[2], mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes, dropout_state, retain_variables ? result3.clone() : result3, grad_input_mask)
-  result.hx = _cudnn_rnn_backward(input, weight, weight_stride0, result4, hx, cx, result0, grads[0], grads[1], grads[2], mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes, dropout_state, retain_variables ? result3.clone() : result3, grad_input_mask)
-  result.cx = _cudnn_rnn_backward(input, weight, weight_stride0, result4, hx, cx, result0, grads[0], grads[1], grads[2], mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes, dropout_state, retain_variables ? result3.clone() : result3, grad_input_mask)
-  result.weight = _cudnn_rnn_backward(input, weight, weight_stride0, result4, hx, cx, result0, grads[0], grads[1], grads[2], mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes, dropout_state, retain_variables ? result3.clone() : result3, grad_input_mask)
+  result.input = u_cudnn_rnn_backward(input, weight, weight_stride0, result4, hx, cx, result0, grads[0], grads[1], grads[2], mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes, dropout_state, retain_variables ? result3.clone() : result3, grad_input_mask)
+  result.hx = u_cudnn_rnn_backward(input, weight, weight_stride0, result4, hx, cx, result0, grads[0], grads[1], grads[2], mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes, dropout_state, retain_variables ? result3.clone() : result3, grad_input_mask)
+  result.cx = u_cudnn_rnn_backward(input, weight, weight_stride0, result4, hx, cx, result0, grads[0], grads[1], grads[2], mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes, dropout_state, retain_variables ? result3.clone() : result3, grad_input_mask)
+  result.weight = u_cudnn_rnn_backward(input, weight, weight_stride0, result4, hx, cx, result0, grads[0], grads[1], grads[2], mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes, dropout_state, retain_variables ? result3.clone() : result3, grad_input_mask)
 
 proc mkldnn_convolution_bwd*(grad: Tensor, self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   result.self = mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
