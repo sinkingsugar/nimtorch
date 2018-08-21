@@ -203,6 +203,14 @@ template `-`*(a): Tensor = (-(a.toCpp)).to(ATensor)
 
 template `+`*(a, b: Tensor): Tensor = (a.toCpp + b.toCpp).to(ATensor)
 
+template `<=`*(a, b: Tensor): Tensor = (a.toCpp <= b.toCpp).to(ATensor)
+
+template `>=`*(a, b: Tensor): Tensor = (a.toCpp >= b.toCpp).to(ATensor)
+
+template `<=`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp <= b.float.toCpp).to(ATensor)
+
+template `>=`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp >= b.float.toCpp).to(ATensor)
+
 template `+`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp + b.float.toCpp).to(ATensor)
 
 template `*`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp * b.float.toCpp).to(ATensor)
