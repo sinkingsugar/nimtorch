@@ -51,6 +51,16 @@ proc toNimType(typeName: string): string =
   of "Type": return "AType"
   of "SparseTensorRef": return "ASparseTensorRef"
   else: raise newException(InvalidReturnException, "Invalid return type '" & typeName & "'")
+
+proc validate(validName: var string) =
+  const invalidNames = ["div", "var", "end", "result", "to", "from"]
+  if validName.endsWith("_"):
+    validName &= "u"
+  if validName.startsWith("_"):
+    validName = "u" & validName
+  if invalidNames.contains(validName):
+    validName = "a" & validName
+  validName = validName.replace("__", "_u_u")
   
 var generatedProcs = newSeq[ProcInfo]()
 
@@ -73,17 +83,7 @@ block declarations:
   doAssert(exitCode == 0, "Failed to convert Declarations.yaml to JSON, failed with output: " & declJson)
   
   var rootNode = parseJson(declJson)
-    
-  proc validate(validName: var string) =
-    const invalidNames = ["div", "var", "end", "result", "to", "from"]
-    if validName.endsWith("_"):
-      validName &= "u"
-    if validName.startsWith("_"):
-      validName = "u" & validName
-    if invalidNames.contains(validName):
-      validName = "a" & validName
-    validName = validName.replace("__", "_u_u")
-
+  
   for node in rootNode:
     if not node.hasKey("name"):
       continue
@@ -321,6 +321,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
   output.writeLine "# nim c -r torch/generator.nim"
   output.writeLine "import math"
+  output.writeLine "import ../torch"
   output.writeLine "const M_PI = math.PI"
 
   # convert from yaml to json to load at compile time, using python3 for now
@@ -334,9 +335,10 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
     (derJson, exitCode) = execCmdEx(cmd)
     
   let namePeg = peg"""
-full <- {Name} func
+full <- dot? {Name} func
 Name <- (validChars)*
 validChars <- \ident / \d+
+dot <- '.'
 func <- '(' @ ')'
 """
   let nameArgsPeg = peg"""
@@ -415,37 +417,53 @@ validChars <- \ident / \d+
     for arg in info.args:
       argsStr &= ", " & arg.name & ": " & arg.nimType
     
-    var nodeIndex = 0
-    for k,v in node:
-      let vStr = v.getStr()
-      if k == "name" or vStr.startsWith("not_implemented"):
-        continue
+    block generateProc:
+      var nodeIndex = 0
+      for k,v in node:
+        let vStr = v.getStr().replace("at::", "") # also remove any at:: prefix
+        if k == "name" or vStr.startsWith("not_implemented"):
+          continue
 
-      var names = newSeq[string]()
+        var names = newSeq[string]()
 
-      # k can be multi like: "self, weight, bias"
-      if k.contains(", "):
-        for n in k.split(", "):
-          names.add(n)
-      else:
-        names.add(k)
-      
-      for name in names:
-        var argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name
-        var prefix = if nodeIndex == 0: "" else: ", "
-        try:
-          resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
-          body &= "  result." & argName[0].name & " = " & vStr & "\n"
-        except:
-          echo name
-          raise
+        # k can be multi like: "self, weight, bias"
+        if k.contains(", "):
+          for n in k.split(", "):
+            names.add(n)
+        else:
+          names.add(k)
         
-        inc nodeIndex
+        for name in names:
+          var argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name
+          var prefix = if nodeIndex == 0: "" else: ", "
+          try:
+            resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
+
+            # this is amazing :)
+            try:
+              var nimLikeStr = vStr.replace(namePeg) do (match: int; cnt: int; caps: openArray[string]) -> string:
+                if caps[0] == "":
+                  return ""
+                for procInfo in generatedProcs:
+                  if procInfo.originalName == caps[0]:
+                    return procInfo.name
+                
+                raiseAssert("proc not found: " & caps[0])
+            except AssertionError:
+              echo getCurrentExceptionMsg()
+              break generateProc
+                  
+            body &= "  result." & argName[0].name & " = " & vStr & "\n"
+          except:
+            echo name
+            raise
+          
+          inc nodeIndex
       
     resTuple &= "]"
 
-    if resTuple == "tuple[]":
-      echo "Ignoring empty derivative (not implemented?): ", name
+    if resTuple == "tuple[]" or body == "\n":
+      echo "Ignoring derivative (not implemented or error): ", name
       continue
 
     let procStr = backward % [info.name, argsStr, resTuple, body]
