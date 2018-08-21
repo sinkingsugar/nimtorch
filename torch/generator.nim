@@ -7,12 +7,14 @@ import os, strutils, macros, osproc, json, sequtils, streams, pegs
 const
   ofTensorTo = "template $1*(self: Tensor$4): $2 $7= self.dynamicCppCall(\"$3\"$5).$6"
   ofNamespaceTo = "template $1*($4): $2 $7= dynamicCCall(\"at::$3\"$5).$6"
+  backward = "proc $1_bwd*(grad: Tensor$2): $3 =$4"
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
 
 type
   ArgInfo = object
+    originalName: string
     name: string
     nimType: string
 
@@ -48,7 +50,7 @@ proc toNimType(typeName: string): string =
   of "std::string": return "StdString"
   of "Type": return "AType"
   of "SparseTensorRef": return "ASparseTensorRef"
-  else: raise newException(InvalidReturnException, "Invalid return type " & typeName)
+  else: raise newException(InvalidReturnException, "Invalid return type '" & typeName & "'")
   
 var generatedProcs = newSeq[ProcInfo]()
 
@@ -249,6 +251,9 @@ block declarations:
       validName.validate()
 
       var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo]())
+
+      # in Tensor kind add Tensor self
+      procInfo.args.add(ArgInfo(originalName: "self", name: "self", nimType: "Tensor"))
       
       var argsStr1 = ""
       var argsStr2 = ""
@@ -256,6 +261,7 @@ block declarations:
         var
           nimType = toNimType(arguments[i]["dynamic_type"].getStr())
           argName = arguments[i]["name"].getStr()
+          originalName = argName
           defaultStr = ""
         
         if argName == "self":
@@ -268,7 +274,7 @@ block declarations:
         argsStr1 &= ", $1: $2$3" % [argName, nimType, defaultStr]
         argsStr2 &= ", $1" % [argName]
 
-        procInfo.args.add(ArgInfo(name: argName, nimType: nimType))
+        procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
       
       generateProc(ofTensorTo)
 
@@ -289,6 +295,7 @@ block declarations:
         var
           nimType = toNimType(arguments[i]["dynamic_type"].getStr())
           argName = arguments[i]["name"].getStr()
+          originalName = argName
           defaultStr = ""
           
         argName.validate()
@@ -299,7 +306,7 @@ block declarations:
         argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
         argsStr2 &= ", $1" % [argName]
 
-        procInfo.args.add(ArgInfo(name: argName, nimType: nimType))
+        procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
       
       generateProc(ofNamespaceTo)
 
@@ -308,11 +315,13 @@ block declarations:
   output.flush()
   output.close()
 
-block derivatives:
+block derivatives: # we still need to implement some of the procs in pytorch's 'tools/autograd/templates/Functions.cpp'
   var output = newFileStream("torch/derivatives.nim", fmWrite)
 
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
   output.writeLine "# nim c -r torch/generator.nim"
+  output.writeLine "import math"
+  output.writeLine "const M_PI = math.PI"
 
   # convert from yaml to json to load at compile time, using python3 for now
   let
@@ -374,22 +383,73 @@ validChars <- \ident / \d+
     else:
       if nameFull =~ nameArgsPeg:
         let argsStr = matches[1]
-        if argsStr =~ argsPegs: # notice by design of pegs module, this is limited to 10 args max, we can edit that by making the peg more complex but no need now
-          var index = 0
-          for candidate in candidates:
-            block checkArgs:
-              for argType in candidate.args:
-                if matches[index] == nil or argType.nimType != matches[index].toNimType:
-                  echo nameFull, "|", matches[index], "|", candidate
-                  break checkArgs
+        # by design of pegs module, this is limited to 10 args max, we can edit that by making the peg more complex but no need now
+        if argsStr =~ argsPegs:
+          # echo matches
+          block findCandidate:
+            for candidate in candidates:
+              # echo nameFull, " | ", candidate
+              block checkArgs:
+                var index = 0
+                for argType in candidate.args:
+                  if matches[index] == nil or argType.nimType != matches[index].toNimType:
+                    # echo "Breaking bad: ", matches[index], " vs ", argType
+                    break checkArgs
+                  
+                  index = index + 2
                 
-                index = index + 2
-              
-              echo "Accepted ", nameFull
-              info = candidate
+                # echo "Accepted ", nameFull
+                info = candidate
+                break findCandidate
     
-    if info.name == "":
-      echo "Ignoring declaration: ", nameFull
+    assert(info.name != "")
+
+    # at this point we know of which Declarations.yaml proc we are talking about
+
+    # build backward proc itself
+    var
+      resTuple = "tuple["
+      body = "\n"
+      argsStr = ""
+  
+    for arg in info.args:
+      argsStr &= ", " & arg.name & ": " & arg.nimType
+    
+    var nodeIndex = 0
+    for k,v in node:
+      let vStr = v.getStr()
+      if k == "name" or vStr.startsWith("not_implemented"):
+        continue
+
+      var names = newSeq[string]()
+
+      # k can be multi like: "self, weight, bias"
+      if k.contains(", "):
+        for n in k.split(", "):
+          names.add(n)
+      else:
+        names.add(k)
+      
+      for name in names:
+        var argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name
+        var prefix = if nodeIndex == 0: "" else: ", "
+        try:
+          resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
+          body &= "  result." & argName[0].name & " = " & vStr & "\n"
+        except:
+          echo name
+          raise
+        
+        inc nodeIndex
+      
+    resTuple &= "]"
+
+    if resTuple == "tuple[]":
+      echo "Ignoring empty derivative (not implemented?): ", name
+      continue
+
+    let procStr = backward % [info.name, argsStr, resTuple, body]
+    output.writeLine procStr
 
   output.flush()
   output.close()

@@ -199,7 +199,33 @@ template copy*(tensor: Tensor; non_blocking: bool = false): Tensor = tensor.dyna
 
 template is_defined*(tensor: Tensor): bool = tensor.dynamicCppCall("defined").to(bool)
 
+template `-`*(a): Tensor = (-(a.toCpp)).to(ATensor)
+
 template `+`*(a, b: Tensor): Tensor = (a.toCpp + b.toCpp).to(ATensor)
+
+template `+`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp + b.float.toCpp).to(ATensor)
+
+template `*`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp * b.float.toCpp).to(ATensor)
+
+template `/`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp / b.float.toCpp).to(ATensor)
+
+proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline.} =
+  if b.float == 1.0:
+    return a
+  else:
+    return a * b
+
+proc mm_mat1_backward*(grad, mat2: Tensor; sizes, strides: IntList; alpha: float): Tensor =
+  if strides[0] == 1 and strides[1] == sizes[0]:
+    return maybe_multiply(mat2.mm(grad.t()).t(), alpha)
+  else:
+    return maybe_multiply(grad.mm(mat2.t()), alpha)
+
+proc mm_mat2_backward*(grad, mat1: Tensor; sizes, strides: IntList; alpha: float): Tensor =
+  if strides[0] == 1 and strides[1] == sizes[0]:
+    return maybe_multiply(grad.t().mm(mat1).t(), alpha)
+  else:
+    return maybe_multiply(mat1.t().mm(grad), alpha)
 
 template `==`*(a, b: Tensor): bool =  a.dynamicCppCall(equal, b).to(bool)
 
