@@ -199,6 +199,10 @@ template copy*(tensor: Tensor; non_blocking: bool = false): Tensor = tensor.dyna
 
 template is_defined*(tensor: Tensor): bool = tensor.dynamicCppCall("defined").to(bool)
 
+template sizes*(tensor: Tensor): IntList = tensor.dynamicCppCall("sizes").to(IntList)
+
+template strides*(tensor: Tensor): IntList = tensor.dynamicCppCall("strides").to(IntList)
+
 template `-`*(a): Tensor = (-(a.toCpp)).to(ATensor)
 
 template `+`*(a, b: Tensor): Tensor = (a.toCpp + b.toCpp).to(ATensor)

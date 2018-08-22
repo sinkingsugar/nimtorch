@@ -64,11 +64,18 @@ proc validate(validName: var string) =
   
 var generatedProcs = newSeq[ProcInfo]()
 
+# add some known procs we created in torch.nim, don't care about args
+generatedProcs.add(ProcInfo(originalName: "maybe_multiply", name: "maybe_multiply"))
+generatedProcs.add(ProcInfo(originalName: "mm_mat1_backward", name: "mm_mat1_backward"))
+generatedProcs.add(ProcInfo(originalName: "mm_mat2_backward", name: "mm_mat2_backward"))
+generatedProcs.add(ProcInfo(originalName: "sizes", name: "sizes"))
+generatedProcs.add(ProcInfo(originalName: "strides", name: "strides"))
+
 block declarations:
   var output = newFileStream("torch/declarations.nim", fmWrite)
 
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r torch/generator.nim"
+  output.writeLine "# nim c -r torch/generator.nim\n"
 
   # convert from yaml to json to load at compile time, using python3 for now
   let
@@ -319,10 +326,10 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   var output = newFileStream("torch/derivatives.nim", fmWrite)
 
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r torch/generator.nim"
+  output.writeLine "# nim c -r torch/generator.nim\n"
   output.writeLine "import math"
-  output.writeLine "import ../torch"
-  output.writeLine "const M_PI = math.PI"
+  output.writeLine "import ../torch\n"
+  output.writeLine "const M_PI = math.PI\n"
 
   # convert from yaml to json to load at compile time, using python3 for now
   let
@@ -337,14 +344,14 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   let namePeg = peg"""
 full <- dot? {Name} func
 Name <- (validChars)+
-validChars <- \ident / \d+
+validChars <- \ident
 dot <- '.'
 func <- '(' @ ')'
 """
   let nameArgsPeg = peg"""
 full <- {Name} func
 Name <- (validChars)*
-validChars <- \ident / \d+
+validChars <- \ident
 func <- '(' {@} ')'
 """
 
@@ -355,13 +362,13 @@ ws <- \s
 argDelim <- ws? '*' ws? separator?
 argFull <- ws? arg ws? separator?
 arg <- {validChars} ws+ {validChars}
-validChars <- \ident / \d+
+validChars <- \ident
 """
 
   doAssert(exitCode == 0, "Failed to convert derivatives.yaml to JSON, failed with output: " & derJson)
 
   var rootNode = parseJson(derJson)
-  
+
   for node in rootNode:
     if not node.hasKey("name"):
       continue
@@ -427,8 +434,8 @@ validChars <- \ident / \d+
         var names = newSeq[string]()
 
         # k can be multi like: "self, weight, bias"
-        if k.contains(", "):
-          for n in k.split(", "):
+        if k.contains(peg"',' \s?"):
+          for n in k.split(peg"',' \s?"):
             names.add(n)
         else:
           names.add(k)
@@ -470,8 +477,9 @@ validChars <- \ident / \d+
                   nimLikeStr = pre & replacement & post
                   strIndex = endsAt + diff
                   foundMatch = true
+                  break
               
-              if not foundMatch:
+              if not foundMatch: # skip and fail if something is not right
                 echo "proc not found: ", matches[0]
                 break generateProc
           

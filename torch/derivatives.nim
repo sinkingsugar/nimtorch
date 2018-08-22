@@ -1,8 +1,11 @@
 # Automatically generated, to update run again the generator from the torch root path
 # nim c -r torch/generator.nim
+
 import math
 import ../torch
+
 const M_PI = math.PI
+
 proc abs_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = grad * self.sign()
 
@@ -11,9 +14,15 @@ proc acos_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
 
 proc add_bwd*(grad: Tensor, self: Tensor, other: Tensor, alpha: float): tuple[self: Tensor, other: Tensor] =
   result.self = grad
+  result.other = maybe_multiply(grad, alpha)
 
 proc add_bwd*(grad: Tensor, self: Tensor, other: float, alpha: float): tuple[self: Tensor] =
   result.self = grad
+
+proc addbmm_bwd*(grad: Tensor, self: Tensor, batch1: Tensor, batch2: Tensor, beta: float, alpha: float): tuple[self: Tensor, batch1: Tensor, batch2: Tensor] =
+  result.self = maybe_multiply(grad, beta)
+  result.batch1 = grad.unsqueeze(0).expand({ batch1.size(0), batch1.size(1), batch2.size(2) }).bmm(batch2.transpose(1, 2)) * alpha
+  result.batch2 = batch1.transpose(1, 2).bmm(grad.unsqueeze(0).expand({ batch1.size(0), batch1.size(1), batch2.size(2) })) * alpha
 
 proc addcdiv_bwd*(grad: Tensor, self: Tensor, tensor1: Tensor, tensor2: Tensor, value: float): tuple[self: Tensor, tensor1: Tensor, tensor2: Tensor] =
   result.self = grad
@@ -25,6 +34,26 @@ proc addcmul_bwd*(grad: Tensor, self: Tensor, tensor1: Tensor, tensor2: Tensor, 
   result.tensor1 = grad * tensor2 * value
   result.tensor2 = grad * tensor1 * value
 
+proc th_addmm_bwd*(grad: Tensor, self: Tensor, mat1: Tensor, mat2: Tensor, beta: float, alpha: float): tuple[self: Tensor, mat1: Tensor, mat2: Tensor] =
+  result.self = maybe_multiply(grad, beta)
+  result.mat1 = mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha)
+  result.mat2 = mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha)
+
+proc s_native_addmm_bwd*(grad: Tensor, self: Tensor, mat1: Tensor, mat2: Tensor, beta: float, alpha: float): tuple[self: Tensor, mat1: Tensor, mat2: Tensor] =
+  result.self = maybe_multiply(grad, beta)
+  result.mat1 = mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha)
+  result.mat2 = mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha)
+
+proc u_addmv_bwd*(grad: Tensor, self: Tensor, mat: Tensor, vec: Tensor, beta: float, alpha: float): tuple[self: Tensor, mat: Tensor, vec: Tensor] =
+  result.self = maybe_multiply(grad, beta)
+  result.mat = grad.ger(vec) * alpha
+  result.vec = mat.t().mv(grad) * alpha
+
+proc u_addr_bwd*(grad: Tensor, self: Tensor, vec1: Tensor, vec2: Tensor, beta: float, alpha: float): tuple[self: Tensor, vec1: Tensor, vec2: Tensor] =
+  result.self = maybe_multiply(grad, beta)
+  result.vec1 = grad.mv(vec2) * alpha
+  result.vec2 = grad.t().mv(vec1) * alpha
+
 proc alias_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = grad
 
@@ -33,6 +62,11 @@ proc asin_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
 
 proc atan_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = grad / (self * self + 1)
+
+proc baddbmm_bwd*(grad: Tensor, self: Tensor, batch1: Tensor, batch2: Tensor, beta: float, alpha: float): tuple[self: Tensor, batch1: Tensor, batch2: Tensor] =
+  result.self = maybe_multiply(grad, beta)
+  result.batch1 = grad.bmm(batch2.transpose(1, 2)) * alpha
+  result.batch2 = batch1.transpose(1, 2).bmm(grad) * alpha
 
 proc bernoulli_bwd*(grad: Tensor, self: Tensor, p: float64, generator: pointer): tuple[self: Tensor] =
   result.self = zeros_like(grad)
@@ -70,9 +104,6 @@ proc conv_tbc_bwd*(grad: Tensor, self: Tensor, weight: Tensor, bias: Tensor, pad
   result.self = conv_tbc_backward(grad, self, weight, bias, pad)
   result.weight = conv_tbc_backward(grad, self, weight, bias, pad)
   result.bias = conv_tbc_backward(grad, self, weight, bias, pad)
-
-proc u_ctc_loss_bwd*(grad: Tensor, log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64): tuple[log_probs: Tensor] =
-  result.log_probs = u_ctc_loss_backward(grad, log_probs, targets, input_lengths, target_lengths, result0, result1, blank)
 
 proc adiv_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] =
   result.self = grad / other
@@ -143,14 +174,6 @@ proc ger_bwd*(grad: Tensor, self: Tensor, vec2: Tensor): tuple[self: Tensor, vec
   result.self = grad.mv(vec2)
   result.vec2 = grad.t().mv(self)
 
-proc grid_sampler_2d_bwd*(grad: Tensor, input: Tensor, grid: Tensor, interpolation_mode: int64, padding_mode: int64): tuple[input: Tensor, grid: Tensor] =
-  result.input = grid_sampler_2d_backward(grad, input, grid, interpolation_mode, padding_mode)
-  result.grid = grid_sampler_2d_backward(grad, input, grid, interpolation_mode, padding_mode)
-
-proc grid_sampler_3d_bwd*(grad: Tensor, input: Tensor, grid: Tensor, interpolation_mode: int64, padding_mode: int64): tuple[input: Tensor, grid: Tensor] =
-  result.input = grid_sampler_3d_backward(grad, input, grid, interpolation_mode, padding_mode)
-  result.grid = grid_sampler_3d_backward(grad, input, grid, interpolation_mode, padding_mode)
-
 proc gt_u_bwd*(grad: Tensor, self: Tensor, other: float): tuple[self: Tensor] =
   result.self = zeros_like(self)
 
@@ -163,14 +186,14 @@ proc index_add_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, sou
   result.source = grad.index_select(dim, index)
 
 proc index_copy_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, source: Tensor): tuple[self: Tensor, source: Tensor] =
-  result.self = grad.clone().index_fill_uu(dim, index, 0)
+  result.self = grad.clone().index_fill_u(dim, index, 0)
   result.source = grad.index_select(dim, index)
 
 proc index_fill_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, value: float): tuple[self: Tensor] =
-  result.self = grad.clone().index_fill_uu(dim, index, 0)
+  result.self = grad.clone().index_fill_u(dim, index, 0)
 
 proc index_fill_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, value: Tensor): tuple[self: Tensor, value: Tensor] =
-  result.self = grad.clone().index_fill_uu(dim, index, 0)
+  result.self = grad.clone().index_fill_u(dim, index, 0)
   result.value = grad.index_select(dim, index).sum()
 
 proc inverse_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
@@ -212,28 +235,32 @@ proc lt_u_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, o
   result.other = zeros_like(other)
 
 proc masked_fill_u_bwd*(grad: Tensor, self: Tensor, mask: Tensor, value: float): tuple[self: Tensor] =
-  result.self = grad.clone().masked_fill_uu(mask, 0)
+  result.self = grad.clone().masked_fill_u(mask, 0)
 
 proc masked_fill_u_bwd*(grad: Tensor, self: Tensor, mask: Tensor, value: Tensor): tuple[self: Tensor, value: Tensor] =
-  result.self = grad.clone().masked_fill_uu(mask, 0)
+  result.self = grad.clone().masked_fill_u(mask, 0)
   result.value = where(mask, grad, zeros_like(grad)).sum()
 
 proc masked_scatter_u_bwd*(grad: Tensor, self: Tensor, mask: Tensor, source: Tensor): tuple[self: Tensor, source: Tensor] =
-  result.self = grad.clone().masked_fill_uu(mask, 0)
+  result.self = grad.clone().masked_fill_u(mask, 0)
 
 proc masked_select_bwd*(grad: Tensor, self: Tensor, mask: Tensor): tuple[self: Tensor] =
   result.self = zeros_like(self).masked_scatter_u(mask, grad)
 
 proc max_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] =
-  result.self = grad.clone().masked_fill_uu(self <= other, 0)
-  result.other = grad.clone().masked_fill_uu(self > other, 0)
+  result.self = grad.clone().masked_fill_u(self <= other, 0)
+  result.other = grad.clone().masked_fill_u(self > other, 0)
 
 proc mean_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = grad.expand(self.sizes()) / self.numel()
 
 proc min_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] =
-  result.self = grad.clone().masked_fill_uu(self >= other, 0)
-  result.other = grad.clone().masked_fill_uu(self < other, 0)
+  result.self = grad.clone().masked_fill_u(self >= other, 0)
+  result.other = grad.clone().masked_fill_u(self < other, 0)
+
+proc u_mm_bwd*(grad: Tensor, self: Tensor, mat2: Tensor): tuple[self: Tensor, mat2: Tensor] =
+  result.self = mm_mat1_backward(grad, mat2, self.sizes(), self.strides(), 1)
+  result.mat2 = mm_mat2_backward(grad, self, mat2.sizes(), mat2.strides(), 1)
 
 proc mul_bwd*(grad: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] =
   result.self = grad * other
@@ -294,11 +321,11 @@ proc rsqrt_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = -0.5 * grad * result.pow(3)
 
 proc scatter_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, src: Tensor): tuple[self: Tensor, src: Tensor] =
-  result.self = grad.clone().scatter_uu(dim, index, 0)
+  result.self = grad.clone().scatter_u(dim, index, 0)
   result.src = grad.gather(dim, index)
 
 proc scatter_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, value: float): tuple[self: Tensor] =
-  result.self = grad.clone().scatter_uu(dim, index, 0)
+  result.self = grad.clone().scatter_u(dim, index, 0)
 
 proc scatter_add_u_bwd*(grad: Tensor, self: Tensor, dim: int64, index: Tensor, src: Tensor): tuple[self: Tensor, src: Tensor] =
   result.self = grad
@@ -426,7 +453,7 @@ proc soft_margin_loss_forward_bwd*(grad: Tensor, self: Tensor, target: Tensor, r
 proc relu_bwd*(grad: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = threshold_backward(grad, self, 0, 0)
 
-proc elu_forward_bwd*(grad: Tensor, self: Tensor, alpha: float, scale: float, input_scale: float): tuple[self: Tensor] =
+proc elu_forward_bwd*(grad: Tensor, self: Tensor, alpha: float, scale: float): tuple[self: Tensor] =
   result.self = elu_backward(grad, alpha, scale, input_scale, output)
 
 proc glu_forward_bwd*(grad: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] =
@@ -639,7 +666,7 @@ proc avg_pool3d_backward_bwd*(grad: Tensor, grad_output: Tensor, self: Tensor, k
   result.grad_output = avg_pool3d(grad, kernel_size, stride, padding, ceil_mode, count_include_pad)
   result.self = zeros_like(self)
 
-proc elu_backward_bwd*(grad: Tensor, grad_output: Tensor, alpha: float, scale: float, input_scale: float, output: Tensor): tuple[grad_output: Tensor, output: Tensor] =
+proc elu_backward_bwd*(grad: Tensor, grad_output: Tensor, alpha: float, scale: float, output: Tensor): tuple[grad_output: Tensor, output: Tensor] =
   result.grad_output = elu_backward(grad, alpha, scale, input_scale, output)
 
 proc hardtanh_backward_bwd*(grad: Tensor, grad_output: Tensor, self: Tensor, min_val: float, max_val: float): tuple[grad_output: Tensor, self: Tensor] =
@@ -732,9 +759,6 @@ proc u_tanh_backward_bwd*(grad: Tensor, grad_output: Tensor, output: Tensor): tu
   result.grad_output = u_tanh_backward(grad, output)
   result.output = -2 * output * grad * grad_output
 
-proc u_cudnn_ctc_loss_bwd*(grad: Tensor, log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64, deterministic: bool): tuple[log_probs: Tensor] =
-  result.log_probs = result1
-
 proc cudnn_convolution_transpose_bwd*(grad: Tensor, self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, output_padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   result.self = cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
   result.weight = cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
@@ -777,6 +801,9 @@ proc mkldnn_convolution_bwd*(grad: Tensor, self: Tensor, weight: Tensor, bias: T
   result.self = mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
   result.weight = mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
   result.bias = mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
+
+proc unbind_bwd*(grad: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] =
+  result.self = stack(to_tensor_list(grads), dim)
 
 proc stack_bwd*(grad: Tensor, tensors: TensorList, dim: int64): tuple[tensors: TensorList] =
   result.tensors = unbind(grad, dim)
