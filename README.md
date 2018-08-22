@@ -10,11 +10,14 @@ Aiming to be mostly auto-generated, internally using ATen.
 
 ## Current status
 
+**Early stage**
+
 - [x] Automatically generated, from `Declarations.yaml`, the full ATen's API
 - [x] Cuda support
 - [x] WASM support
 - [ ] Automatically generated, from `derivatives.yaml`, gradient procs
 - [ ] Autograd
+- [ ] High level pytorch API (Module, Models etc)
 - [ ] ...
 
 The final aim is to be as compatible as possible with the pytorch API
@@ -78,14 +81,15 @@ Windows was tested and works, instructions should be similar to linux.
 
 ### Easy way
 
-1. Build ATen libraries, in this example for cuda8/ubuntu16.04 kind of system (will work on other distros as well)
-  1. Make sure you have a system with docker installed
-  2. `cd docker && cd docker-cuda8-ubuntu16.04`
-  3. `docker build -t aten_cuda8_ubuntu16lts .`
-  4. `docker run --name aten_cuda8_ubuntu16lts-temp -d aten_cuda8_ubuntu16lts /bin/bash`
-  5. `docker cp aten_cuda8_ubuntu16lts-temp:/root/pytorch/aten/built/output output`
-  6. `docker rm aten_cuda8_ubuntu16lts-temp`
-  7. Profit your *output* folder
+*Build ATen libraries, in this example for cuda8/ubuntu16.04 kind of system (will work on other distros as well)*
+
+1. Make sure you have a system with docker installed
+2. `cd docker && cd docker-cuda8-ubuntu16.04`
+3. `docker build -t aten_cuda8_ubuntu16lts .`
+4. `docker run --name aten_cuda8_ubuntu16lts-temp -d aten_cuda8_ubuntu16lts /bin/bash`
+5. `docker cp aten_cuda8_ubuntu16lts-temp:/root/pytorch/aten/built/output output`
+6. `docker rm aten_cuda8_ubuntu16lts-temp`
+7. Profit your *output* folder
   
 ### Hard way
 
