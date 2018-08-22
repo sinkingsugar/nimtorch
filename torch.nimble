@@ -4,6 +4,8 @@ version     = "0.1.19"
 author      = "Giovanni Petrantoni"
 description = "A nim flavor of pytorch"
 license     = "MIT"
+skipDirs = @["docker"]
+skipFiles = @[".gitlab-ci.yml"]
 
 # Deps
 
