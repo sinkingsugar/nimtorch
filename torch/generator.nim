@@ -22,6 +22,7 @@ type
     originalName: string
     name: string
     args: seq[ArgInfo]
+    returnsTuple: bool
 
   MethodOfKind = enum
     Type, Tensor, Namespace
@@ -173,6 +174,8 @@ block declarations:
           output.writeLine ofTemplateTo % [validName, outputType, name, argsStr1, argsStr2, "to(" & outputType & ")", deprecatedStr]
           
         elif node["returns"].len > 1: # tuple, a bit ugly tho
+          procInfo.returnsTuple = true
+          
           var
             tupleStr = ""
             convertStr = ""
@@ -385,6 +388,9 @@ validChars <- \ident
       argsStr &= ", " & arg.name & ": " & arg.nimType
     
     block generateProc:
+      if info.returnsTuple:
+        break generateProc
+
       var nodeIndex = 0
       for k,v in node:
         let vStr = v.getStr().replace("at::", "") # also remove any at:: prefix
@@ -417,6 +423,7 @@ validChars <- \ident
             while true:
               var
                 foundMatch = false
+                hasTuple = false
                 (foundAt, endsAt) = nimLikeStr.findBounds(namePeg, matches, strIndex)
               
               if foundAt == -1:
@@ -437,11 +444,18 @@ validChars <- \ident
                   nimLikeStr = pre & replacement & post
                   strIndex = endsAt + diff
                   foundMatch = true
+                  hasTuple = procInfo.returnsTuple
                   break
               
               if not foundMatch: # skip and fail if something is not right
                 echo "proc not found: ", matches[0]
                 break generateProc
+
+              if hasTuple: # skip and fail if something is not right
+                echo "proc has not yet implemented tuple: ", matches[0]
+                break generateProc
+
+            nimLikeStr = nimLikeStr.replace("result", "self")
           
             body &= "  result." & argName[0].name & " = " & nimLikeStr & "\n"
           except:
