@@ -14,23 +14,6 @@ defineCppType(AGenerator, "at::Generator", "ATen/ATen.h")
 defineCppType(AContext, "at::Context", "ATen/ATen.h")
 defineCppType(ATensors, "std::vector<at::Tensor>", "vector")  
 
-# hard coded tuples, find for now, if they increase need to do something
-defineCppType(ATensorTuple2, "std::tuple<at::Tensor, at::Tensor>")
-defineCppType(ATensorRTuple2, "std::tuple<at::Tensor&, at::Tensor&>")
-defineCppType(ATensorTuple3, "std::tuple<at::Tensor, at::Tensor, at::Tensor>")
-defineCppType(ATensorRTuple3, "std::tuple<at::Tensor&, at::Tensor&, at::Tensor&>")
-defineCppType(ATensorTuple4, "std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>")
-defineCppType(ATensorRTuple4, "std::tuple<at::Tensor&, at::Tensor&, at::Tensor&, at::Tensor&>")
-defineCppType(ATensorTuple5, "std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>")
-defineCppType(ATensorRTuple5, "std::tuple<at::Tensor&, at::Tensor&, at::Tensor&, at::Tensor&, at::Tensor&>")
-defineCppType(ATensorTuple3v1, "std::tuple<at::Tensor, at::Tensor, at::Tensor, std::vector<at::Tensor>>")
-
-# cpp utils
-defineCppType(StdString, "std::string", "string")
-converter toStdString*(s: string): StdString {.inline, noinit.} = cppinit(StdString, s.cstring)
-
-proc cppTupleGet[T](index: int; obj: CppProxy): T {.importcpp: "std::get<#>(#)".}
-
 # some issues generating static[int] in cpp
 type
   StdArray* {.importcpp: "std::array<'0, '1>", header: "array".} [T; S: static[int]] = object

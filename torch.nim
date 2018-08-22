@@ -59,21 +59,6 @@ template `@`*[IDX](a: array[IDX, SomeInteger]): IntList =
   # cannot use cppinit for some reasons
   dynamicCCall("at::IntList", cast[ptr ilsize](addr(res)), res.len.csize)
 
-proc toNimTensorTuple(cppTuple: ATensorTuple2 | ATensorRTuple2): (Tensor, Tensor) {.inline, noinit.} =
-  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp))
-
-proc toNimTensorTuple(cppTuple: ATensorTuple3 | ATensorRTuple3): (Tensor, Tensor, Tensor) {.inline, noinit.} =
-  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp), cppTupleGet[Tensor](2, cppTuple.toCpp))
-  
-proc toNimTensorTuple(cppTuple: ATensorTuple4 | ATensorRTuple4): (Tensor, Tensor, Tensor, Tensor) {.inline, noinit.} =
-  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp), cppTupleGet[Tensor](2, cppTuple.toCpp), cppTupleGet[Tensor](3, cppTuple.toCpp))
-
-proc toNimTensorTuple(cppTuple: ATensorTuple5 | ATensorRTuple5): (Tensor, Tensor, Tensor, Tensor, Tensor) {.inline, noinit.} =
-  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp), cppTupleGet[Tensor](2, cppTuple.toCpp), cppTupleGet[Tensor](3, cppTuple.toCpp), cppTupleGet[Tensor](4, cppTuple.toCpp))
-
-proc toNimTensorTuple(cppTuple: ATensorTuple3v1): (Tensor, Tensor, Tensor, TensorList) {.inline, noinit.} =
-  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp), cppTupleGet[Tensor](2, cppTuple.toCpp), cppTupleGet[TensorList](3, cppTuple.toCpp))
-
 # Auto generated #
 # append all the auto generated procs
 include torch/declarations

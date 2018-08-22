@@ -174,10 +174,8 @@ block declarations:
           
         elif node["returns"].len > 1: # tuple, a bit ugly tho
           var
-            tupleStr = "("
+            tupleStr = ""
             convertStr = ""
-            isRef = false
-            hasVector = false
           
           let returnsHigh = node["returns"].len - 1
           for i in 0..returnsHigh:
@@ -185,52 +183,14 @@ block declarations:
               res = node["returns"][i]["dynamic_type"].getStr()
               resType = node["returns"][i]["type"].getStr()
             
-            # quite hard coded behavior for now...
-            # reason is we hard coded tuples in torch_cpp
-            # not a problem since it's very few and probably rare to increase/change
-            # if maintenance cost/time is too high lets soft code it
-            
-            if resType == "Tensor &":
-              isRef = true
-            
-            if res == "TensorList":
-              hasVector = true
-            
             tupleStr &= toNimType(res)
             
             if i != returnsHigh:
               tupleStr &= ", "
             else:
-              tupleStr &= ")"
-              
-              case returnsHigh
-              of 1:
-                if isRef:
-                  convertStr = "to(ATensorRTuple2).toNimTensorTuple()"
-                else:
-                  convertStr = "to(ATensorTuple2).toNimTensorTuple()"
-              of 2:
-                if isRef:
-                  convertStr = "to(ATensorRTuple3).toNimTensorTuple()"
-                else:
-                  convertStr = "to(ATensorTuple3).toNimTensorTuple()"
-              of 3:
-                if hasVector:
-                  convertStr = "to(ATensorTuple3v1).toNimTensorTuple()"
-                else:
-                  if isRef:
-                    convertStr = "to(ATensorRTuple4).toNimTensorTuple()"
-                  else:
-                    convertStr = "to(ATensorTuple4).toNimTensorTuple()"
-              of 4:
-                if isRef:
-                  convertStr = "to(ATensorRTuple5).toNimTensorTuple()"
-                else:
-                  convertStr = "to(ATensorTuple5).toNimTensorTuple()"
-              else:
-                raise newException(InvalidReturnException, "Not implemented tuple size")
+              convertStr = "to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr & "]).toNimTuple()"
             
-          output.writeLine ofTemplateTo % [validName, tupleStr, name, argsStr1, argsStr2, convertStr, deprecatedStr]
+          output.writeLine ofTemplateTo % [validName, "(" & tupleStr & ")", name, argsStr1, argsStr2, convertStr, deprecatedStr]
             
         else:
           raise newException(InvalidReturnException, "Not implemented returns length")
