@@ -462,17 +462,13 @@ validChars <- \ident / \d+
                   # replace
                   let
                     pre = nimLikeStr[0..foundAt - 1]
-                    post = nimLikeStr[foundAt + matches[0].len + 1..^1]
-                    toReplace = nimLikeStr[foundAt..foundAt + matches[0].len]
+                    post = nimLikeStr[endsAt + 1..^1]
+                    toReplace = nimLikeStr[foundAt..endsAt]
                     replacement = toReplace.replace(matches[0], procInfo.name)
-                    diff = replacement.len - matches[0].len
+                    diff = replacement.len - toReplace.len
                   
-                  echo toReplace, " > ", pre, replacement, post
-
                   nimLikeStr = pre & replacement & post
-
                   strIndex = endsAt + diff
-                  
                   foundMatch = true
               
               if not foundMatch:
