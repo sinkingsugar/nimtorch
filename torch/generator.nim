@@ -497,6 +497,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           # replace int lists {} to our @[]
           nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
 
+          body &= "  discard cppctor(addr(result." & argName[0].name & "))\n"
           body &= "  result." & argName[0].name & " = " & nimLikeStr & "\n"
           
           inc nodeIndex
