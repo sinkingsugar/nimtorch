@@ -427,8 +427,8 @@ proc soft_margin_loss_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, targe
 proc relu_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = threshold_backward(grad, self, 0, 0)
 
-proc elu_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, alpha: float, scale: float): tuple[self: Tensor] =
-  result.self = elu_backward(grad, alpha, scale, fwd_result)
+proc elu_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, alpha: float, scale: float, input_scale: float): tuple[self: Tensor] =
+  result.self = elu_backward(grad, alpha, scale, input_scale, fwd_result)
 
 proc glu_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] =
   result.self = glu_backward(grad, self, dim)

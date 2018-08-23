@@ -6,6 +6,7 @@ type
   TensorType* = AType
   TensorList* = ATensors
   IntList* = AIntList
+  torch = distinct pointer
   
   Device* {.pure.} = enum
     CPU, CUDA
@@ -123,10 +124,10 @@ proc internalZeros(size: openarray[ilsize]; dtype: TensorKind; device: Device = 
         of IntTensor: return ACPU(ATkInt).dynamicCppCall(zeros, shape)
         of LongTensor: return ACPU(ATkLong).dynamicCppCall(zeros, shape)
 
-proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]): Tensor {.inline.} = internalZeros(size)
-proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]; device: Device): Tensor {.inline.} = internalZeros(size, device)
-proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]; dtype: TensorKind): Tensor {.inline.} = internalZeros(size, dtype)
-proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]; dtype: TensorKind; device: Device): Tensor {.inline.} = internalZeros(size, dtype, device)
+proc zeros*[T: SomeInteger](_: typedesc[torch]; size: varargs[T, toIntListType]): Tensor {.inline.} = internalZeros(size)
+proc zeros*[T: SomeInteger](_: typedesc[torch]; size: varargs[T, toIntListType]; device: Device): Tensor {.inline.} = internalZeros(size, device)
+proc zeros*[T: SomeInteger](_: typedesc[torch]; size: varargs[T, toIntListType]; dtype: TensorKind): Tensor {.inline.} = internalZeros(size, dtype)
+proc zeros*[T: SomeInteger](_: typedesc[torch]; size: varargs[T, toIntListType]; dtype: TensorKind; device: Device): Tensor {.inline.} = internalZeros(size, dtype, device)
 
 iterator lenIter[T](s: openarray[T]): int {.inline.} =
   ## Inline iterator on any-depth seq or array
@@ -148,7 +149,7 @@ iterator flatIter[T](s: openarray[T]): auto {.inline.} =
     else:
       yield item
 
-proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
+proc tensor*(_: typedesc[torch]; data: openarray; dtype: TensorKind; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
   # as noticed in Arraymancer as well:
   ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
@@ -174,8 +175,8 @@ proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; du
   of Device.CUDA: return ACUDA(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: return ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
-  return tensor(data, defaultType, device)
+proc tensor*(_: typedesc[torch]; data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
+  return tensor(torch, data, defaultType, device)
 
 template getType*(tensor: Tensor): TensorType = tensor.dynamicCppCall("type").to(TensorType)
 
@@ -322,10 +323,10 @@ proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device:
   of Device.CUDA: return ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeq(s, size)
-proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeq(s, size, device)
-proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromArray(s, size)
-proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromArray(s, size, device)
+proc fromSeq*[T; I: SomeInteger](_: typedesc[torch]; s: var seq[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeq(s, size)
+proc fromSeq*[T; I: SomeInteger](_: typedesc[torch]; s: var seq[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeq(s, size, device)
+proc fromArray*[T; I: SomeInteger](_: typedesc[torch]; s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromArray(s, size)
+proc fromArray*[T; I: SomeInteger](_: typedesc[torch]; s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromArray(s, size, device)
 
 proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.toCpp()[index].to(ATensor)
 
@@ -475,7 +476,8 @@ when isMainModule:
     (i_r, i_i, i_nn) = gi.chunk(3, 2)
     (h_r, h_i, h_n) = gh.chunk(3, 2)
     resetgate = (i_r + h_r).sigmoid_u()
-    inputgate = torch.sigmoid_u(i_i + h_i)
+    presigmoid = i_i + h_i
+    inputgate = torch.sigmoid_u(presigmoid)
     newgate = (i_nn + resetgate * h_n).tanh_u()
     hy = newgate + inputgate * (hidden - newgate)
 
@@ -485,7 +487,7 @@ when isMainModule:
     tos = toSeq[float32](hy)
     froms = torch.fromSeq(tos, 2, 3, 2)
     
-  var (ra, rb) = prelu_backward(gi, gh, hy, @[true, true])
+  var (ra, rb) = torch.prelu_backward(gi, gh, hy, @[true, true])
   
 
   echo tos
@@ -512,7 +514,8 @@ when isMainModule:
       (i_r, i_i, i_nn) = gi.chunk(3, 2)
       (h_r, h_i, h_n) = gh.chunk(3, 2)
       resetgate = (i_r + h_r).sigmoid()
-      inputgate = torch.sigmoid(i_i + h_i)
+      presigmoid = i_i + h_i
+      inputgate = torch.sigmoid(presigmoid)
       newgate = (i_nn + resetgate * h_n).tanh()
       hy = newgate + inputgate * (hidden - newgate)
 

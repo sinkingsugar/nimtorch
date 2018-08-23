@@ -6,8 +6,8 @@ import os, strutils, macros, osproc, json, sequtils, streams, pegs
 
 const
   ofTensorTo = "template $1*(self: Tensor$4): $2 $7= self.dynamicCppCall(\"$3\"$5).$6"
-  ofTypeTo = "template $1*(ty: TensorType, $4): $2 $7= ty.dynamicCppCall(\"$3\"$5).$6"
-  ofNamespaceTo = "template $1*($4): $2 $7= dynamicCCall(\"at::$3\"$5).$6"
+  ofTypeTo = "template $1*(ty: TensorType; $4): $2 $7= ty.dynamicCppCall(\"$3\"$5).$6"
+  ofNamespaceTo = "template $1*(_: typedesc[torch]; $4): $2 $7= dynamicCCall(\"at::$3\"$5).$6"
   backward = "proc $1_bwd*(grad, fwd_result: Tensor$2): $3 =$4"
 
 static:
@@ -24,7 +24,7 @@ type
     name: string
     args: seq[ArgInfo]
     returnsTuple: bool
-    ofTensor: bool
+    kind: MethodOfKind
 
   MethodOfKind = enum
     Type, Tensor, Namespace
@@ -222,7 +222,7 @@ block declarations:
       var validName = name
       validName.validate()
 
-      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo](), ofTensor: true)
+      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo](), kind: Tensor)
 
       # in Tensor kind add Tensor self
       procInfo.args.add(ArgInfo(originalName: "self", name: "self", nimType: "Tensor"))
@@ -232,6 +232,7 @@ block declarations:
       for i in 0..arguments.high:
         var
           nimType = toNimType(arguments[i]["dynamic_type"].getStr())
+          isRef = arguments[i]["type"].getStr().contains(peg"\ident \s? '&'")
           argName = arguments[i]["name"].getStr()
           originalName = argName
           defaultStr = ""
@@ -243,7 +244,7 @@ block declarations:
         
         fillArgumentDefaults()
         
-        argsStr1 &= ", $1: $2$3" % [argName, nimType, defaultStr]
+        argsStr1 &= ", $1: $2$3" % [argName, if isRef: "var " & nimType else: nimType, defaultStr]
         argsStr2 &= ", $1" % [argName]
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
@@ -259,13 +260,14 @@ block declarations:
       var validName = name
       validName.validate()
 
-      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo]())
+      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo](), kind: Type)
       
       var argsStr1 = ""
       var argsStr2 = ""
       for i in 0..arguments.high:
         var
           nimType = toNimType(arguments[i]["dynamic_type"].getStr())
+          isRef = arguments[i]["type"].getStr().contains(peg"\ident \s? '&'")
           argName = arguments[i]["name"].getStr()
           originalName = argName
           defaultStr = ""
@@ -275,7 +277,7 @@ block declarations:
         fillArgumentDefaults()
         
         var prefix = if i == 0: "" else: ", "
-        argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
+        argsStr1 &= prefix & "$1: $2$3" % [argName, if isRef: "var " & nimType else: nimType, defaultStr]
         argsStr2 &= ", $1" % [argName]
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
@@ -284,20 +286,21 @@ block declarations:
 
       generatedProcs.add(procInfo)
         
-    if methodKind.contains(Namespace) and not methodKind.contains(Tensor):
+    if methodKind.contains(Namespace):
       if arguments.len > 0:
         validateArguments()
       
       var validName = name
       validName.validate()
 
-      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo]())
+      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo](), kind: Namespace)
       
       var argsStr1 = ""
       var argsStr2 = ""
       for i in 0..arguments.high:
         var
           nimType = toNimType(arguments[i]["dynamic_type"].getStr())
+          isRef = arguments[i]["type"].getStr().contains(peg"\ident \s? '&'")
           argName = arguments[i]["name"].getStr()
           originalName = argName
           defaultStr = ""
@@ -307,7 +310,7 @@ block declarations:
         fillArgumentDefaults()
         
         var prefix = if i == 0: "" else: ", "
-        argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
+        argsStr1 &= prefix & "$1: $2$3" % [argName, if isRef: "var " & nimType else: nimType, defaultStr]
         argsStr2 &= ", $1" % [argName]
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
