@@ -117,6 +117,32 @@ proc zeros*(_: typedesc[torch]; intList: IntList; dtype: TensorKind; device: Dev
   of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
   return torch.zeros(intList, opts)
 
+proc ones*(_: typedesc[torch]; intList: IntList): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  return torch.ones(intList, opts)
+
+proc ones*(_: typedesc[torch]; intList: IntList; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.ones(intList, opts)
+
+proc ones*(_: typedesc[torch]; intList: IntList; dtype: TensorKind): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  return torch.ones(intList, opts)
+
+proc ones*(_: typedesc[torch]; intList: IntList; dtype: TensorKind; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.ones(intList, opts)
+
 iterator lenIter[T](s: openarray[T]): int {.inline.} =
   ## Inline iterator on any-depth seq or array
   ## Returns values in order
