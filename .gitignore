@@ -2,3 +2,5 @@ nimcache*
 artifacts
 a.out
 torch/generator
+nimtorch
+test

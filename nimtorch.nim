@@ -6,7 +6,7 @@ type
   TensorType* = AType
   TensorList* = ATensors
   IntList* = AIntList
-  torch = distinct pointer
+  torch* = distinct pointer
   
   Device* {.pure.} = enum
     CPU, CUDA
@@ -212,23 +212,23 @@ template `*`*(a: SomeNumber; b: Tensor): Tensor = (a.float.toCpp * b.toCpp).to(A
 
 template `/`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp / b.float.toCpp).to(ATensor)
 
-proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline.} =
+proc maybe_multiply*(_: typedesc[torch]; a: Tensor; b: SomeNumber): Tensor {.inline.} =
   if b.float == 1.0:
     return a
   else:
     return a * b
 
-proc mm_mat1_backward*(grad, mat2: Tensor; sizes, strides: IntList; alpha: float): Tensor =
+proc mm_mat1_backward*(_: typedesc[torch]; grad, mat2: Tensor; sizes, strides: IntList; alpha: float): Tensor =
   if strides[0] == 1 and strides[1] == sizes[0]:
-    return maybe_multiply(mat2.mm(grad.t()).t(), alpha)
+    return torch.maybe_multiply(mat2.mm(grad.t()).t(), alpha)
   else:
-    return maybe_multiply(grad.mm(mat2.t()), alpha)
+    return torch.maybe_multiply(grad.mm(mat2.t()), alpha)
 
-proc mm_mat2_backward*(grad, mat1: Tensor; sizes, strides: IntList; alpha: float): Tensor =
+proc mm_mat2_backward*(_: typedesc[torch]; grad, mat1: Tensor; sizes, strides: IntList; alpha: float): Tensor =
   if strides[0] == 1 and strides[1] == sizes[0]:
-    return maybe_multiply(grad.t().mm(mat1).t(), alpha)
+    return torch.maybe_multiply(grad.t().mm(mat1).t(), alpha)
   else:
-    return maybe_multiply(mat1.t().mm(grad), alpha)
+    return torch.maybe_multiply(mat1.t().mm(grad), alpha)
 
 template `==`*(a, b: Tensor): bool =  a.dynamicCppCall(equal, b).to(bool)
 

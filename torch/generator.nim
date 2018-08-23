@@ -68,11 +68,12 @@ proc validate(validName: var string) =
 var generatedProcs = newSeq[ProcInfo]()
 
 # add some known procs we created in torch.nim, don't care about args
-generatedProcs.add(ProcInfo(originalName: "maybe_multiply", name: "maybe_multiply"))
-generatedProcs.add(ProcInfo(originalName: "mm_mat1_backward", name: "mm_mat1_backward"))
-generatedProcs.add(ProcInfo(originalName: "mm_mat2_backward", name: "mm_mat2_backward"))
-generatedProcs.add(ProcInfo(originalName: "sizes", name: "sizes"))
-generatedProcs.add(ProcInfo(originalName: "strides", name: "strides"))
+generatedProcs.add(ProcInfo(originalName: "maybe_multiply", name: "maybe_multiply", kind: Namespace))
+generatedProcs.add(ProcInfo(originalName: "mm_mat1_backward", name: "mm_mat1_backward", kind: Namespace))
+generatedProcs.add(ProcInfo(originalName: "mm_mat2_backward", name: "mm_mat2_backward",kind: Namespace))
+generatedProcs.add(ProcInfo(originalName: "sizes", name: "sizes", kind: Tensor))
+generatedProcs.add(ProcInfo(originalName: "strides", name: "strides", kind: Tensor))
+generatedProcs.add(ProcInfo(originalName: "type", name: "getType", kind: Tensor))
 
 block declarations:
   var output = newFileStream("torch/declarations.nim", fmWrite)
@@ -232,7 +233,6 @@ block declarations:
       for i in 0..arguments.high:
         var
           nimType = toNimType(arguments[i]["dynamic_type"].getStr())
-          isRef = arguments[i]["type"].getStr().contains(peg"\ident \s? '&'")
           argName = arguments[i]["name"].getStr()
           originalName = argName
           defaultStr = ""
@@ -244,7 +244,7 @@ block declarations:
         
         fillArgumentDefaults()
         
-        argsStr1 &= ", $1: $2$3" % [argName, if isRef: "var " & nimType else: nimType, defaultStr]
+        argsStr1 &= ", $1: $2$3" % [argName, nimType, defaultStr]
         argsStr2 &= ", $1" % [argName]
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
@@ -267,7 +267,6 @@ block declarations:
       for i in 0..arguments.high:
         var
           nimType = toNimType(arguments[i]["dynamic_type"].getStr())
-          isRef = arguments[i]["type"].getStr().contains(peg"\ident \s? '&'")
           argName = arguments[i]["name"].getStr()
           originalName = argName
           defaultStr = ""
@@ -277,7 +276,7 @@ block declarations:
         fillArgumentDefaults()
         
         var prefix = if i == 0: "" else: ", "
-        argsStr1 &= prefix & "$1: $2$3" % [argName, if isRef: "var " & nimType else: nimType, defaultStr]
+        argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
         argsStr2 &= ", $1" % [argName]
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
@@ -300,7 +299,6 @@ block declarations:
       for i in 0..arguments.high:
         var
           nimType = toNimType(arguments[i]["dynamic_type"].getStr())
-          isRef = arguments[i]["type"].getStr().contains(peg"\ident \s? '&'")
           argName = arguments[i]["name"].getStr()
           originalName = argName
           defaultStr = ""
@@ -310,7 +308,7 @@ block declarations:
         fillArgumentDefaults()
         
         var prefix = if i == 0: "" else: ", "
-        argsStr1 &= prefix & "$1: $2$3" % [argName, if isRef: "var " & nimType else: nimType, defaultStr]
+        argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
         argsStr2 &= ", $1" % [argName]
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
@@ -328,7 +326,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
   output.writeLine "# nim c -r torch/generator.nim\n"
   output.writeLine "import math"
-  output.writeLine "import ../torch\n"
+  output.writeLine "import ../nimtorch\n"
   output.writeLine "const M_PI = math.PI\n"
 
   # convert from yaml to json to load at compile time, using python3 for now
@@ -364,6 +362,14 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
     arg <- {validChars} ws+ {validChars}
     validChars <- \ident
     """
+
+  # generate replacements for calls from ATen/pytorch to nim 
+  var replacements = newSeq[tuple[pattern: Peg, repl: string]]()
+  for p in generatedProcs:
+    case p.kind
+    of Tensor: replacements.add((peg("'.' '" & p.originalName & "' '('"), "." & p.name & "("))
+    of Namespace: replacements.add((peg("!'.' '" & p.originalName & "' '('"), "torch." & p.name & "("))
+    else: discard
   
   let callPeg = peg"','? \s? \ident+"
 
@@ -413,7 +419,9 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
                 info = candidate
                 break findCandidate
     
-    assert(info.name != "", nameFull)
+    if info.name == "":
+      echo "Ignoring not found declaration: ", name
+      continue
 
     # at this point we know of which Declarations.yaml proc we are talking about
 
@@ -434,7 +442,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
 
       var nodeIndex = 0
       for k,v in node:
-        let vStr = v.getStr().replace("at::", "") # also remove any at:: prefix
+        let vStr = v.getStr().replace("at::", "") # also remove any at::prefix
         if k == "name" or vStr.startsWith("not_implemented"):
           continue
 
@@ -455,63 +463,31 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           try:
             resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
 
-            # this is amazing :)            
-            var
-              nimLikeStr = vStr
-              strIndex = 0
-              matches: array[20, string]
-
-            while true:
-              var
-                foundMatch = false
-                hasTuple = false
-                (foundAt, endsAt) = nimLikeStr.findBounds(namePeg, matches, strIndex)
+            var nimLikeStr = vStr
+            
+            # make sure we got all procs we need nim side
+            var neededProcs = nimLikeStr.findAll(namePeg)
+            for neededProc in neededProcs:
+              let hasProc = generatedProcs.any do (x: ProcInfo) -> bool:
+                result = false
+                if neededProc =~ namePeg: # go thru again to filter out not matched stuff
+                  if (x.kind == Tensor or x.kind == Namespace) and x.originalName == matches[0]:
+                    result = true
               
-              if foundAt == -1:
-                break
-              
-              strIndex = endsAt
-
-              for procInfo in generatedProcs:
-                if procInfo.originalName == matches[0]:
-                  # replace
-                  let
-                    pre = nimLikeStr[0..foundAt - 1]
-                    post = nimLikeStr[endsAt + 1..^1]
-                    toReplace = nimLikeStr[foundAt..endsAt]
-                    replacement = toReplace.replace(matches[0], procInfo.name)
-                    diff = replacement.len - toReplace.len
-                  
-                  nimLikeStr = pre & replacement & post
-                  strIndex = endsAt + diff
-                  foundMatch = true
-                  hasTuple = procInfo.returnsTuple
-                  break
-              
-              if not foundMatch: # skip and fail if something is not right
-                echo "proc not found: ", matches[0]
+              if not hasProc:
+                echo "A needed proc was not found: ", neededProc
                 hasError = true
                 break generateProc
 
-              if hasTuple: # skip and fail if something is not right
-                echo "proc has not yet implemented tuple: ", matches[0]
-                hasError = true
-                break generateProc
+            # fix all pytorch to nim namings
+            nimLikeStr = nimLikeStr.parallelReplace(replacements)
 
             # fix fwd_result namings
             nimLikeStr = nimLikeStr.replace(peg"result", "fwd_result")
             nimLikeStr = nimLikeStr.replace(peg"output", "fwd_result")
 
-            # replace int lists {}
+            # replace int lists {} to our @[]
             nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
-
-            # no good, we should use Type, not Tensor procs :(
-
-            # polygamma hard coded fix #TODO
-            nimLikeStr = nimLikeStr.replacef(peg"'polygamma' '(' {@} ',' \s* {@} ')'", "polygamma($2, $1)")
-
-            # log_softmax_backward_data hard coded fix #TODO
-            nimLikeStr = nimLikeStr.replacef(peg"'log_softmax_backward_data' '(' {@} ',' \s* {@} ',' \s* {@} ',' \s* {@} ')'", "log_softmax_backward_data($1, $2, $4, $3)")
 
             body &= "  result." & argName[0].name & " = " & nimLikeStr & "\n"
           except:
