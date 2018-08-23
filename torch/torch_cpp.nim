@@ -52,6 +52,8 @@ proc printTensor(t: ATensor) {.importcpp: "at::print(#)".}
 proc globalContext(): AContext {.importcpp: "at::globalContext()".}
 var BackendCPU* {.importcpp: "at::Backend::CPU", nodecl.}: cint
 var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
+var DeviceTypeCPU* {.importcpp: "at::DeviceType::CPU", nodecl.}: cint
+var DeviceTypeCUDA* {.importcpp: "at::DeviceType::CUDA", nodecl.}: cint
 
 {.passC: "-I$ATEN/include".}
 

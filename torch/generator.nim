@@ -398,26 +398,29 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
     elif candidates.len == 1:
       info = candidates[0]
     else:
-      if nameFull =~ nameArgsPeg:
-        let argsStr = matches[1]
-        # by design of pegs module, this is limited to 10 args max, we can edit that by making the peg more complex but no need now
-        if argsStr =~ argsPegs:
-          # echo matches
-          block findCandidate:
-            for candidate in candidates:
-              # echo nameFull, " | ", candidate
-              block checkArgs:
-                var index = 0
-                for argType in candidate.args:
-                  if matches[index] == nil or argType.nimType != matches[index].toNimType:
-                    # echo "Breaking bad: ", matches[index], " vs ", argType
-                    break checkArgs
+      var nameMatches: array[0..10, string]
+      if nameFull.match(nameArgsPeg, nameMatches):
+        let argsStr = nameMatches[1]
+        var argsMatches: array[0..50, string]
+        try:
+          if argsStr.match(argsPegs, argsMatches):
+            # echo matches
+            block findCandidate:
+              for candidate in candidates:
+                # echo nameFull, " | ", candidate
+                block checkArgs:
+                  var index = 0
+                  for argType in candidate.args:
+                    if argsMatches[index] == "" or argType.nimType != argsMatches[index].toNimType:
+                      # echo "Breaking bad: ", matches[index], " vs ", argType
+                      break checkArgs
+                    index = index + 2
                   
-                  index = index + 2
-                
-                # echo "Accepted ", nameFull
-                info = candidate
-                break findCandidate
+                  # echo "Accepted ", nameFull
+                  info = candidate
+                  break findCandidate
+        except:
+          echo "Error"
     
     if info.name == "":
       echo "Ignoring not found declaration: ", name
@@ -460,39 +463,35 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name
             prefix = if nodeIndex == 0: "" else: ", "
           
-          try:
-            resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
+          resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
 
-            var nimLikeStr = vStr
+          var nimLikeStr = vStr
+          
+          # make sure we got all procs we need nim side
+          var neededProcs = nimLikeStr.findAll(namePeg)
+          for neededProc in neededProcs:
+            let hasProc = generatedProcs.any do (x: ProcInfo) -> bool:
+              result = false
+              if neededProc =~ namePeg: # go thru again to filter out not matched stuff
+                if (x.kind == Tensor or x.kind == Namespace) and x.originalName == matches[0]:
+                  result = true
             
-            # make sure we got all procs we need nim side
-            var neededProcs = nimLikeStr.findAll(namePeg)
-            for neededProc in neededProcs:
-              let hasProc = generatedProcs.any do (x: ProcInfo) -> bool:
-                result = false
-                if neededProc =~ namePeg: # go thru again to filter out not matched stuff
-                  if (x.kind == Tensor or x.kind == Namespace) and x.originalName == matches[0]:
-                    result = true
-              
-              if not hasProc:
-                echo "A needed proc was not found: ", neededProc
-                hasError = true
-                break generateProc
+            if not hasProc:
+              echo "A needed proc was not found: ", neededProc
+              hasError = true
+              break generateProc
 
-            # fix all pytorch to nim namings
-            nimLikeStr = nimLikeStr.parallelReplace(replacements)
+          # fix all pytorch to nim namings
+          nimLikeStr = nimLikeStr.parallelReplace(replacements)
 
-            # fix fwd_result namings
-            nimLikeStr = nimLikeStr.replace(peg"result", "fwd_result")
-            nimLikeStr = nimLikeStr.replace(peg"output", "fwd_result")
+          # fix fwd_result namings
+          nimLikeStr = nimLikeStr.replace(peg"result", "fwd_result")
+          nimLikeStr = nimLikeStr.replace(peg"output", "fwd_result")
 
-            # replace int lists {} to our @[]
-            nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
+          # replace int lists {} to our @[]
+          nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
 
-            body &= "  result." & argName[0].name & " = " & nimLikeStr & "\n"
-          except:
-            echo name
-            raise
+          body &= "  result." & argName[0].name & " = " & nimLikeStr & "\n"
           
           inc nodeIndex
       

@@ -5,21 +5,55 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) Launch nimtorch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/torch",
+            "program": "${workspaceFolder}/nimtorch",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [
                 {
-                    "name": "LD_PRELOAD",
-                    "value": "/home/sugar/aten/lib/libATen_cpu.so"
+                    "name": "LD_LIBRARY_PATH",
+                    "value": "/data/work/aten-native/lib"
+                },
+                {
+                    "name": "ATEN",
+                    "value": "/data/work/aten-native"
                 }
             ],
             "externalConsole": true,
             "MIMode": "gdb",
+            "miDebuggerPath": "/data/work/Nim/bin/nim-gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Launch generator",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/torch/generator",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "LD_LIBRARY_PATH",
+                    "value": "/data/work/aten-native/lib"
+                },
+                {
+                    "name": "ATEN",
+                    "value": "/data/work/aten-native"
+                }
+            ],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/data/work/Nim/bin/nim-gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

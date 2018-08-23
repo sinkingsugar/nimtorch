@@ -323,10 +323,10 @@ proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device:
   of Device.CUDA: return ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc fromSeq*[T; I: SomeInteger](_: typedesc[torch]; s: var seq[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeq(s, size)
-proc fromSeq*[T; I: SomeInteger](_: typedesc[torch]; s: var seq[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeq(s, size, device)
-proc fromArray*[T; I: SomeInteger](_: typedesc[torch]; s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromArray(s, size)
-proc fromArray*[T; I: SomeInteger](_: typedesc[torch]; s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromArray(s, size, device)
+proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeq(s, size)
+proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeq(s, size, device)
+proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromArray(s, size)
+proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromArray(s, size, device)
 
 proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.toCpp()[index].to(ATensor)
 
@@ -335,14 +335,18 @@ converter toFloat32*(a: Tensor): float32 {.inline.} =
   let scalar = cppinit(AScalar, a)
   return scalar.scalarToF32()
 
-proc manual_seed*(seed: int) =
-  globalContext().defaultGenerator(BackendCPU).manualSeed(seed).to(void)
+proc internalManualSeed(seed: int) =
+  globalContext().defaultGenerator(DeviceTypeCPU).manualSeed(seed).to(void)
   if globalContext().hasCUDA().to(bool):
-    globalContext().defaultGenerator(BackendCUDA).manualSeed(seed).to(void)
+    globalContext().defaultGenerator(DeviceTypeCUDA).manualSeed(seed).to(void)
 
-proc set_num_threads*(num: int) {.importcpp: "at::set_num_threads(#)".}
+proc manual_seed*(_: typedesc[torch]; seed: int) = internalManualSeed(seed)
 
-proc get_num_threads*(): int {.importcpp: "at::get_num_threads(#)".}
+proc set_num_threads(num: int) {.importcpp: "at::set_num_threads(#)".}
+
+proc set_num_threads*(_: typedesc[torch]; num: int) = set_num_threads(num)
+
+proc get_num_threads*(_: typedesc[torch];): int {.importcpp: "at::get_num_threads()".}
 
 when isMainModule:
   # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim
@@ -485,7 +489,7 @@ when isMainModule:
 
   var
     tos = toSeq[float32](hy)
-    froms = torch.fromSeq(tos, 2, 3, 2)
+    froms = tos.fromSeq(2, 3, 2)
     
   var (ra, rb) = torch.prelu_backward(gi, gh, hy, @[true, true])
   
@@ -520,6 +524,8 @@ when isMainModule:
       hy = newgate + inputgate * (hidden - newgate)
 
       hy.printTensor()
+  
+  torch.manual_seed(1)
 
 
   # tensor([[-0.5317, -0.4753],
