@@ -100,11 +100,6 @@ proc cross_bwd*(grad, fwd_result: Tensor, self: Tensor, other: Tensor, dim: int6
   result.self = other.cross(grad, dim)
   result.other = grad.cross(self, dim)
 
-proc conv_tbc_bwd*(grad, fwd_result: Tensor, self: Tensor, weight: Tensor, bias: Tensor, pad: int64): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
-  result.self = torch.conv_tbc_backward(grad, self, weight, bias, pad)
-  result.weight = torch.conv_tbc_backward(grad, self, weight, bias, pad)
-  result.bias = torch.conv_tbc_backward(grad, self, weight, bias, pad)
-
 proc adiv_bwd*(grad, fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] =
   result.self = grad / other
   result.other = -grad * self / (other * other)
@@ -161,7 +156,7 @@ proc frac_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
   result.self = grad
 
 proc gather_bwd*(grad, fwd_result: Tensor, self: Tensor, dim: int64, index: Tensor): tuple[self: Tensor] =
-  result.self = torch.zeros(self.sizes(), grad.getType()).scatter_add_u(dim, index, grad)
+  result.self = torch.zeros(self.sizes(), grad.getType().TensorOptions).scatter_add_u(dim, index, grad)
 
 proc ge_u_bwd*(grad, fwd_result: Tensor, self: Tensor, other: float): tuple[self: Tensor] =
   result.self = torch.zeros_like(self)
@@ -176,14 +171,6 @@ proc geometric_u_bwd*(grad, fwd_result: Tensor, self: Tensor, p: float64, genera
 proc ger_bwd*(grad, fwd_result: Tensor, self: Tensor, vec2: Tensor): tuple[self: Tensor, vec2: Tensor] =
   result.self = grad.mv(vec2)
   result.vec2 = grad.t().mv(self)
-
-proc grid_sampler_2d_bwd*(grad, fwd_result: Tensor, input: Tensor, grid: Tensor, interpolation_mode: int64, padding_mode: int64): tuple[input: Tensor, grid: Tensor] =
-  result.input = torch.grid_sampler_2d_backward(grad, input, grid, interpolation_mode, padding_mode)
-  result.grid = torch.grid_sampler_2d_backward(grad, input, grid, interpolation_mode, padding_mode)
-
-proc grid_sampler_3d_bwd*(grad, fwd_result: Tensor, input: Tensor, grid: Tensor, interpolation_mode: int64, padding_mode: int64): tuple[input: Tensor, grid: Tensor] =
-  result.input = torch.grid_sampler_3d_backward(grad, input, grid, interpolation_mode, padding_mode)
-  result.grid = torch.grid_sampler_3d_backward(grad, input, grid, interpolation_mode, padding_mode)
 
 proc gt_u_bwd*(grad, fwd_result: Tensor, self: Tensor, other: float): tuple[self: Tensor] =
   result.self = torch.zeros_like(self)
@@ -314,4 +301,345 @@ proc put_u_bwd*(grad, fwd_result: Tensor, self: Tensor, index: Tensor, source: T
   result.self = grad.clone().put_u(index, torch.zeros_like(source), accumulate)
   result.source = grad.take(index)
 
-proc random_u_bwd*(grad, fw
+proc random_u_bwd*(grad, fwd_result: Tensor, self: Tensor, afrom: int64, ato: int64, generator: pointer): tuple[self: Tensor] =
+  result.self = torch.zeros_like(grad)
+
+proc random_u_bwd*(grad, fwd_result: Tensor, self: Tensor, ato: int64, generator: pointer): tuple[self: Tensor] =
+  result.self = torch.zeros_like(grad)
+
+proc random_u_bwd*(grad, fwd_result: Tensor, self: Tensor, generator: pointer): tuple[self: Tensor] =
+  result.self = torch.zeros_like(grad)
+
+proc reciprocal_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = -grad * fwd_result * fwd_result
+
+proc remainder_bwd*(grad, fwd_result: Tensor, self: Tensor, other: float): tuple[self: Tensor] =
+  result.self = grad
+
+proc remainder_bwd*(grad, fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor] =
+  result.self = grad
+
+proc round_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = torch.zeros_like(grad)
+
+proc rsqrt_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = -0.5 * grad * fwd_result.pow(3)
+
+proc scatter_u_bwd*(grad, fwd_result: Tensor, self: Tensor, dim: int64, index: Tensor, src: Tensor): tuple[self: Tensor, src: Tensor] =
+  result.self = grad.clone().scatter_u(dim, index, 0)
+  result.src = grad.gather(dim, index)
+
+proc scatter_u_bwd*(grad, fwd_result: Tensor, self: Tensor, dim: int64, index: Tensor, value: float): tuple[self: Tensor] =
+  result.self = grad.clone().scatter_u(dim, index, 0)
+
+proc scatter_add_u_bwd*(grad, fwd_result: Tensor, self: Tensor, dim: int64, index: Tensor, src: Tensor): tuple[self: Tensor, src: Tensor] =
+  result.self = grad
+  result.src = grad.gather(dim, index)
+
+proc sigmoid_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = torch.u_sigmoid_backward(grad, fwd_result)
+
+proc sign_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = torch.zeros_like(grad)
+
+proc sin_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = grad * self.cos()
+
+proc sinh_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = grad * self.cosh()
+
+proc sqrt_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = grad / (2 * fwd_result)
+
+proc sub_bwd*(grad, fwd_result: Tensor, self: Tensor, other: Tensor, alpha: float): tuple[self: Tensor, other: Tensor] =
+  result.self = grad
+  result.other = -grad * alpha
+
+proc sub_bwd*(grad, fwd_result: Tensor, self: Tensor, other: float, alpha: float): tuple[self: Tensor] =
+  result.self = grad
+
+proc u_sum_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = grad.expand(self.sizes())
+
+proc t_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = grad.t()
+
+proc flip_bwd*(grad, fwd_result: Tensor, self: Tensor, dims: IntList): tuple[self: Tensor] =
+  result.self = grad.flip(dims)
+
+proc rot90_bwd*(grad, fwd_result: Tensor, self: Tensor, k: int64, dims: IntList): tuple[self: Tensor] =
+  result.self = grad.rot90(-k, dims)
+
+proc take_bwd*(grad, fwd_result: Tensor, self: Tensor, index: Tensor): tuple[self: Tensor] =
+  result.self = torch.zeros_like(self).put_u(index, grad, true)
+
+proc tan_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = grad * (1 + fwd_result.pow(2))
+
+proc tanh_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = torch.u_tanh_backward(grad, fwd_result)
+
+proc transpose_bwd*(grad, fwd_result: Tensor, self: Tensor, dim0: int64, dim1: int64): tuple[self: Tensor] =
+  result.self = grad.transpose(dim0, dim1)
+
+proc transpose_u_bwd*(grad, fwd_result: Tensor, self: Tensor, dim0: int64, dim1: int64): tuple[self: Tensor] =
+  result.self = grad.transpose(dim0, dim1)
+
+proc tril_bwd*(grad, fwd_result: Tensor, self: Tensor, diagonal: int64): tuple[self: Tensor] =
+  result.self = grad.tril(diagonal)
+
+proc triu_bwd*(grad, fwd_result: Tensor, self: Tensor, diagonal: int64): tuple[self: Tensor] =
+  result.self = grad.triu(diagonal)
+
+proc trunc_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = torch.zeros_like(grad)
+
+proc uniform_u_bwd*(grad, fwd_result: Tensor, self: Tensor, afrom: float64, ato: float64, generator: pointer): tuple[self: Tensor] =
+  result.self = torch.zeros_like(grad)
+
+proc u_unsafe_view_bwd*(grad, fwd_result: Tensor, self: Tensor, size: IntList): tuple[self: Tensor] =
+  result.self = grad.reshape(self.sizes())
+
+proc unsqueeze_bwd*(grad, fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] =
+  result.self = grad.squeeze(dim)
+
+proc unsqueeze_u_bwd*(grad, fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] =
+  result.self = grad.squeeze(dim)
+
+proc view_bwd*(grad, fwd_result: Tensor, self: Tensor, size: IntList): tuple[self: Tensor] =
+  result.self = grad.reshape(self.sizes())
+
+proc u_s_where_bwd*(grad, fwd_result: Tensor, self: Tensor, condition: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] =
+  result.self = torch.where(condition, grad, torch.zeros_like(grad))
+  result.other = torch.where(condition, torch.zeros_like(grad), grad)
+
+proc zero_u_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = torch.zeros_like(grad)
+
+proc u_standard_gamma_bwd*(grad, fwd_result: Tensor, self: Tensor, generator: pointer): tuple[self: Tensor] =
+  result.self = grad * self.u_standard_gamma_grad(fwd_result)
+
+proc binary_cross_entropy_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, target: Tensor, weight: Tensor, reduction: int64): tuple[self: Tensor] =
+  result.self = torch.binary_cross_entropy_backward(grad, self, target, weight, reduction)
+
+proc embedding_bwd*(grad, fwd_result: Tensor, weight: Tensor, indices: Tensor, padding_idx: int64, scale_grad_by_freq: bool, sparse: bool): tuple[weight: Tensor] =
+  result.weight = torch.embedding_backward(grad, indices, weight.size(0), padding_idx, scale_grad_by_freq, sparse)
+
+proc l1_loss_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] =
+  result.self = torch.l1_loss_backward(grad, self, target, reduction)
+
+proc mse_loss_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] =
+  result.self = torch.mse_loss_backward(grad, self, target, reduction)
+
+proc multi_margin_loss_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, target: Tensor, p: float, margin: float, weight: Tensor, reduction: int64): tuple[self: Tensor] =
+  result.self = torch.multi_margin_loss_backward(grad, self, target, p, margin, weight, reduction)
+
+proc smooth_l1_loss_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] =
+  result.self = torch.smooth_l1_loss_backward(grad, self, target, reduction)
+
+proc soft_margin_loss_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] =
+  result.self = torch.soft_margin_loss_backward(grad, self, target, reduction)
+
+proc relu_bwd*(grad, fwd_result: Tensor, self: Tensor): tuple[self: Tensor] =
+  result.self = torch.threshold_backward(grad, self, 0, 0)
+
+proc elu_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, alpha: float, scale: float, input_scale: float): tuple[self: Tensor] =
+  result.self = torch.elu_backward(grad, alpha, scale, input_scale, fwd_result)
+
+proc glu_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] =
+  result.self = torch.glu_backward(grad, self, dim)
+
+proc hardshrink_bwd*(grad, fwd_result: Tensor, self: Tensor, lambd: float): tuple[self: Tensor] =
+  result.self = torch.hardshrink_backward(grad, self, lambd)
+
+proc hardshrink_backward_bwd*(grad, fwd_result: Tensor, self: Tensor, grad_out: Tensor, lambd: float): tuple[grad_out: Tensor, self: Tensor] =
+  result.grad_out = torch.hardshrink_backward(grad, self, lambd)
+  result.self = torch.zeros_like(grad)
+
+proc hardtanh_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, min_val: float, max_val: float): tuple[self: Tensor] =
+  result.self = torch.hardtanh_backward(grad, self, min_val, max_val)
+
+proc hardtanh_forward_u_bwd*(grad, fwd_result: Tensor, self: Tensor, min_val: float, max_val: float): tuple[self: Tensor] =
+  result.self = torch.hardtanh_backward(grad, fwd_result, min_val, max_val)
+
+proc leaky_relu_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, negative_slope: float): tuple[self: Tensor] =
+  result.self = torch.leaky_relu_backward(grad, self, negative_slope)
+
+proc leaky_relu_forward_u_bwd*(grad, fwd_result: Tensor, self: Tensor, negative_slope: float): tuple[self: Tensor] =
+  result.self = torch.leaky_relu_backward(grad, fwd_result, negative_slope)
+
+proc log_softmax_bwd*(grad, fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] =
+  result.self = torch.log_softmax_backward_data(grad, fwd_result, dim, self)
+
+proc rrelu_with_noise_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, noise: Tensor, lower: float, upper: float, training: bool, generator: pointer): tuple[self: Tensor] =
+  result.self = torch.rrelu_with_noise_backward(grad, self, noise, lower, upper, training)
+
+proc rrelu_with_noise_forward_u_bwd*(grad, fwd_result: Tensor, self: Tensor, noise: Tensor, lower: float, upper: float, training: bool, generator: pointer): tuple[self: Tensor] =
+  result.self = torch.rrelu_with_noise_backward(grad, fwd_result, noise, lower, upper, training)
+
+proc softmax_bwd*(grad, fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] =
+  result.self = torch.softmax_backward_data(grad, fwd_result, dim, self)
+
+proc softplus_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, beta: float, threshold: float): tuple[self: Tensor] =
+  result.self = torch.softplus_backward(grad, self, beta, threshold, fwd_result)
+
+proc softshrink_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, lambd: float): tuple[self: Tensor] =
+  result.self = torch.softshrink_backward(grad, self, lambd)
+
+proc threshold_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, threshold: float, value: float): tuple[self: Tensor] =
+  result.self = torch.threshold_backward(grad, self, threshold, value)
+
+proc threshold_forward_u_bwd*(grad, fwd_result: Tensor, self: Tensor, threshold: float, value: float): tuple[self: Tensor] =
+  result.self = torch.threshold_backward(grad, fwd_result, threshold, value)
+
+proc reflection_pad1d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, padding: IntList): tuple[self: Tensor] =
+  result.self = torch.reflection_pad1d_backward(grad, self, padding)
+
+proc reflection_pad2d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, padding: IntList): tuple[self: Tensor] =
+  result.self = torch.reflection_pad2d_backward(grad, self, padding)
+
+proc replication_pad1d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, padding: IntList): tuple[self: Tensor] =
+  result.self = torch.replication_pad1d_backward(grad, self, padding)
+
+proc replication_pad2d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, padding: IntList): tuple[self: Tensor] =
+  result.self = torch.replication_pad2d_backward(grad, self, padding)
+
+proc replication_pad3d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, padding: IntList): tuple[self: Tensor] =
+  result.self = torch.replication_pad3d_backward(grad, self, padding)
+
+proc upsample_linear1d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, output_size: IntList, align_corners: bool): tuple[self: Tensor] =
+  result.self = torch.upsample_linear1d_backward(grad, fwd_result_size, self.sizes(), align_corners)
+
+proc upsample_bilinear2d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, output_size: IntList, align_corners: bool): tuple[self: Tensor] =
+  result.self = torch.upsample_bilinear2d_backward(grad, fwd_result_size, self.sizes(), align_corners)
+
+proc upsample_trilinear3d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, output_size: IntList, align_corners: bool): tuple[self: Tensor] =
+  result.self = torch.upsample_trilinear3d_backward(grad, fwd_result_size, self.sizes(), align_corners)
+
+proc upsample_nearest1d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, output_size: IntList): tuple[self: Tensor] =
+  result.self = torch.upsample_nearest1d_backward(grad, fwd_result_size, self.sizes())
+
+proc upsample_nearest2d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, output_size: IntList): tuple[self: Tensor] =
+  result.self = torch.upsample_nearest2d_backward(grad, fwd_result_size, self.sizes())
+
+proc upsample_nearest3d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, output_size: IntList): tuple[self: Tensor] =
+  result.self = torch.upsample_nearest3d_backward(grad, fwd_result_size, self.sizes())
+
+proc adaptive_avg_pool2d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, output_size: IntList): tuple[self: Tensor] =
+  result.self = torch.adaptive_avg_pool2d_backward(grad, self)
+
+proc adaptive_avg_pool3d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, output_size: IntList): tuple[self: Tensor] =
+  result.self = torch.adaptive_avg_pool3d_backward(grad, self)
+
+proc avg_pool2d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool): tuple[self: Tensor] =
+  result.self = torch.avg_pool2d_backward(grad, self, kernel_size, stride, padding, ceil_mode, count_include_pad)
+
+proc avg_pool3d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool): tuple[self: Tensor] =
+  result.self = torch.avg_pool3d_backward(grad, self, kernel_size, stride, padding, ceil_mode, count_include_pad)
+
+proc max_unpool2d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, indices: Tensor, output_size: IntList): tuple[self: Tensor] =
+  result.self = torch.max_unpool2d_backward(grad, self, indices, fwd_result_size)
+
+proc max_unpool3d_forward_bwd*(grad, fwd_result: Tensor, self: Tensor, indices: Tensor, output_size: IntList, stride: IntList, padding: IntList): tuple[self: Tensor] =
+  result.self = torch.max_unpool3d_backward(grad, self, indices, fwd_result_size, stride, padding)
+
+proc adaptive_avg_pool2d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.adaptive_avg_pool2d(grad, @[ grad_fwd_result.size(-2), grad_fwd_result.size(-1) ])
+  result.self = torch.zeros_like(self)
+
+proc adaptive_avg_pool3d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.adaptive_avg_pool3d(grad, @[ grad_fwd_result.size(-3), grad_fwd_result.size(-2), grad_fwd_result.size(-1) ])
+  result.self = torch.zeros_like(self)
+
+proc avg_pool2d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.avg_pool2d(grad, kernel_size, stride, padding, ceil_mode, count_include_pad)
+  result.self = torch.zeros_like(self)
+
+proc avg_pool3d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.avg_pool3d(grad, kernel_size, stride, padding, ceil_mode, count_include_pad)
+  result.self = torch.zeros_like(self)
+
+proc hardtanh_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, min_val: float, max_val: float): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.hardtanh_backward(grad, self, min_val, max_val)
+  result.self = torch.zeros_like(grad)
+
+proc leaky_relu_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, negative_slope: float): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.leaky_relu_backward(grad, self, negative_slope)
+  result.self = torch.zeros_like(grad)
+
+proc max_unpool2d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, indices: Tensor, output_size: IntList): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.max_unpool2d(grad, indices, fwd_result_size)
+  result.self = torch.zeros_like(self)
+
+proc nll_loss_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64, total_weight: Tensor): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.nll_loss(grad, target, weight, reduction, ignore_index)
+  result.self = torch.zeros_like(grad)
+
+proc nll_loss2d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64, total_weight: Tensor): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.nll_loss2d(grad, target, weight, reduction, ignore_index)
+  result.self = torch.zeros_like(grad)
+
+proc rrelu_with_noise_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, noise: Tensor, lower: float, upper: float, training: bool): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.rrelu_with_noise_backward(grad, self, noise, lower, upper, training)
+  result.self = torch.zeros_like(grad)
+
+proc reflection_pad1d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, padding: IntList): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.reflection_pad1d(grad, padding)
+  result.self = torch.zeros_like(self)
+
+proc reflection_pad2d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, padding: IntList): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.reflection_pad2d(grad, padding)
+  result.self = torch.zeros_like(self)
+
+proc replication_pad1d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, padding: IntList): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.replication_pad1d(grad, padding)
+  result.self = torch.zeros_like(self)
+
+proc replication_pad2d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, padding: IntList): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.replication_pad2d(grad, padding)
+  result.self = torch.zeros_like(self)
+
+proc replication_pad3d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, padding: IntList): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.replication_pad3d(grad, padding)
+  result.self = torch.zeros_like(self)
+
+proc softshrink_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, lambd: float): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.softshrink_backward(grad, self, lambd)
+  result.self = torch.zeros_like(grad)
+
+proc threshold_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, self: Tensor, threshold: float, value: float): tuple[grad_output: Tensor, self: Tensor] =
+  result.grad_output = torch.threshold_backward(grad, self, threshold, value)
+  result.self = torch.zeros_like(grad)
+
+proc upsample_linear1d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList, align_corners: bool): tuple[grad_output: Tensor] =
+  result.grad_output = torch.upsample_linear1d(grad, fwd_result_size, align_corners)
+
+proc upsample_bilinear2d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList, align_corners: bool): tuple[grad_output: Tensor] =
+  result.grad_output = torch.upsample_bilinear2d(grad, fwd_result_size, align_corners)
+
+proc upsample_trilinear3d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList, align_corners: bool): tuple[grad_output: Tensor] =
+  result.grad_output = torch.upsample_trilinear3d(grad, fwd_result_size, align_corners)
+
+proc upsample_nearest1d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList): tuple[grad_output: Tensor] =
+  result.grad_output = torch.upsample_nearest1d(grad, fwd_result_size)
+
+proc upsample_nearest2d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList): tuple[grad_output: Tensor] =
+  result.grad_output = torch.upsample_nearest2d(grad, fwd_result_size)
+
+proc upsample_nearest3d_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList): tuple[grad_output: Tensor] =
+  result.grad_output = torch.upsample_nearest3d(grad, fwd_result_size)
+
+proc u_sigmoid_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, output: Tensor): tuple[grad_output: Tensor, output: Tensor] =
+  result.grad_output = torch.u_sigmoid_backward(grad, fwd_result)
+  result.output = grad * grad_fwd_result * (-2 * fwd_result + 1)
+
+proc u_tanh_backward_bwd*(grad, fwd_result: Tensor, grad_output: Tensor, output: Tensor): tuple[grad_output: Tensor, output: Tensor] =
+  result.grad_output = torch.u_tanh_backward(grad, fwd_result)
+  result.output = -2 * fwd_result * grad * grad_fwd_result
+
+proc cudnn_affine_grid_generator_bwd*(grad, fwd_result: Tensor, theta: Tensor, N: int64, C: int64, H: int64, W: int64): tuple[theta: Tensor] =
+  result.theta = torch.cudnn_affine_grid_generator_backward(grad, N, C, H, W)
+
+proc stack_bwd*(grad, fwd_result: Tensor, tensors: TensorList, dim: int64): tuple[tensors: TensorList] =
+  result.tensors = torch.unbind(grad, dim)
+

@@ -1,9 +1,10 @@
 include torch/torch_cpp
-import macros, sequtils
+import macros, sequtils, math
 
 type
   Tensor* = ATensor
   TensorType* = AType
+  TensorOptions* = ATensorOptions
   TensorList* = ATensors
   IntList* = AIntList
   torch* = distinct pointer
@@ -84,50 +85,37 @@ proc toATenType(kind: TensorKind): AScalarType {.inline.} =
   of LongTensor: return ATkLong
   else: raiseAssert("Unknown type")
 
-proc device*(deviceName: string): Device {.inline.} =
+proc device*(_: typedesc[torch]; deviceName: string): Device {.inline.} =
   case deviceName
   of "cpu", "CPU": return Device.CPU
   of "cuda", "CUDA": return Device.CUDA
   else: raiseAssert("Unknown device")
 
-proc internalZeros(size: openarray[ilsize]): Tensor {.inline.} =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
-  return ACPU(defaultType.toATenType()).dynamicCppCall(zeros, shape)
+proc zeros*(_: typedesc[torch]; intList: IntList): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  return torch.zeros(intList, opts)
 
-proc internalZeros(size: openarray[ilsize]; device: Device): Tensor {.inline.} =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
-  case device:
-  of Device.CUDA: return ACUDA(defaultType.toATenType()).dynamicCppCall(zeros, shape)
-  of Device.CPU: return ACPU(defaultType.toATenType()).dynamicCppCall(zeros, shape)
+proc zeros*(_: typedesc[torch]; intList: IntList; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.zeros(intList, opts)
 
-proc internalZeros(size: openarray[ilsize]; dtype: TensorKind; device: Device = Device.CPU): Tensor =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
-  case device:
-    of Device.CUDA:
-      case dtype:
-        of FloatTensor: return ACUDA(ATkFloat).dynamicCppCall(zeros, shape)
-        of DoubleTensor: return ACUDA(ATkDouble).dynamicCppCall(zeros, shape)
-        of HalfTensor: return ACUDA(ATkHalf).dynamicCppCall(zeros, shape)
-        of ByteTensor: return ACUDA(ATkByte).dynamicCppCall(zeros, shape)
-        of CharTensor: return ACUDA(ATkChar).dynamicCppCall(zeros, shape)
-        of ShortTensor: return ACUDA(ATkShort).dynamicCppCall(zeros, shape)
-        of IntTensor: return ACUDA(ATkInt).dynamicCppCall(zeros, shape)
-        of LongTensor: return ACUDA(ATkLong).dynamicCppCall(zeros, shape)
-    of Device.CPU:
-      case dtype:
-        of FloatTensor: return ACPU(ATkFloat).dynamicCppCall(zeros, shape)
-        of DoubleTensor: return ACPU(ATkDouble).dynamicCppCall(zeros, shape)
-        of HalfTensor: return ACPU(ATkHalf).dynamicCppCall(zeros, shape)
-        of ByteTensor: return ACPU(ATkByte).dynamicCppCall(zeros, shape)
-        of CharTensor: return ACPU(ATkChar).dynamicCppCall(zeros, shape)
-        of ShortTensor: return ACPU(ATkShort).dynamicCppCall(zeros, shape)
-        of IntTensor: return ACPU(ATkInt).dynamicCppCall(zeros, shape)
-        of LongTensor: return ACPU(ATkLong).dynamicCppCall(zeros, shape)
+proc zeros*(_: typedesc[torch]; intList: IntList; dtype: TensorKind): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  return torch.zeros(intList, opts)
 
-proc zeros*[T: SomeInteger](_: typedesc[torch]; size: varargs[T, toIntListType]): Tensor {.inline.} = internalZeros(size)
-proc zeros*[T: SomeInteger](_: typedesc[torch]; size: varargs[T, toIntListType]; device: Device): Tensor {.inline.} = internalZeros(size, device)
-proc zeros*[T: SomeInteger](_: typedesc[torch]; size: varargs[T, toIntListType]; dtype: TensorKind): Tensor {.inline.} = internalZeros(size, dtype)
-proc zeros*[T: SomeInteger](_: typedesc[torch]; size: varargs[T, toIntListType]; dtype: TensorKind; device: Device): Tensor {.inline.} = internalZeros(size, dtype, device)
+proc zeros*(_: typedesc[torch]; intList: IntList; dtype: TensorKind; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.zeros(intList, opts)
 
 iterator lenIter[T](s: openarray[T]): int {.inline.} =
   ## Inline iterator on any-depth seq or array
@@ -180,6 +168,9 @@ proc tensor*(_: typedesc[torch]; data: openarray; device: Device = Device.CPU; d
 
 template getType*(tensor: Tensor): TensorType = tensor.dynamicCppCall("type").to(TensorType)
 
+converter toTensorOptions*(tensorType: TensorType): TensorOptions =
+  result = cppinit(TensorOptions, tensorType.toCpp)
+
 template cpu*(tensor: Tensor): Tensor = tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
 
 template cuda*(tensor: Tensor): Tensor = tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
@@ -211,6 +202,8 @@ template `*`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp * b.float.toCpp).to(A
 template `*`*(a: SomeNumber; b: Tensor): Tensor = (a.float.toCpp * b.toCpp).to(ATensor)
 
 template `/`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp / b.float.toCpp).to(ATensor)
+
+template sqrt*(_: typedesc[torch]; b: SomeFloat): SomeFloat = math.sqrt(b)
 
 proc maybe_multiply*(_: typedesc[torch]; a: Tensor; b: SomeNumber): Tensor {.inline.} =
   if b.float == 1.0:
@@ -353,7 +346,7 @@ when isMainModule:
   # nim cpp -d:wasm --nimcache=nimcache-wasm -o:nimcache-wasm/test.js torch.nim && node nimcache-wasm/test.js
 
   var
-    z = torch.zeros(2, 1, 4)
+    z = torch.zeros(@[2, 1, 4])
 
     x = torch.tensor([
         [
@@ -441,10 +434,10 @@ when isMainModule:
   x.print()
   echo z.size(0)
 
-  var longt = torch.zeros(1, 1, 1, dtype = LongTensor)
+  var longt = torch.zeros(@[1, 1, 1], dtype = LongTensor)
   longt.print()
 
-  var ht = torch.zeros(1, 1, 1, dtype = ByteTensor)
+  var ht = torch.zeros(@[1, 1, 1], dtype = ByteTensor)
   ht.print()
 
   var tensorList: TensorList
@@ -501,7 +494,7 @@ when isMainModule:
     if globalContext().hasCUDA().to(bool):
       echo "Cuda available"
       echo "Cuda device ", globalContext().current_device().to(int)
-      var cudaTensor = torch.zeros(7, 7, 7, device = torch.device("cuda"), dtype = torch.DoubleTensor)
+      var cudaTensor = torch.zeros(@[7, 7, 7], device = torch.device("cuda"), dtype = DoubleTensor)
       cudaTensor.printTensor()
 
       froms = froms.cuda()

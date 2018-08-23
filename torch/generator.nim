@@ -34,7 +34,7 @@ type
 proc toNimType(typeName: string): string =
   case typeName
   of "Tensor", "BoolTensor", "IndexTensor", "IntegerTensor": return "Tensor"
-  of "TensorOptions": return "ATensorOptions"
+  of "TensorOptions": return "TensorOptions"
   of "Storage": return "AStorage"
   of "TensorList": return "TensorList"
   of "int64_t": return "int64"
@@ -401,30 +401,30 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
       var nameMatches: array[0..10, string]
       if nameFull.match(nameArgsPeg, nameMatches):
         let argsStr = nameMatches[1]
-        var argsMatches: array[0..50, string]
-        try:
-          if argsStr.match(argsPegs, argsMatches):
-            # echo matches
-            block findCandidate:
-              for candidate in candidates:
-                # echo nameFull, " | ", candidate
-                block checkArgs:
-                  var index = 0
-                  for argType in candidate.args:
-                    if argsMatches[index] == "" or argType.nimType != argsMatches[index].toNimType:
-                      # echo "Breaking bad: ", matches[index], " vs ", argType
-                      break checkArgs
-                    index = index + 2
+        var args = argsStr.split(peg"',' \s?")
+
+        # remove *, its the delimiter for optional args...
+        let wildcardIndex = args.find("*")
+        if wildcardIndex != -1:
+          args.del(wildcardIndex)
+        
+        block findCandidate:
+          for candidate in candidates:
+            # echo nameFull, " | ", candidate
+            block checkArgs:
+              var hasWildcard = false
+              if candidate.args.len == args.len:
+                for i in 0..candidate.args.high:
+                  let
+                    argB = args[i].split(peg"\s+")[0].toNimType
+                    argA = candidate.args[i].nimType
                   
-                  # echo "Accepted ", nameFull
-                  info = candidate
-                  break findCandidate
-        except:
-          echo "Error"
-    
-    if info.name == "":
-      echo "Ignoring not found declaration: ", name
-      continue
+                  if argA != argB:
+                    break checkArgs
+                
+                echo "Accepted ", nameFull
+                info = candidate
+                break findCandidate
 
     # at this point we know of which Declarations.yaml proc we are talking about
 
@@ -463,9 +463,15 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name
             prefix = if nodeIndex == 0: "" else: ", "
           
+          if argName.len == 0:
+            echo "A needed arg was not found: ", name
+            hasError = true
+            break generateProc
+          
           resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
 
-          var nimLikeStr = vStr
+          var
+            nimLikeStr = vStr
           
           # make sure we got all procs we need nim side
           var neededProcs = nimLikeStr.findAll(namePeg)
@@ -473,14 +479,14 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             let hasProc = generatedProcs.any do (x: ProcInfo) -> bool:
               result = false
               if neededProc =~ namePeg: # go thru again to filter out not matched stuff
-                if (x.kind == Tensor or x.kind == Namespace) and x.originalName == matches[0]:
+                if (x.kind == Tensor or x.kind == Namespace) and x.originalName == matches[0] and not x.returnsTuple:
                   result = true
             
             if not hasProc:
-              echo "A needed proc was not found: ", neededProc
+              echo "A needed proc was not found (or not implemented tuple): ", neededProc
               hasError = true
               break generateProc
-
+            
           # fix all pytorch to nim namings
           nimLikeStr = nimLikeStr.parallelReplace(replacements)
 
