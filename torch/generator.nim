@@ -6,8 +6,9 @@ import os, strutils, macros, osproc, json, sequtils, streams, pegs
 
 const
   ofTensorTo = "template $1*(self: Tensor$4): $2 $7= self.dynamicCppCall(\"$3\"$5).$6"
+  ofTypeTo = "template $1*(ty: TensorType, $4): $2 $7= ty.dynamicCppCall(\"$3\"$5).$6"
   ofNamespaceTo = "template $1*($4): $2 $7= dynamicCCall(\"at::$3\"$5).$6"
-  backward = "proc $1_bwd*(grad: Tensor$2): $3 =$4"
+  backward = "proc $1_bwd*(grad, fwd_result: Tensor$2): $3 =$4"
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
@@ -23,6 +24,7 @@ type
     name: string
     args: seq[ArgInfo]
     returnsTuple: bool
+    ofTensor: bool
 
   MethodOfKind = enum
     Type, Tensor, Namespace
@@ -49,7 +51,7 @@ proc toNimType(typeName: string): string =
   of "std::array<bool,4>": return "StdArray[bool, 4]"
   of "ScalarType": return "AScalarType"
   of "std::string": return "StdString"
-  of "Type": return "AType"
+  of "Type": return "TensorType"
   of "SparseTensorRef": return "ASparseTensorRef"
   else: raise newException(InvalidReturnException, "Invalid return type '" & typeName & "'")
 
@@ -220,7 +222,7 @@ block declarations:
       var validName = name
       validName.validate()
 
-      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo]())
+      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo](), ofTensor: true)
 
       # in Tensor kind add Tensor self
       procInfo.args.add(ArgInfo(originalName: "self", name: "self", nimType: "Tensor"))
@@ -249,8 +251,40 @@ block declarations:
       generateProc(ofTensorTo)
 
       generatedProcs.add(procInfo)
+
+    if methodKind.contains(Type):
+      if arguments.len > 0:
+        validateArguments()
+      
+      var validName = name
+      validName.validate()
+
+      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo]())
+      
+      var argsStr1 = ""
+      var argsStr2 = ""
+      for i in 0..arguments.high:
+        var
+          nimType = toNimType(arguments[i]["dynamic_type"].getStr())
+          argName = arguments[i]["name"].getStr()
+          originalName = argName
+          defaultStr = ""
+          
+        argName.validate()
         
-    elif methodKind.contains(Namespace):
+        fillArgumentDefaults()
+        
+        var prefix = if i == 0: "" else: ", "
+        argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
+        argsStr2 &= ", $1" % [argName]
+
+        procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
+      
+      generateProc(ofTypeTo)
+
+      generatedProcs.add(procInfo)
+        
+    if methodKind.contains(Namespace) and not methodKind.contains(Tensor):
       if arguments.len > 0:
         validateArguments()
       
@@ -305,28 +339,30 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
     (derJson, exitCode) = execCmdEx(cmd)
     
   let namePeg = peg"""
-full <- dot? {Name} func
-Name <- (validChars)+
-validChars <- \ident
-dot <- '.'
-func <- '(' @ ')'
-"""
+    full <- dot? {Name} func
+    Name <- (validChars)+
+    validChars <- \ident
+    dot <- '.'
+    func <- '(' @ ')'
+    """
   let nameArgsPeg = peg"""
-full <- {Name} func
-Name <- (validChars)*
-validChars <- \ident
-func <- '(' {@} ')'
-"""
+    full <- {Name} func
+    Name <- (validChars)*
+    validChars <- \ident
+    func <- '(' {@} ')'
+    """
 
   let argsPegs = peg"""
-full <- argFull+ argDelim argFull+ / argFull+
-separator <- ','
-ws <- \s
-argDelim <- ws? '*' ws? separator?
-argFull <- ws? arg ws? separator?
-arg <- {validChars} ws+ {validChars}
-validChars <- \ident
-"""
+    full <- argFull+ argDelim argFull+ / argFull+
+    separator <- ','
+    ws <- \s
+    argDelim <- ws? '*' ws? separator?
+    argFull <- ws? arg ws? separator?
+    arg <- {validChars} ws+ {validChars}
+    validChars <- \ident
+    """
+  
+  let callPeg = peg"','? \s? \ident+"
 
   doAssert(exitCode == 0, "Failed to convert derivatives.yaml to JSON, failed with output: " & derJson)
 
@@ -374,7 +410,7 @@ validChars <- \ident
                 info = candidate
                 break findCandidate
     
-    assert(info.name != "")
+    assert(info.name != "", nameFull)
 
     # at this point we know of which Declarations.yaml proc we are talking about
 
@@ -383,12 +419,14 @@ validChars <- \ident
       resTuple = "tuple["
       body = "\n"
       argsStr = ""
+      hasError = false
   
     for arg in info.args:
       argsStr &= ", " & arg.name & ": " & arg.nimType
     
     block generateProc:
       if info.returnsTuple:
+        hasError = true
         break generateProc
 
       var nodeIndex = 0
@@ -449,14 +487,29 @@ validChars <- \ident
               
               if not foundMatch: # skip and fail if something is not right
                 echo "proc not found: ", matches[0]
+                hasError = true
                 break generateProc
 
               if hasTuple: # skip and fail if something is not right
                 echo "proc has not yet implemented tuple: ", matches[0]
+                hasError = true
                 break generateProc
 
-            nimLikeStr = nimLikeStr.replace("result", "self")
-          
+            # fix fwd_result namings
+            nimLikeStr = nimLikeStr.replace(peg"result", "fwd_result")
+            nimLikeStr = nimLikeStr.replace(peg"output", "fwd_result")
+
+            # replace int lists {}
+            nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
+
+            # no good, we should use Type, not Tensor procs :(
+
+            # polygamma hard coded fix #TODO
+            nimLikeStr = nimLikeStr.replacef(peg"'polygamma' '(' {@} ',' \s* {@} ')'", "polygamma($2, $1)")
+
+            # log_softmax_backward_data hard coded fix #TODO
+            nimLikeStr = nimLikeStr.replacef(peg"'log_softmax_backward_data' '(' {@} ',' \s* {@} ',' \s* {@} ',' \s* {@} ')'", "log_softmax_backward_data($1, $2, $4, $3)")
+
             body &= "  result." & argName[0].name & " = " & nimLikeStr & "\n"
           except:
             echo name
@@ -466,7 +519,7 @@ validChars <- \ident
       
     resTuple &= "]"
 
-    if resTuple == "tuple[]" or body == "\n":
+    if resTuple == "tuple[]" or body == "\n" or hasError:
       echo "Ignoring derivative (not implemented or error): ", name
       continue
 

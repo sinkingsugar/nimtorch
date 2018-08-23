@@ -3,6 +3,7 @@ import macros, sequtils
 
 type
   Tensor* = ATensor
+  TensorType* = AType
   TensorList* = ATensors
   IntList* = AIntList
   
@@ -175,6 +176,8 @@ proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; du
 
 proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
   return tensor(data, defaultType, device)
+
+template getType*(tensor: Tensor): TensorType = tensor.dynamicCppCall("type").to(TensorType)
 
 template cpu*(tensor: Tensor): Tensor = tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
 
