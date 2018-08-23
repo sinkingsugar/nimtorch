@@ -491,8 +491,8 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           nimLikeStr = nimLikeStr.parallelReplace(replacements)
 
           # fix fwd_result namings
-          nimLikeStr = nimLikeStr.replace(peg"result", "fwd_result")
-          nimLikeStr = nimLikeStr.replace(peg"output", "fwd_result")
+          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {!\ident}", "$1fwd_result$2")
+          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'output' {!\ident}", "$1fwd_result$2")
 
           # replace int lists {} to our @[]
           nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
