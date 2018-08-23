@@ -8,6 +8,8 @@ Aiming to be mostly auto-generated, internally using ATen.
 
 **Because nim compiles into cpp, this is not a wrapper or binding library, this is 1:1 ATen bare metal**
 
+The only requirement from pytorch is ATens core tensor library; because of this nimtorch is extremely versatible and can compile on any kind of device.
+
 ## Current status
 
 **Early stage**
