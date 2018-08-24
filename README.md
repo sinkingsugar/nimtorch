@@ -87,11 +87,11 @@ Windows was tested and works, instructions should be similar to linux.
 *Build ATen libraries, in this example for cuda8/ubuntu16.04 kind of system (will work on other distros as well)*
 
 1. Make sure you have a system with docker installed
-2. `cd docker && cd docker-cuda8-ubuntu16.04`
-3. `docker build -t aten_cuda8_ubuntu16lts .`
-4. `docker run --name aten_cuda8_ubuntu16lts-temp -d aten_cuda8_ubuntu16lts /bin/bash`
-5. `docker cp aten_cuda8_ubuntu16lts-temp:/root/pytorch/aten/built/output output`
-6. `docker rm aten_cuda8_ubuntu16lts-temp`
+2. `cd docker && cd docker-aten-native`
+3. `docker build -t docker_aten_native .`
+4. `docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash`
+5. `docker cp docker_aten_native-temp:/root/pytorch/aten/built/output output`
+6. `docker rm docker_aten_native-temp`
 7. Profit your *output* folder
   
 ### Hard way

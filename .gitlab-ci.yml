@@ -16,7 +16,7 @@ build:aten:wasm:
   tags:
     - LINUX, DOCKER
   
-test:aten:native:
+test:nimtorch:native:
   stage: test
   script:
     - nimble -y develop
@@ -34,7 +34,7 @@ test:aten:native:
   tags:
     - LINUX, DOCKER, NIM, PYYAML
 
-test:aten:wasm:
+test:nimtorch:wasm:
   stage: test
   script:
     - nimble -y develop
