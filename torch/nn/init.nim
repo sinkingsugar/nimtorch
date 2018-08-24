@@ -1,4 +1,4 @@
-import ../../torch as torch
+import ../../nimtorch
 import math
 
 proc calculate_fan_in_and_fan_out(tensor: Tensor): (int64, int64) =

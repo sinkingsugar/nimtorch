@@ -1,10 +1,13 @@
 include torch/torch_cpp
-import macros, sequtils
+import macros, sequtils, math
 
 type
   Tensor* = ATensor
+  TensorType* = AType
+  TensorOptions* = ATensorOptions
   TensorList* = ATensors
   IntList* = AIntList
+  torch* = distinct pointer
   
   Device* {.pure.} = enum
     CPU, CUDA
@@ -59,21 +62,6 @@ template `@`*[IDX](a: array[IDX, SomeInteger]): IntList =
   # cannot use cppinit for some reasons
   dynamicCCall("at::IntList", cast[ptr ilsize](addr(res)), res.len.csize)
 
-proc toNimTensorTuple(cppTuple: ATensorTuple2 | ATensorRTuple2): (Tensor, Tensor) {.inline, noinit.} =
-  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp))
-
-proc toNimTensorTuple(cppTuple: ATensorTuple3 | ATensorRTuple3): (Tensor, Tensor, Tensor) {.inline, noinit.} =
-  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp), cppTupleGet[Tensor](2, cppTuple.toCpp))
-  
-proc toNimTensorTuple(cppTuple: ATensorTuple4 | ATensorRTuple4): (Tensor, Tensor, Tensor, Tensor) {.inline, noinit.} =
-  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp), cppTupleGet[Tensor](2, cppTuple.toCpp), cppTupleGet[Tensor](3, cppTuple.toCpp))
-
-proc toNimTensorTuple(cppTuple: ATensorTuple5 | ATensorRTuple5): (Tensor, Tensor, Tensor, Tensor, Tensor) {.inline, noinit.} =
-  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp), cppTupleGet[Tensor](2, cppTuple.toCpp), cppTupleGet[Tensor](3, cppTuple.toCpp), cppTupleGet[Tensor](4, cppTuple.toCpp))
-
-proc toNimTensorTuple(cppTuple: ATensorTuple3v1): (Tensor, Tensor, Tensor, TensorList) {.inline, noinit.} =
-  (cppTupleGet[Tensor](0, cppTuple.toCpp), cppTupleGet[Tensor](1, cppTuple.toCpp), cppTupleGet[Tensor](2, cppTuple.toCpp), cppTupleGet[TensorList](3, cppTuple.toCpp))
-
 # Auto generated #
 # append all the auto generated procs
 include torch/declarations
@@ -97,50 +85,63 @@ proc toATenType(kind: TensorKind): AScalarType {.inline.} =
   of LongTensor: return ATkLong
   else: raiseAssert("Unknown type")
 
-proc device*(deviceName: string): Device {.inline.} =
+proc device*(_: typedesc[torch]; deviceName: string): Device {.inline.} =
   case deviceName
   of "cpu", "CPU": return Device.CPU
   of "cuda", "CUDA": return Device.CUDA
   else: raiseAssert("Unknown device")
 
-proc internalZeros(size: openarray[ilsize]): Tensor {.inline.} =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
-  return ACPU(defaultType.toATenType()).dynamicCppCall(zeros, shape)
+proc zeros*(_: typedesc[torch]; intList: IntList): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  return torch.zeros(intList, opts)
 
-proc internalZeros(size: openarray[ilsize]; device: Device): Tensor {.inline.} =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
-  case device:
-  of Device.CUDA: return ACUDA(defaultType.toATenType()).dynamicCppCall(zeros, shape)
-  of Device.CPU: return ACPU(defaultType.toATenType()).dynamicCppCall(zeros, shape)
+proc zeros*(_: typedesc[torch]; intList: IntList; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.zeros(intList, opts)
 
-proc internalZeros(size: openarray[ilsize]; dtype: TensorKind; device: Device = Device.CPU): Tensor =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
-  case device:
-    of Device.CUDA:
-      case dtype:
-        of FloatTensor: return ACUDA(ATkFloat).dynamicCppCall(zeros, shape)
-        of DoubleTensor: return ACUDA(ATkDouble).dynamicCppCall(zeros, shape)
-        of HalfTensor: return ACUDA(ATkHalf).dynamicCppCall(zeros, shape)
-        of ByteTensor: return ACUDA(ATkByte).dynamicCppCall(zeros, shape)
-        of CharTensor: return ACUDA(ATkChar).dynamicCppCall(zeros, shape)
-        of ShortTensor: return ACUDA(ATkShort).dynamicCppCall(zeros, shape)
-        of IntTensor: return ACUDA(ATkInt).dynamicCppCall(zeros, shape)
-        of LongTensor: return ACUDA(ATkLong).dynamicCppCall(zeros, shape)
-    of Device.CPU:
-      case dtype:
-        of FloatTensor: return ACPU(ATkFloat).dynamicCppCall(zeros, shape)
-        of DoubleTensor: return ACPU(ATkDouble).dynamicCppCall(zeros, shape)
-        of HalfTensor: return ACPU(ATkHalf).dynamicCppCall(zeros, shape)
-        of ByteTensor: return ACPU(ATkByte).dynamicCppCall(zeros, shape)
-        of CharTensor: return ACPU(ATkChar).dynamicCppCall(zeros, shape)
-        of ShortTensor: return ACPU(ATkShort).dynamicCppCall(zeros, shape)
-        of IntTensor: return ACPU(ATkInt).dynamicCppCall(zeros, shape)
-        of LongTensor: return ACPU(ATkLong).dynamicCppCall(zeros, shape)
+proc zeros*(_: typedesc[torch]; intList: IntList; dtype: TensorKind): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  return torch.zeros(intList, opts)
 
-proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]): Tensor {.inline.} = internalZeros(size)
-proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]; device: Device): Tensor {.inline.} = internalZeros(size, device)
-proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]; dtype: TensorKind): Tensor {.inline.} = internalZeros(size, dtype)
-proc zeros*[T: SomeInteger](size: varargs[T, toIntListType]; dtype: TensorKind; device: Device): Tensor {.inline.} = internalZeros(size, dtype, device)
+proc zeros*(_: typedesc[torch]; intList: IntList; dtype: TensorKind; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.zeros(intList, opts)
+
+proc ones*(_: typedesc[torch]; intList: IntList): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  return torch.ones(intList, opts)
+
+proc ones*(_: typedesc[torch]; intList: IntList; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.ones(intList, opts)
+
+proc ones*(_: typedesc[torch]; intList: IntList; dtype: TensorKind): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  return torch.ones(intList, opts)
+
+proc ones*(_: typedesc[torch]; intList: IntList; dtype: TensorKind; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.ones(intList, opts)
 
 iterator lenIter[T](s: openarray[T]): int {.inline.} =
   ## Inline iterator on any-depth seq or array
@@ -162,7 +163,7 @@ iterator flatIter[T](s: openarray[T]): auto {.inline.} =
     else:
       yield item
 
-proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
+proc tensor*(_: typedesc[torch]; data: openarray; dtype: TensorKind; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
   # as noticed in Arraymancer as well:
   ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
@@ -188,8 +189,13 @@ proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; du
   of Device.CUDA: return ACUDA(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: return ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
-  return tensor(data, defaultType, device)
+proc tensor*(_: typedesc[torch]; data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
+  return tensor(torch, data, defaultType, device)
+
+template getType*(tensor: Tensor): TensorType = tensor.dynamicCppCall("type").to(TensorType)
+
+converter toTensorOptions*(tensorType: TensorType): TensorOptions =
+  result = cppinit(TensorOptions, tensorType.toCpp)
 
 template cpu*(tensor: Tensor): Tensor = tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
 
@@ -199,7 +205,49 @@ template copy*(tensor: Tensor; non_blocking: bool = false): Tensor = tensor.dyna
 
 template is_defined*(tensor: Tensor): bool = tensor.dynamicCppCall("defined").to(bool)
 
+template sizes*(tensor: Tensor): IntList = tensor.dynamicCppCall("sizes").to(IntList)
+
+template strides*(tensor: Tensor): IntList = tensor.dynamicCppCall("strides").to(IntList)
+
+template `-`*(a): Tensor = (-(a.toCpp)).to(ATensor)
+
 template `+`*(a, b: Tensor): Tensor = (a.toCpp + b.toCpp).to(ATensor)
+
+template `<=`*(a, b: Tensor): Tensor = (a.toCpp <= b.toCpp).to(ATensor)
+
+template `>=`*(a, b: Tensor): Tensor = (a.toCpp >= b.toCpp).to(ATensor)
+
+template `<=`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp <= b.float.toCpp).to(ATensor)
+
+template `>=`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp >= b.float.toCpp).to(ATensor)
+
+template `+`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp + b.float.toCpp).to(ATensor)
+
+template `*`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp * b.float.toCpp).to(ATensor)
+
+template `*`*(a: SomeNumber; b: Tensor): Tensor = (a.float.toCpp * b.toCpp).to(ATensor)
+
+template `/`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp / b.float.toCpp).to(ATensor)
+
+template sqrt*(_: typedesc[torch]; b: SomeFloat): SomeFloat = math.sqrt(b)
+
+proc maybe_multiply*(_: typedesc[torch]; a: Tensor; b: SomeNumber): Tensor {.inline.} =
+  if b.float == 1.0:
+    return a
+  else:
+    return a * b
+
+proc mm_mat1_backward*(_: typedesc[torch]; grad, mat2: Tensor; sizes, strides: IntList; alpha: float): Tensor =
+  if strides[0] == 1 and strides[1] == sizes[0]:
+    return torch.maybe_multiply(mat2.mm(grad.t()).t(), alpha)
+  else:
+    return torch.maybe_multiply(grad.mm(mat2.t()), alpha)
+
+proc mm_mat2_backward*(_: typedesc[torch]; grad, mat1: Tensor; sizes, strides: IntList; alpha: float): Tensor =
+  if strides[0] == 1 and strides[1] == sizes[0]:
+    return torch.maybe_multiply(grad.t().mm(mat1).t(), alpha)
+  else:
+    return torch.maybe_multiply(mat1.t().mm(grad), alpha)
 
 template `==`*(a, b: Tensor): bool =  a.dynamicCppCall(equal, b).to(bool)
 
@@ -306,21 +354,25 @@ converter toFloat32*(a: Tensor): float32 {.inline.} =
   let scalar = cppinit(AScalar, a)
   return scalar.scalarToF32()
 
-proc manual_seed*(seed: int) =
-  globalContext().defaultGenerator(BackendCPU).manualSeed(seed).to(void)
+proc internalManualSeed(seed: int) =
+  globalContext().defaultGenerator(DeviceTypeCPU).manualSeed(seed).to(void)
   if globalContext().hasCUDA().to(bool):
-    globalContext().defaultGenerator(BackendCUDA).manualSeed(seed).to(void)
+    globalContext().defaultGenerator(DeviceTypeCUDA).manualSeed(seed).to(void)
 
-proc set_num_threads*(num: int) {.importcpp: "at::set_num_threads(#)".}
+proc manual_seed*(_: typedesc[torch]; seed: int) = internalManualSeed(seed)
 
-proc get_num_threads*(): int {.importcpp: "at::get_num_threads(#)".}
+proc set_num_threads(num: int) {.importcpp: "at::set_num_threads(#)".}
+
+proc set_num_threads*(_: typedesc[torch]; num: int) = set_num_threads(num)
+
+proc get_num_threads*(_: typedesc[torch];): int {.importcpp: "at::get_num_threads()".}
 
 when isMainModule:
   # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim
   # nim cpp -d:wasm --nimcache=nimcache-wasm -o:nimcache-wasm/test.js torch.nim && node nimcache-wasm/test.js
 
   var
-    z = torch.zeros(2, 1, 4)
+    z = torch.zeros(@[2, 1, 4])
 
     x = torch.tensor([
         [
@@ -408,38 +460,6 @@ when isMainModule:
   x.print()
   echo z.size(0)
 
-  var longt = torch.zeros(1, 1, 1, dtype = LongTensor)
-  longt.print()
-
-  var ht = torch.zeros(1, 1, 1, dtype = ByteTensor)
-  ht.print()
-
-  var tensorList: TensorList
-  var tensorSeq = newSeq[Tensor]()
-  tensorSeq.add(z)
-  tensorSeq.add(x)
-  tensorList = tensorSeq
-  tensorList = @[z, x]
-  for i in 0..tensorList.high:
-    tensorList[i].print()
-  
-  var
-    c0 = torch.tensor([1.0, 0.0])
-    c1 = torch.tensor([0.2, 1.1])
-    c2 = torch.cat(@[c0, c1])
-  
-  echo "cat test:"
-  c2.print()
-  
-  # var tupleTest = torch.multilabel_margin_loss_forward(c0, c1, 0)
-  
-  var intList: IntList = @[10, 20, 30]
-  for i in 0..intList.high:
-    echo "IntList[", i, "] = ", intList[i]
-  
-  for item in intList:
-    echo item
-
   # grucell
   var
     gi = x.matmul(w_input.transpose(1, 2)) + b_input
@@ -447,49 +467,86 @@ when isMainModule:
     (i_r, i_i, i_nn) = gi.chunk(3, 2)
     (h_r, h_i, h_n) = gh.chunk(3, 2)
     resetgate = (i_r + h_r).sigmoid_u()
-    inputgate = torch.sigmoid_u(i_i + h_i)
+    presigmoid = i_i + h_i
+    inputgate = torch.sigmoid_u(presigmoid)
     newgate = (i_nn + resetgate * h_n).tanh_u()
     hy = newgate + inputgate * (hidden - newgate)
-
+  
   hy.print()
 
-  var
-    tos = toSeq[float32](hy)
-    froms = torch.fromSeq(tos, 2, 3, 2)
+  when not defined wasmamtron:
+    var longt = torch.zeros(@[1, 1, 1], dtype = LongTensor)
+    longt.print()
+
+    var ht = torch.zeros(@[1, 1, 1], dtype = ByteTensor)
+    ht.print()
+
+    when not defined wasm:
+      var tensorList: TensorList
+      var tensorSeq = newSeq[Tensor]()
+      tensorSeq.add(z)
+      tensorSeq.add(x)
+      tensorList = tensorSeq
+      tensorList = @[z, x]
+      for i in 0..tensorList.high:
+        tensorList[i].print()
     
-  var (ra, rb) = prelu_backward(gi, gh, hy, @[true, true])
-  
+    var
+      c0 = torch.tensor([1.0, 0.0])
+      c1 = torch.tensor([0.2, 1.1])
+      c2 = torch.cat(@[c0, c1])
+    
+    echo "cat test:"
+    c2.print()
+    
+    # var tupleTest = torch.multilabel_margin_loss_forward(c0, c1, 0)
+    
+    var intList: IntList = @[10, 20, 30]
+    for i in 0..intList.high:
+      echo "IntList[", i, "] = ", intList[i]
+    
+    for item in intList:
+      echo item
 
-  echo tos
-  froms.print()
-  
-  when not defined(wasm) and defined(cuda):
-    if globalContext().hasCUDA().to(bool):
-      echo "Cuda available"
-      echo "Cuda device ", globalContext().current_device().to(int)
-      var cudaTensor = torch.zeros(7, 7, 7, device = torch.device("cuda"), dtype = torch.DoubleTensor)
-      cudaTensor.printTensor()
+    var
+      tos = toSeq[float32](hy)
+      froms = tos.fromSeq(2, 3, 2)
+      
+    var (ra, rb) = torch.prelu_backward(gi, gh, hy, @[true, true])
+    
 
-      froms = froms.cuda()
-      froms.printTensor()
+    echo tos
+    froms.print()
+    
+    when defined cuda:
+      if globalContext().hasCUDA().to(bool):
+        echo "Cuda available"
+        echo "Cuda device ", globalContext().current_device().to(int)
+        var cudaTensor = torch.zeros(@[7, 7, 7], device = torch.device("cuda"), dtype = DoubleTensor)
+        cudaTensor.printTensor()
 
-      x = x.cuda()
-      hidden = hidden.cuda()
-      b_input = b_input.cuda()
-      b_recur = b_recur.cuda()
-      w_input = w_input.cuda()
-      w_recur = w_recur.cuda()
-      gi = x.matmul(w_input.transpose(1, 2)) + b_input
-      gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
-      (i_r, i_i, i_nn) = gi.chunk(3, 2)
-      (h_r, h_i, h_n) = gh.chunk(3, 2)
-      resetgate = (i_r + h_r).sigmoid()
-      inputgate = torch.sigmoid(i_i + h_i)
-      newgate = (i_nn + resetgate * h_n).tanh()
-      hy = newgate + inputgate * (hidden - newgate)
+        froms = froms.cuda()
+        froms.printTensor()
 
-      hy.printTensor()
+        x = x.cuda()
+        hidden = hidden.cuda()
+        b_input = b_input.cuda()
+        b_recur = b_recur.cuda()
+        w_input = w_input.cuda()
+        w_recur = w_recur.cuda()
+        gi = x.matmul(w_input.transpose(1, 2)) + b_input
+        gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
+        (i_r, i_i, i_nn) = gi.chunk(3, 2)
+        (h_r, h_i, h_n) = gh.chunk(3, 2)
+        resetgate = (i_r + h_r).sigmoid()
+        presigmoid = i_i + h_i
+        inputgate = torch.sigmoid(presigmoid)
+        newgate = (i_nn + resetgate * h_n).tanh()
+        hy = newgate + inputgate * (hidden - newgate)
 
+        hy.printTensor()
+    
+    torch.manual_seed(1)
 
   # tensor([[-0.5317, -0.4753],
   #         [-0.3930, -0.3210],

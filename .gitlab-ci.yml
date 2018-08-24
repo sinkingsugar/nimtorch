@@ -1,0 +1,53 @@
+build:aten:native:
+  stage: build
+  script:
+    - cd docker/docker-aten-native
+    - docker build -t docker_aten_native .
+  tags:
+    - LINUX, DOCKER
+
+build:aten:wasm:
+  stage: build
+  script:
+    - cd docker/docker-aten-wasm
+    - docker build -t docker_aten_wasm .
+  tags:
+    - LINUX, DOCKER
+  
+test:aten:native:
+  stage: test
+  script:
+    - nimble -y develop
+    - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
+    - docker cp docker_aten_native-temp:/root/pytorch/aten/built/output output
+    - export ATEN=`pwd`/output
+    - nim cpp -r -o:test torch/generator.nim
+    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch
+    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test torch/test_derivatives.nim
+  after_script:
+    - docker stop docker_aten_native-temp
+    - docker rm docker_aten_native-temp
+  dependencies:
+    - build:aten:native
+  tags:
+    - LINUX, DOCKER, NIM, PYYAML
+
+test:aten:wasm:
+  stage: test
+  script:
+    - nimble -y develop
+    - docker run --name docker_aten_wasm-temp -d docker_aten_wasm /bin/bash
+    - docker cp docker_aten_wasm-temp:/root/pytorch/aten/built/output output
+    - export ATEN=`pwd`/output
+    - nim cpp -r -o:test torch/generator.nim
+    - nim cpp -d:wasm -d:release -o:test.js nimtorch
+    - node test.js
+    - nim cpp -d:wasm -d:release -o:test.js torch/test_derivatives.nim
+    - node test.js
+  after_script:
+    - docker stop docker_aten_wasm-temp
+    - docker rm docker_aten_wasm-temp
+  dependencies:
+    - build:aten:wasm
+  tags:
+    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML
