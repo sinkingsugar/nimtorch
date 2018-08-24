@@ -8,7 +8,7 @@ Aiming to be mostly auto-generated, internally using ATen.
 
 **Because nim compiles into cpp, this is not a wrapper or binding library, this is 1:1 ATen bare metal**
 
-The only requirement from pytorch is ATens core tensor library; because of this nimtorch is extremely versatible and can compile on any kind of device.
+The only requirement from pytorch is ATens core tensor library, because of this nimtorch is extremely versatible and can compile on any kind of device.
 
 ## Current status
 
@@ -17,7 +17,8 @@ The only requirement from pytorch is ATens core tensor library; because of this 
 - [x] Automatically generated, from `Declarations.yaml`, the full ATen's API
 - [x] Cuda support
 - [x] WASM support
-- [ ] Automatically generated, from `derivatives.yaml`, gradient procs
+- [x] Automatically generated, from `derivatives.yaml`, gradient procs
+- [ ] Add missing derivatives
 - [ ] Autograd
 - [ ] High level pytorch API (Module, Models etc)
 - [ ] ...
@@ -61,11 +62,11 @@ also python is a renown mess...
 
 ![python mess](https://camo.githubusercontent.com/953249a42e8fe655a8c1fdfe80744a42b4d25723/68747470733a2f2f696d67732e786b63642e636f6d2f636f6d6963732f707974686f6e5f656e7669726f6e6d656e742e706e67)
 
-## How to install
+## Getting started
 
 Make sure you have a recent nim version and nimble in your path
 
-`nimble install nimtorch` (pending package PR)
+`nimble install nimtorch`
 
 *or*
 
