@@ -76,10 +76,10 @@ generatedProcs.add(ProcInfo(originalName: "strides", name: "strides", kind: Tens
 generatedProcs.add(ProcInfo(originalName: "type", name: "getType", kind: Tensor))
 
 block declarations:
-  var output = newFileStream("torch/declarations.nim", fmWrite)
+  var output = newFileStream("nimtorch/declarations.nim", fmWrite)
 
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r torch/generator.nim\n"
+  output.writeLine "# nim c -r nimtorch/generator.nim\n"
 
   # convert from yaml to json to load at compile time, using python3 for now
   let
@@ -321,10 +321,10 @@ block declarations:
   output.close()
 
 block derivatives: # we still need to implement some of the procs in pytorch's 'tools/autograd/templates/Functions.cpp'
-  var output = newFileStream("torch/derivatives.nim", fmWrite)
+  var output = newFileStream("nimtorch/derivatives.nim", fmWrite)
 
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r torch/generator.nim\n"
+  output.writeLine "# nim c -r nimtorch/generator.nim\n"
   output.writeLine "import math"
   output.writeLine "import ../nimtorch\n"
   output.writeLine "const M_PI = math.PI\n"
