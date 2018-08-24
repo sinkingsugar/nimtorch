@@ -460,38 +460,6 @@ when isMainModule:
   x.print()
   echo z.size(0)
 
-  var longt = torch.zeros(@[1, 1, 1], dtype = LongTensor)
-  longt.print()
-
-  var ht = torch.zeros(@[1, 1, 1], dtype = ByteTensor)
-  ht.print()
-
-  var tensorList: TensorList
-  var tensorSeq = newSeq[Tensor]()
-  tensorSeq.add(z)
-  tensorSeq.add(x)
-  tensorList = tensorSeq
-  tensorList = @[z, x]
-  for i in 0..tensorList.high:
-    tensorList[i].print()
-  
-  var
-    c0 = torch.tensor([1.0, 0.0])
-    c1 = torch.tensor([0.2, 1.1])
-    c2 = torch.cat(@[c0, c1])
-  
-  echo "cat test:"
-  c2.print()
-  
-  # var tupleTest = torch.multilabel_margin_loss_forward(c0, c1, 0)
-  
-  var intList: IntList = @[10, 20, 30]
-  for i in 0..intList.high:
-    echo "IntList[", i, "] = ", intList[i]
-  
-  for item in intList:
-    echo item
-
   # grucell
   var
     gi = x.matmul(w_input.transpose(1, 2)) + b_input
@@ -503,49 +471,82 @@ when isMainModule:
     inputgate = torch.sigmoid_u(presigmoid)
     newgate = (i_nn + resetgate * h_n).tanh_u()
     hy = newgate + inputgate * (hidden - newgate)
-
+  
   hy.print()
 
-  var
-    tos = toSeq[float32](hy)
-    froms = tos.fromSeq(2, 3, 2)
+  when not defined wasmamtron:
+    var longt = torch.zeros(@[1, 1, 1], dtype = LongTensor)
+    longt.print()
+
+    var ht = torch.zeros(@[1, 1, 1], dtype = ByteTensor)
+    ht.print()
+
+    when not defined wasm:
+      var tensorList: TensorList
+      var tensorSeq = newSeq[Tensor]()
+      tensorSeq.add(z)
+      tensorSeq.add(x)
+      tensorList = tensorSeq
+      tensorList = @[z, x]
+      for i in 0..tensorList.high:
+        tensorList[i].print()
     
-  var (ra, rb) = torch.prelu_backward(gi, gh, hy, @[true, true])
-  
+    var
+      c0 = torch.tensor([1.0, 0.0])
+      c1 = torch.tensor([0.2, 1.1])
+      c2 = torch.cat(@[c0, c1])
+    
+    echo "cat test:"
+    c2.print()
+    
+    # var tupleTest = torch.multilabel_margin_loss_forward(c0, c1, 0)
+    
+    var intList: IntList = @[10, 20, 30]
+    for i in 0..intList.high:
+      echo "IntList[", i, "] = ", intList[i]
+    
+    for item in intList:
+      echo item
 
-  echo tos
-  froms.print()
-  
-  when not defined(wasm) and defined(cuda):
-    if globalContext().hasCUDA().to(bool):
-      echo "Cuda available"
-      echo "Cuda device ", globalContext().current_device().to(int)
-      var cudaTensor = torch.zeros(@[7, 7, 7], device = torch.device("cuda"), dtype = DoubleTensor)
-      cudaTensor.printTensor()
+    var
+      tos = toSeq[float32](hy)
+      froms = tos.fromSeq(2, 3, 2)
+      
+    var (ra, rb) = torch.prelu_backward(gi, gh, hy, @[true, true])
+    
 
-      froms = froms.cuda()
-      froms.printTensor()
+    echo tos
+    froms.print()
+    
+    when defined cuda:
+      if globalContext().hasCUDA().to(bool):
+        echo "Cuda available"
+        echo "Cuda device ", globalContext().current_device().to(int)
+        var cudaTensor = torch.zeros(@[7, 7, 7], device = torch.device("cuda"), dtype = DoubleTensor)
+        cudaTensor.printTensor()
 
-      x = x.cuda()
-      hidden = hidden.cuda()
-      b_input = b_input.cuda()
-      b_recur = b_recur.cuda()
-      w_input = w_input.cuda()
-      w_recur = w_recur.cuda()
-      gi = x.matmul(w_input.transpose(1, 2)) + b_input
-      gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
-      (i_r, i_i, i_nn) = gi.chunk(3, 2)
-      (h_r, h_i, h_n) = gh.chunk(3, 2)
-      resetgate = (i_r + h_r).sigmoid()
-      presigmoid = i_i + h_i
-      inputgate = torch.sigmoid(presigmoid)
-      newgate = (i_nn + resetgate * h_n).tanh()
-      hy = newgate + inputgate * (hidden - newgate)
+        froms = froms.cuda()
+        froms.printTensor()
 
-      hy.printTensor()
-  
-  torch.manual_seed(1)
+        x = x.cuda()
+        hidden = hidden.cuda()
+        b_input = b_input.cuda()
+        b_recur = b_recur.cuda()
+        w_input = w_input.cuda()
+        w_recur = w_recur.cuda()
+        gi = x.matmul(w_input.transpose(1, 2)) + b_input
+        gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
+        (i_r, i_i, i_nn) = gi.chunk(3, 2)
+        (h_r, h_i, h_n) = gh.chunk(3, 2)
+        resetgate = (i_r + h_r).sigmoid()
+        presigmoid = i_i + h_i
+        inputgate = torch.sigmoid(presigmoid)
+        newgate = (i_nn + resetgate * h_n).tanh()
+        hy = newgate + inputgate * (hidden - newgate)
 
+        hy.printTensor()
+    
+    torch.manual_seed(1)
 
   # tensor([[-0.5317, -0.4753],
   #         [-0.3930, -0.3210],
