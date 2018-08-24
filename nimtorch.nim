@@ -1,4 +1,4 @@
-include torch/torch_cpp
+include nimtorch/torch_cpp
 import macros, sequtils, math
 
 type
@@ -64,7 +64,7 @@ template `@`*[IDX](a: array[IDX, SomeInteger]): IntList =
 
 # Auto generated #
 # append all the auto generated procs
-include torch/declarations
+include nimtorch/declarations
 
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
 
