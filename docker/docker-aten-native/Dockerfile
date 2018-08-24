@@ -9,7 +9,7 @@ RUN pip3 install typing
 RUN cd && \
 git clone --depth=1 https://github.com/fragcolor-xyz/pytorch.git && \
 cd pytorch && \
-git reset --hard 267c397c5bc3db6765991711ded9ba24f71abad4
+git reset --hard 5c0eece2fdca6006300875e002b1483bc7761854
 
 RUN cd && \
 cd pytorch && \
@@ -26,4 +26,5 @@ cd built && \
 cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDNN=OFF -DATEN_NO_TEST=ON -DCAFFE2_CMAKE_BUILDING_WITH_MAIN_REPO=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
 make -j10 && \
 make install -j10 && \
-make clean
+make clean && \
+cp ../../tools/autograd/derivatives.yaml `pwd`/output/share/
