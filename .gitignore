@@ -2,5 +2,6 @@ nimcache*
 artifacts
 a.out
 torch/generator
-nimtorch
 test
+nimtorch/generator
+nimtorch/test_derivatives

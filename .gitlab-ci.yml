@@ -1,3 +1,5 @@
+# used by our internal gitlab server
+
 build:aten:native:
   stage: build
   script:
@@ -23,7 +25,7 @@ test:aten:native:
     - export ATEN=`pwd`/output
     - nim cpp -r -o:test torch/generator.nim
     - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test torch/test_derivatives.nim
+    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch/test_derivatives.nim
   after_script:
     - docker stop docker_aten_native-temp
     - docker rm docker_aten_native-temp
@@ -42,7 +44,7 @@ test:aten:wasm:
     - nim cpp -r -o:test torch/generator.nim
     - nim cpp -d:wasm -d:release -o:test.js nimtorch
     - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js torch/test_derivatives.nim
+    - nim cpp -d:wasm -d:release -o:test.js nimtorch/test_derivatives.nim
     - node test.js
   after_script:
     - docker stop docker_aten_wasm-temp
