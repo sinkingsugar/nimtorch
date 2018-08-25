@@ -15,8 +15,8 @@ The only requirement from pytorch is ATens core tensor library, because of this 
 **Early stage**
 
 - [x] Automatically generated, from `Declarations.yaml`, the full ATen's API
-- [x] Cuda support
-- [x] WASM support
+- [x] Cuda support ( add -d:cuda when compiling with nim )
+- [x] WASM support ( add -d:wasm when compiling with nim )
 - [x] Automatically generated, from `derivatives.yaml`, gradient procs
 - [ ] Add missing derivatives
 - [ ] Autograd
@@ -73,18 +73,21 @@ Make sure you have a recent nim version and nimble in your path
 1. clone this repo
 2. `cd nimtorch`
 3. `nimble develop`
-4. set $ATEN environment variable to point at ATens folder (see instructions under)
-5. (optional) run self test `nim cpp -r torch.nim`
+
+*finally*
+
+1. set $ATEN environment variable to point at ATens folder (see instructions under)
+2. (optional) run self test `nim cpp -r torch.nim`
 
 ## ATen's build instructions
 
-Windows was tested and works, instructions should be similar to linux.
+*Windows was tested and works, instructions should be similar to linux.*
 
-**Linux only**
+**Linux**
 
 ### Easy way
 
-*Build ATen libraries, in this example for cuda8/ubuntu16.04 kind of system (will work on other distros as well)*
+*Build ATen libraries, in this example for a native linux system (will work on other distros as well, as long as core libs are up-to-date)*
 
 1. Make sure you have a system with docker installed
 2. `cd docker && cd docker-aten-native`
@@ -97,12 +100,3 @@ Windows was tested and works, instructions should be similar to linux.
 ### Hard way
 
 1. Check content of dockerfiles for requirements and cmake command
-
-To build a *wasm* version you this might be helpful:
-```shell
-emconfigure cmake -DUSE_CUDA=OFF -Wno-deprecated -DCMAKE_BUILD_TYPE=Release -DCAFFE2_CMAKE_BUILDING_WITH_MAIN_REPO=OFF -DCMAKE_C_FLAGS="-Wno-implicit-function-declaration -DEMSCRIPTEN -s DISABLE_EXCEPTION_CATCHING=0" -DCMAKE_CXX_FLAGS="-Wno-implicit-function-declaration -DEMSCRIPTEN -s DISABLE_EXCEPTION_CATCHING=0" -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
-
-emmake make
-```
-
-
