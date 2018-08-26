@@ -2,19 +2,17 @@
 
 Pytorch - Py + Nim
 
-A pytorch's nim frontend.
+A Nim frontend for pytorch, aiming to be mostly auto-generated and internally using ATen.
 
-Aiming to be mostly auto-generated, internally using ATen.
+**Because Nim compiles to C++, this is not a wrapper or binding library. It generates 1-to-1 native ATen code.**
 
-**Because nim compiles into cpp, this is not a wrapper or binding library, this is 1:1 ATen bare metal**
-
-The only requirement from pytorch is ATens core tensor library, because of this nimtorch is extremely versatible and can compile on any kind of device.
+The only requirement from pytorch is ATen's core tensor library. Because of this, nimtorch is extremely versatile and can compile on any kind of device.
 
 ## Current status
 
 **Early stage**
 
-- [x] Automatically generated, from `Declarations.yaml`, the full ATen's API
+- [x] Automatically generated, from `Declarations.yaml`, the full ATen API
 - [x] Cuda support ( add -d:cuda when compiling with nim )
 - [x] WASM support ( add -d:wasm when compiling with nim )
 - [x] Automatically generated, from `derivatives.yaml`, gradient procs
@@ -23,7 +21,7 @@ The only requirement from pytorch is ATens core tensor library, because of this 
 - [ ] High level pytorch API (Module, Models etc)
 - [ ] ...
 
-The final aim is to be as compatible as possible with the pytorch API
+The final aim is to be as compatible as possible with the pytorch API.
 
 ## Why
 
@@ -58,13 +56,13 @@ let
   hy = newgate + inputgate * (hidden - newgate)
 ```
 
-also python is a renown mess...
+Also python is a complete mess...
 
 ![python mess](https://camo.githubusercontent.com/953249a42e8fe655a8c1fdfe80744a42b4d25723/68747470733a2f2f696d67732e786b63642e636f6d2f636f6d6963732f707974686f6e5f656e7669726f6e6d656e742e706e67)
 
 ## Getting started
 
-Make sure you have a recent nim version and nimble in your path
+Make sure you have a recent Nim version and Nimble in your path
 
 `nimble install nimtorch`
 
@@ -76,10 +74,10 @@ Make sure you have a recent nim version and nimble in your path
 
 *finally*
 
-1. set `$ATEN` environment variable to point at ATens folder (see instructions under)
+1. set `$ATEN` environment variable to point to ATen's folder (see instructions below)
 2. (optional) run self test `nim cpp -r nimtorch.nim`
 
-## ATen's build instructions
+## ATen build instructions
 
 *Windows was tested and works, instructions should be similar to linux.*
 
@@ -95,7 +93,7 @@ Make sure you have a recent nim version and nimble in your path
 4. `docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash`
 5. `docker cp docker_aten_native-temp:/root/pytorch/aten/built/output output`
 6. `docker rm docker_aten_native-temp`
-7. Profit your *output* folder
+7. Retrieve the *output* folder
   
 ### Hard way
 
