@@ -62,26 +62,27 @@ when atenPath == "":
 cppincludes(atenPath & """/include""")
 cpplibpaths(atenPath & """/lib""")
 cpplibpaths(atenPath & """/lib64""")
-cpplibs("ATen_cpu.lib")
 
 type ilsize* = int64
 
-when not defined wasm:
+when defined wasm:
+  {.passL: "-lATen_cpu".}
 
+elif defined windows:
+  cpplibs("ATen_cpu.lib")
   cpplibs("cpuinfo.lib")
   when defined cuda:
     cpplibs("cuda.lib")
 
-  when defined windows:
-    const cudaPath = getEnv("CUDA_PATH")
-    cppincludes(cudaPath & """/include""")
+  const cudaPath = getEnv("CUDA_PATH")
+  cppincludes(cudaPath & """/include""")
 
-    when defined cuda:
-      cpplibpaths(cudaPath & """/lib/Win32""")
-      cpplibpaths(cudaPath & """/lib/x64""")
-      cpplibs("cuda.lib")
+  when defined cuda:
+    cpplibpaths(cudaPath & """/lib/Win32""")
+    cpplibpaths(cudaPath & """/lib/x64""")
+    cpplibs("cuda.lib")
 
-  else:
-    {.passL: "-lsleef -pthread -fopenmp -lrt".}
-    when defined cuda:
-      {.passL: "-Wl,--no-as-needed -lcuda".}
+else:
+  {.passL: "-lATen_cpu -lcpuinfo -lsleef -pthread -fopenmp -lrt".}
+  when defined cuda:
+    {.passL: "-lATen_cuda -Wl,--no-as-needed -lcuda".}
