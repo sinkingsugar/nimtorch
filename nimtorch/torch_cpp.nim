@@ -55,22 +55,33 @@ var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
 var DeviceTypeCPU* {.importcpp: "at::DeviceType::CPU", nodecl.}: cint
 var DeviceTypeCUDA* {.importcpp: "at::DeviceType::CUDA", nodecl.}: cint
 
-{.passC: "-I$ATEN/include".}
+const atenPath = getEnv("ATEN")
+when atenPath == "":
+  {.error: "Please set $ATEN environment variable to point to the ATen installation path".}
 
-static:
-  doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
+cppincludes(atenPath & """/include""")
+cpplibpaths(atenPath & """/lib""")
+cpplibpaths(atenPath & """/lib64""")
+cpplibs("ATen_cpu.lib")
 
-when defined wasm:
-  {.passL: "-L$ATEN/lib -lATen_cpu".}
-  
-  type ilsize* = clonglong
-  
-elif defined cuda:
-  {.passL: "-Wl,--no-as-needed -L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lATen_cuda -lsleef -lcpuinfo -lcuda -pthread -fopenmp -lrt".}
+type ilsize* = int64
 
-  type ilsize* = clong
+when not defined wasm:
 
-else:
-  {.passL: "-L$ATEN/lib -L$ATEN/lib64 -lATen_cpu -lsleef -lcpuinfo -pthread -fopenmp -lrt".}
+  cpplibs("cpuinfo.lib")
+  when defined cuda:
+    cpplibs("cuda.lib")
 
-  type ilsize* = clong
+  when defined windows:
+    const cudaPath = getEnv("CUDA_PATH")
+    cppincludes(cudaPath & """/include""")
+
+    when defined cuda:
+      cpplibpaths(cudaPath & """/lib/Win32""")
+      cpplibpaths(cudaPath & """/lib/x64""")
+      cpplibs("cuda.lib")
+
+  else:
+    {.passL: "-lsleef -pthread -fopenmp -lrt".}
+    when defined cuda:
+      {.passL: "-Wl,--no-as-needed -lcuda".}

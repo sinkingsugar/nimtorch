@@ -34,11 +34,8 @@ iterator items*(tensors: TensorList): Tensor {.inline.} =
 proc `@`*[IDX](a: array[IDX, Tensor]): TensorList =
   for tensor in a:
     result.add(tensor)
-    
-converter toTensorSeq*(tensors: TensorList): seq[Tensor] =
-  sequtils.toSeq(tensors.items)
-  
-converter toTensorList*(tensors: seq[Tensor]): TensorList =
+
+converter toTensorList*(tensors: openarray[Tensor]): TensorList =
   for tensor in tensors:
     result.add(tensor)
 
@@ -171,7 +168,7 @@ proc tensor*(_: typedesc[torch]; data: openarray; dtype: TensorKind; device: Dev
   # figure out size of array/seq
   var size = newSeq[ilsize]()
   for length in lenIter(data):
-    size.add(length)
+    size.add(length.ilsize)
   
   # make shape out of size
   let shape = cppinit(AIntList, cast[ptr ilsize](addr(size[0])), size.len.csize)
@@ -480,15 +477,10 @@ when isMainModule:
   var ht = torch.zeros(@[1, 1, 1], dtype = ByteTensor)
   ht.print()
 
-  when not defined wasm:
-    var tensorList: TensorList
-    var tensorSeq = newSeq[Tensor]()
-    tensorSeq.add(z)
-    tensorSeq.add(x)
-    tensorList = tensorSeq
-    tensorList = @[z, x]
-    for i in 0..tensorList.high:
-      tensorList[i].print()
+  var tensorList: TensorList
+  tensorList = @[z, x]
+  for i in 0..tensorList.high:
+    tensorList[i].print()
   
   var
     c0 = torch.tensor([1.0, 0.0])
