@@ -71,18 +71,19 @@ when defined wasm:
 elif defined windows:
   type ilsize* = int64
 
-  cpplibs("ATen_cpu.lib")
-  cpplibs("cpuinfo.lib")
-  when defined cuda:
-    cpplibs("cuda.lib")
-
-  const cudaPath = getEnv("CUDA_PATH")
-  cppincludes(cudaPath & """/include""")
+  cpplibs(atenPath & "/lib/ATen_cpu.lib")
+  cpplibs(atenPath & "/lib/cpuinfo.lib")
 
   when defined cuda:
-    cpplibpaths(cudaPath & """/lib/Win32""")
-    cpplibpaths(cudaPath & """/lib/x64""")
-    cpplibs("cuda.lib")
+    const cudaPath = getEnv("CUDA_PATH")
+    cppincludes(cudaPath & """/include""")
+  
+    when sizeof(int) == 8:
+      const cudaLibPath = cudaPath & "/lib/x64"
+    else:
+      const cudaLibPath = cudaPath & "/lib/Win32"
+
+    cpplibs(cudaLibPath & "/cuda.lib")
 
 else:
   type ilsize* = clong
