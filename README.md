@@ -46,7 +46,7 @@ hy = newgate + inputgate * (hidden - newgate)
 ```nimrod
 # GRUCell
 let
-  gi = x.matmul(w_input.()) + b_input
+  gi = x.matmul(w_input.t()) + b_input
   gh = hidden.matmul(w_recur.t()) + b_recur
   (i_r, i_i, i_nn) = gi.chunk(3, 1)
   (h_r, h_i, h_n)  = gh.chunk(3, 1)
