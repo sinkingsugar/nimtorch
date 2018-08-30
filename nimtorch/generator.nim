@@ -178,9 +178,10 @@ block declarations:
           
         elif node["returns"].len > 1: # tuple, a bit ugly tho
           procInfo.returnsTuple = true
-          
+
           var
-            tupleStr = ""
+            tupleStr1 = ""
+            tupleStr2 = ""
             convertStr = ""
           
           let returnsHigh = node["returns"].len - 1
@@ -188,15 +189,31 @@ block declarations:
             let
               res = node["returns"][i]["dynamic_type"].getStr()
               resType = node["returns"][i]["type"].getStr()
+              
+            var returnName = node["returns"][i]["name"].getStr()
             
-            tupleStr &= toNimType(res)
+            # Need to
+            # turn any grad_input into self because of:
+            # https://github.com/pytorch/pytorch/blob/e26d584445a80a548485097bfbef1f67bba5f771/aten/src/ATen/nn_parse.py#L356
+            # addume grad_ is to be cut cos of
+            # https://github.com/pytorch/pytorch/blob/e26d584445a80a548485097bfbef1f67bba5f771/aten/src/ATen/nn_parse.py#L356
+            if returnName == "grad_input":
+              returnName = "self"
+            elif returnName.startsWith("grad_"):
+              returnName = returnName["grad_".len..^1]
+            
+            returnName.validate()
+
+            tupleStr1 &= returnName & ": " & toNimType(res)
+            tupleStr2 &= toNimType(res)
             
             if i != returnsHigh:
-              tupleStr &= ", "
+              tupleStr1 &= ", "
+              tupleStr2 &= ", "
             else:
-              convertStr = "to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr & "]).toNimTuple()"
+              convertStr = "to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple()"
             
-          output.writeLine ofTemplateTo % [validName, "(" & tupleStr & ")", name, argsStr1, argsStr2, convertStr, deprecatedStr]
+          output.writeLine ofTemplateTo % [validName, "tuple[" & tupleStr1 & "]", name, argsStr1, argsStr2, convertStr, deprecatedStr]
             
         else:
           raise newException(InvalidReturnException, "Not implemented returns length")
