@@ -1,4 +1,4 @@
-import os, strutils, macros, osproc, json, sequtils, streams, pegs
+import os, strutils, macros, osproc, json, sequtils, streams, pegs, tables
 
 # nim naming issues:
 # if a name is a nim keyword, like "var", the name will be prefixed by "a", and so it will be "avar"
@@ -8,7 +8,7 @@ const
   ofTensorTo = "template $1*(self: Tensor$4): $2 $7= self.dynamicCppCall(\"$3\"$5).$6"
   ofTypeTo = "template $1*(ty: TensorType; $4): $2 $7= ty.dynamicCppCall(\"$3\"$5).$6"
   ofNamespaceTo = "template $1*(_: typedesc[torch]; $4): $2 $7= dynamicCCall(\"at::$3\"$5).$6"
-  backward = "proc $1_bwd*(grad, fwd_result: Tensor$2): $3 =$4"
+  backward = "proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 =$5"
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
@@ -23,7 +23,8 @@ type
     originalName: string
     name: string
     args: seq[ArgInfo]
-    returnsTuple: bool
+    returns: seq[ArgInfo]
+    nimReturnType: string
     kind: MethodOfKind
 
   MethodOfKind = enum
@@ -175,10 +176,11 @@ block declarations:
           let outputType = toNimType(node["returns"][0]["dynamic_type"].getStr())
           
           output.writeLine ofTemplateTo % [validName, outputType, name, argsStr1, argsStr2, "to(" & outputType & ")", deprecatedStr]
+
+          procInfo.returns.add(ArgInfo(originalName: "", name: "", nimType: outputType))
+          procInfo.nimReturnType = outputType
           
         elif node["returns"].len > 1: # tuple, a bit ugly tho
-          procInfo.returnsTuple = true
-
           var
             tupleStr1 = ""
             tupleStr2 = ""
@@ -202,10 +204,16 @@ block declarations:
             elif returnName.startsWith("grad_"):
               returnName = returnName["grad_".len..^1]
             
+            var
+              originalReturnName = returnName
+              outputType = res.toNimType
+
             returnName.validate()
 
-            tupleStr1 &= returnName & ": " & toNimType(res)
-            tupleStr2 &= toNimType(res)
+            procInfo.returns.add(ArgInfo(originalName: originalReturnName, name: returnName, nimType: outputType))
+
+            tupleStr1 &= returnName & ": " & outputType
+            tupleStr2 &= outputType
             
             if i != returnsHigh:
               tupleStr1 &= ", "
@@ -214,6 +222,8 @@ block declarations:
               convertStr = "to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple()"
             
           output.writeLine ofTemplateTo % [validName, "tuple[" & tupleStr1 & "]", name, argsStr1, argsStr2, convertStr, deprecatedStr]
+
+          procInfo.nimReturnType = "tuple[" & tupleStr1 & "]"
             
         else:
           raise newException(InvalidReturnException, "Not implemented returns length")
@@ -240,7 +250,7 @@ block declarations:
       var validName = name
       validName.validate()
 
-      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo](), kind: Tensor)
+      var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: Tensor)
 
       # in Tensor kind add Tensor self
       procInfo.args.add(ArgInfo(originalName: "self", name: "self", nimType: "Tensor"))
@@ -456,28 +466,29 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
       argsStr &= ", " & arg.name & ": " & arg.nimType
     
     block generateProc:
-      if info.returnsTuple:
-        hasError = true
-        break generateProc
-
       var nodeIndex = 0
       for k,v in node:
         let vStr = v.getStr().replace("at::", "") # also remove any at::prefix
         if k == "name" or vStr.startsWith("not_implemented"):
           continue
 
-        var names = newSeq[string]()
+        var names = newSeq[tuple[name: string; index: int]]()
 
-        # k can be multi like: "self, weight, bias"
+        # k can be multi like: "self, weight, bias", this is likely a tuple
         if k.contains(peg"',' \s?"):
+          var index = 0
           for n in k.split(peg"',' \s?"):
-            names.add(n)
+            names.add((n, index))
+            inc index
         else:
-          names.add(k)
+          names.add((k, -1))
+
+        # must keep track of final calls, to recycle them (specially if final result was a tuple)
+        var calls = initTable[string, string]()
         
         for name in names:
           var
-            argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name
+            argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name.name
             prefix = if nodeIndex == 0: "" else: ", "
           
           if argName.len == 0:
@@ -496,7 +507,8 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             let hasProc = generatedProcs.any do (x: ProcInfo) -> bool:
               result = false
               if neededProc =~ namePeg: # go thru again to filter out not matched stuff
-                if (x.kind == Tensor or x.kind == Namespace) and x.originalName == matches[0] and not x.returnsTuple:
+                # we assume Type ONLY procs are not used/needed in derivatives.. this might be wrong
+                if (x.kind == Tensor or x.kind == Namespace) and x.originalName == matches[0]:
                   result = true
             
             if not hasProc:
@@ -511,12 +523,28 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {!\ident}", "$1fwd_result$2")
           nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'output' {!\ident}", "$1fwd_result$2")
 
+          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'fwd_result' {\d}", "$1fwd_result[$2]")
+
           # replace int lists {} to our @[]
           nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
 
           body &= "  discard cppctor(addr(result." & argName[0].name & "))\n"
-          body &= "  result." & argName[0].name & " = " & nimLikeStr & "\n"
+
+          var valueName = argName[0].name & "_result"
           
+          # make sure we actually call only once
+          if calls.contains(nimLikeStr):
+            valueName = calls[nimLikeStr]
+          else:
+            body &= "  let " & valueName & " = " & nimLikeStr & "\n"
+          
+          calls.add(nimLikeStr, valueName)
+
+          if name.index == -1:
+            body &= "  result." & argName[0].name & " = " & valueName & "\n"
+          else:
+            body &= "  result." & argName[0].name & " = " & valueName & "[" & $name.index & "]\n"
+
           inc nodeIndex
       
     resTuple &= "]"
@@ -525,7 +553,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
       echo "Ignoring derivative (not implemented or error): ", name
       continue
 
-    let procStr = backward % [info.name, argsStr, resTuple, body]
+    let procStr = backward % [info.name, info.nimReturnType, argsStr, resTuple, body]
     output.writeLine procStr
 
   output.flush()
