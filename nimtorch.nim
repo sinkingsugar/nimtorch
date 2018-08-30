@@ -358,7 +358,7 @@ proc internalManualSeed(seed: int) =
 
 proc manual_seed*(_: typedesc[torch]; seed: int) = internalManualSeed(seed)
 
-proc set_num_threads(num: int) {.importcpp: "at::set_num_threads(#)".}
+proc set_num_threads(num: int) {.importcpp: "at::set_num_threads(#)", header: "ATen/ATen.h".}
 
 proc set_num_threads*(_: typedesc[torch]; num: int) = set_num_threads(num)
 
