@@ -8,7 +8,7 @@ const
   ofTensorTo = "template $1*(self: Tensor$4): $2 $7= self.dynamicCppCall(\"$3\"$5).$6"
   ofTypeTo = "template $1*(ty: TensorType; $4): $2 $7= ty.dynamicCppCall(\"$3\"$5).$6"
   ofNamespaceTo = "template $1*(_: typedesc[torch]; $4): $2 $7= dynamicCCall(\"at::$3\"$5).$6"
-  backward = "proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 =$5"
+  backward = "proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 {.inline, noinit.} =$5"
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
@@ -72,6 +72,10 @@ var generatedProcs = newSeq[ProcInfo]()
 generatedProcs.add(ProcInfo(originalName: "maybe_multiply", name: "maybe_multiply", kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
 generatedProcs.add(ProcInfo(originalName: "mm_mat1_backward", name: "mm_mat1_backward", kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
 generatedProcs.add(ProcInfo(originalName: "mm_mat2_backward", name: "mm_mat2_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "pow_backward", name: "pow_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "pow_backward_self", name: "pow_backward_self",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "pow_backward_exponent", name: "pow_backward_exponent",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "atan2_backward", name: "atan2_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
 generatedProcs.add(ProcInfo(originalName: "sizes", name: "sizes", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
 generatedProcs.add(ProcInfo(originalName: "strides", name: "strides", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
 generatedProcs.add(ProcInfo(originalName: "type", name: "getType", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
@@ -353,7 +357,8 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
   output.writeLine "# nim c -r nimtorch/generator.nim\n"
   output.writeLine "import math"
-  output.writeLine "import ../nimtorch\n"
+  output.writeLine "import ../nimtorch"
+  output.writeLine "import autograd_helpers\n"
   output.writeLine "const M_PI = math.PI\n"
 
   # convert from yaml to json to load at compile time, using python3 for now
