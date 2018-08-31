@@ -8,7 +8,8 @@ const
   ofTensorTo = "template $1*(self: Tensor$4): $2 $7= self.dynamicCppCall(\"$3\"$5).$6"
   ofTypeTo = "template $1*(ty: TensorType; $4): $2 $7= ty.dynamicCppCall(\"$3\"$5).$6"
   ofNamespaceTo = "template $1*(_: typedesc[torch]; $4): $2 $7= dynamicCCall(\"at::$3\"$5).$6"
-  backward = "proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 {.inline, noinit.} =$5"
+  backwardGrad = "proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 {.inline, noinit.} =$5"
+  backwardGrads = "proc $1_bwd*(grads: TensorList; fwd_result: $2$3): $4 {.inline, noinit.} =$5"
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
@@ -76,6 +77,8 @@ generatedProcs.add(ProcInfo(originalName: "pow_backward", name: "pow_backward",k
 generatedProcs.add(ProcInfo(originalName: "pow_backward_self", name: "pow_backward_self",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
 generatedProcs.add(ProcInfo(originalName: "pow_backward_exponent", name: "pow_backward_exponent",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
 generatedProcs.add(ProcInfo(originalName: "atan2_backward", name: "atan2_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "split_backward", name: "split_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "split_with_sizes_backward", name: "split_with_sizes_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
 generatedProcs.add(ProcInfo(originalName: "sizes", name: "sizes", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
 generatedProcs.add(ProcInfo(originalName: "strides", name: "strides", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
 generatedProcs.add(ProcInfo(originalName: "type", name: "getType", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
@@ -547,8 +550,9 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             addedInputMask = true
 
           # some gradients are multiple
-          if nimLikeStr.contains(peg"'grads[' \d ']'"):
+          if nimLikeStr.contains(peg"'grads[' \d ']'") or nimLikeStr.contains(peg"'grads'"):
             # TODO
+            echo "Ignoring multi grad proc: ", info.name
             hasError = true
             break generateProc
 
@@ -587,7 +591,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
       echo "Ignoring derivative (not implemented or error): ", name
       continue
 
-    let procStr = backward % [info.name, info.nimReturnType, argsStr, resTuple, body]
+    let procStr = backwardGrad % [info.name, info.nimReturnType, argsStr, resTuple, body]
     output.writeLine procStr
 
   output.flush()
