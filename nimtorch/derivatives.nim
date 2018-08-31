@@ -818,17 +818,17 @@ proc multi_margin_loss_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tens
 
 proc multilabel_margin_loss_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, is_target: Tensor], self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.multilabel_margin_loss_backward(grad, self, target, reduction, is_target)
+  let self_result = torch.multilabel_margin_loss_backward(grad, self, target, reduction, fwd_result.is_target)
   result.self = self_result
 
 proc nll_loss_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, total_weight: Tensor], self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64): tuple[self: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.nll_loss_backward(grad, self, target, weight, reduction, ignore_index, total_weight)
+  let self_result = torch.nll_loss_backward(grad, self, target, weight, reduction, ignore_index, fwd_result.total_weight)
   result.self = self_result
 
 proc nll_loss2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, total_weight: Tensor], self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64): tuple[self: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.nll_loss2d_backward(grad, self, target, weight, reduction, ignore_index, total_weight)
+  let self_result = torch.nll_loss2d_backward(grad, self, target, weight, reduction, ignore_index, fwd_result.total_weight)
   result.self = self_result
 
 proc smooth_l1_loss_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] =
@@ -891,7 +891,7 @@ proc leaky_relu_forward_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, n
 
 proc log_sigmoid_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, buffer: Tensor], self: Tensor): tuple[self: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.log_sigmoid_backward(grad, self, buffer)
+  let self_result = torch.log_sigmoid_backward(grad, self, fwd_result.buffer)
   result.self = self_result
 
 proc log_softmax_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] =
@@ -899,7 +899,7 @@ proc log_softmax_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim: int64
   let self_result = torch.log_softmax_backward_data(grad, fwd_result, dim, self)
   result.self = self_result
 
-proc prelu_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor): tuple[self: Tensor, weight: Tensor] =
+proc prelu_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor] =
   discard cppctor(addr(result.self))
   let self_result = torch.prelu_backward(grad, self, weight, grad_input_mask)
   result.self = self_result[0]
@@ -1008,12 +1008,12 @@ proc adaptive_avg_pool3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Te
 
 proc adaptive_max_pool2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, output_size: IntList): tuple[self: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.adaptive_max_pool2d_backward(grad, self, indices)
+  let self_result = torch.adaptive_max_pool2d_backward(grad, self, fwd_result.indices)
   result.self = self_result
 
 proc adaptive_max_pool3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, output_size: IntList): tuple[self: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.adaptive_max_pool3d_backward(grad, self, indices)
+  let self_result = torch.adaptive_max_pool3d_backward(grad, self, fwd_result.indices)
   result.self = self_result
 
 proc avg_pool2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool): tuple[self: Tensor] =
@@ -1028,17 +1028,17 @@ proc avg_pool3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, ker
 
 proc fractional_max_pool2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, kernel_size: IntList, output_size: IntList, random_samples: Tensor): tuple[self: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.fractional_max_pool2d_backward(grad, self, kernel_size, output_size, indices)
+  let self_result = torch.fractional_max_pool2d_backward(grad, self, kernel_size, output_size, fwd_result.indices)
   result.self = self_result
 
 proc max_pool2d_with_indices_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, ceil_mode: bool): tuple[self: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.max_pool2d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, indices)
+  let self_result = torch.max_pool2d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices)
   result.self = self_result
 
 proc max_pool3d_with_indices_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, ceil_mode: bool): tuple[self: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.max_pool3d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, indices)
+  let self_result = torch.max_pool3d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices)
   result.self = self_result
 
 proc max_unpool2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, indices: Tensor, output_size: IntList): tuple[self: Tensor] =
@@ -1051,43 +1051,43 @@ proc max_unpool3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, i
   let self_result = torch.max_unpool3d_backward(grad, self, indices, output_size, stride, padding)
   result.self = self_result
 
-proc thnn_batch_norm_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, save_mean: Tensor, save_std: Tensor], self: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, momentum: float64, eps: float64): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc thnn_batch_norm_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, save_mean: Tensor, save_std: Tensor], self: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, momentum: float64, eps: float64, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.thnn_batch_norm_backward(grad.contiguous(), self, weight, running_mean, running_var, training, eps, save_mean, save_std, grad_input_mask)
+  let self_result = torch.thnn_batch_norm_backward(grad.contiguous(), self, weight, running_mean, running_var, training, eps, fwd_result.save_mean, fwd_result.save_std, grad_input_mask)
   result.self = self_result[0]
   discard cppctor(addr(result.weight))
   result.weight = self_result[1]
   discard cppctor(addr(result.bias))
   result.bias = self_result[2]
 
-proc thnn_conv_transpose2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc thnn_conv_transpose2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, columns, ones, grad_input_mask)
+  let self_result = torch.thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   result.self = self_result[0]
   discard cppctor(addr(result.weight))
   result.weight = self_result[1]
   discard cppctor(addr(result.bias))
   result.bias = self_result[2]
 
-proc thnn_conv_transpose3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc thnn_conv_transpose3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, finput, fgrad_input, grad_input_mask)
+  let self_result = torch.thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   result.self = self_result[0]
   discard cppctor(addr(result.weight))
   result.weight = self_result[1]
   discard cppctor(addr(result.bias))
   result.bias = self_result[2]
 
-proc thnn_conv2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc thnn_conv2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, finput, fgrad_input, grad_input_mask)
+  let self_result = torch.thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   result.self = self_result[0]
   discard cppctor(addr(result.weight))
   result.weight = self_result[1]
   discard cppctor(addr(result.bias))
   result.bias = self_result[2]
 
-proc thnn_conv_depthwise2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc thnn_conv_depthwise2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
   let self_result = torch.thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
   result.self = self_result[0]
@@ -1097,27 +1097,27 @@ proc thnn_conv_depthwise2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: 
   let bias_result = grad.contiguous().view(@[grad.size(0), grad.size(1), -1]).sum(0).sum(1)
   result.bias = bias_result
 
-proc thnn_conv3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc thnn_conv3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, finput, fgrad_input, grad_input_mask)
+  let self_result = torch.thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   result.self = self_result[0]
   discard cppctor(addr(result.weight))
   result.weight = self_result[1]
   discard cppctor(addr(result.bias))
   result.bias = self_result[2]
 
-proc thnn_conv_dilated2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc thnn_conv_dilated2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, columns, ones, grad_input_mask)
+  let self_result = torch.thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   result.self = self_result[0]
   discard cppctor(addr(result.weight))
   result.weight = self_result[1]
   discard cppctor(addr(result.bias))
   result.bias = self_result[2]
 
-proc thnn_conv_dilated3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc thnn_conv_dilated3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
-  let self_result = torch.thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, columns, ones, grad_input_mask)
+  let self_result = torch.thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   result.self = self_result[0]
   discard cppctor(addr(result.weight))
   result.weight = self_result[1]
@@ -1308,10 +1308,10 @@ proc u_tanh_backward_bwd*(grad: Tensor; fwd_result: Tensor, grad_output: Tensor,
 
 proc u_cudnn_ctc_loss_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor], log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64, deterministic: bool): tuple[log_probs: Tensor] =
   discard cppctor(addr(result.log_probs))
-  let log_probs_result = result1
+  let log_probs_result = fwd_result[1]
   result.log_probs = log_probs_result
 
-proc cudnn_convolution_transpose_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, output_padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc cudnn_convolution_transpose_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, output_padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
   let self_result = torch.cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
   result.self = self_result[0]
@@ -1320,7 +1320,7 @@ proc cudnn_convolution_transpose_bwd*(grad: Tensor; fwd_result: Tensor, self: Te
   discard cppctor(addr(result.bias))
   result.bias = self_result[2]
 
-proc cudnn_convolution_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc cudnn_convolution_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
   let self_result = torch.cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
   result.self = self_result[0]
@@ -1341,27 +1341,18 @@ proc cudnn_affine_grid_generator_bwd*(grad: Tensor; fwd_result: Tensor, theta: T
   let theta_result = torch.cudnn_affine_grid_generator_backward(grad, N, C, H, W)
   result.theta = theta_result
 
-proc cudnn_batch_norm_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor, result2: Tensor], input: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, exponential_average_factor: float64, epsilon: float64): tuple[input: Tensor, weight: Tensor, bias: Tensor] =
+proc cudnn_batch_norm_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor, result2: Tensor], input: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, exponential_average_factor: float64, epsilon: float64, grad_input_mask: StdArray): tuple[input: Tensor, weight: Tensor, bias: Tensor] =
+  if not training:
+    raiseAssert("CuDNN cannot be used to compute backward in evaluation mode")
   discard cppctor(addr(result.input))
-  let input_result = training ? torch.cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, fwd_result[1], fwd_result[2], epsilon) : torch.thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, fwd_result[1], fwd_result[2], grad_input_mask)
+  let input_result =  torch.cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, fwd_result[1], fwd_result[2], epsilon) : torch.thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, fwd_result[1], fwd_result[2], grad_input_mask)
   result.input = input_result[0]
   discard cppctor(addr(result.weight))
   result.weight = input_result[1]
   discard cppctor(addr(result.bias))
   result.bias = input_result[2]
 
-proc u_cudnn_rnn_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor], input: Tensor, weight: TensorList, weight_stride0: int64, weight_buf: Tensor, hx: Tensor, cx: Tensor, mode: int64, hidden_size: int64, num_layers: int64, batch_first: bool, dropout: float64, train: bool, bidirectional: bool, batch_sizes: IntList, dropout_state: Tensor): tuple[input: Tensor, hx: Tensor, cx: Tensor, weight: TensorList] =
-  discard cppctor(addr(result.input))
-  let input_result = torch.u_cudnn_rnn_backward(input, weight, weight_stride0, fwd_result[4], hx, cx, fwd_result[0], grads[0], grads[1], grads[2], mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes, dropout_state, retain_variables ? fwd_result[3].clone() : fwd_result[3], grad_input_mask)
-  result.input = input_result[0]
-  discard cppctor(addr(result.hx))
-  result.hx = input_result[1]
-  discard cppctor(addr(result.cx))
-  result.cx = input_result[2]
-  discard cppctor(addr(result.weight))
-  result.weight = input_result[3]
-
-proc mkldnn_convolution_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
+proc mkldnn_convolution_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] =
   discard cppctor(addr(result.self))
   let self_result = torch.mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
   result.self = self_result[0]
@@ -1374,19 +1365,6 @@ proc stack_bwd*(grad: Tensor; fwd_result: Tensor, tensors: TensorList, dim: int6
   discard cppctor(addr(result.tensors))
   let tensors_result = torch.unbind(grad, dim)
   result.tensors = tensors_result
-
-proc u_thnn_fused_lstm_cell_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor, result2: Tensor], input_gates: Tensor, hidden_gates: Tensor, cx: Tensor, input_bias: Tensor, hidden_bias: Tensor): tuple[input_gates: Tensor, hidden_gates: Tensor, cx: Tensor, input_bias: Tensor, hidden_bias: Tensor] =
-  discard cppctor(addr(result.input_gates))
-  let input_gates_result = torch.u_thnn_fused_lstm_cell_backward(grads[0], grads[1], cx, fwd_result[1], fwd_result[2], input_bias.defined())
-  result.input_gates = input_gates_result[0]
-  discard cppctor(addr(result.hidden_gates))
-  result.hidden_gates = input_gates_result[1]
-  discard cppctor(addr(result.cx))
-  result.cx = input_gates_result[2]
-  discard cppctor(addr(result.input_bias))
-  result.input_bias = input_gates_result[3]
-  discard cppctor(addr(result.hidden_bias))
-  result.hidden_bias = input_gates_result[4]
 
 proc u_thnn_fused_gru_cell_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor], input_gates: Tensor, hidden_gates: Tensor, hx: Tensor, input_bias: Tensor, hidden_bias: Tensor): tuple[input_gates: Tensor, hidden_gates: Tensor, hx: Tensor, input_bias: Tensor, hidden_bias: Tensor] =
   discard cppctor(addr(result.input_gates))

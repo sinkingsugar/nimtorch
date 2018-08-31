@@ -449,7 +449,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
                   if argA != argB:
                     break checkArgs
                 
-                echo "Accepted ", nameFull
+                # echo "Accepted ", nameFull
                 info = candidate
                 break findCandidate
 
@@ -484,7 +484,10 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           names.add((k, -1))
 
         # must keep track of final calls, to recycle them (specially if final result was a tuple)
-        var calls = initTable[string, string]()
+        var
+          calls = initTable[string, string]()
+          addedInputMask = false
+          generatedTrainingAssert = false
         
         for name in names:
           var
@@ -512,7 +515,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
                   result = true
             
             if not hasProc:
-              echo "A needed proc was not found (or not implemented tuple): ", neededProc
+              echo "A needed proc was not found: ", neededProc
               hasError = true
               break generateProc
             
@@ -520,13 +523,39 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           nimLikeStr = nimLikeStr.parallelReplace(replacements)
 
           # fix fwd_result namings
+          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {\d}", "$1fwd_result[$2]")
+          nimLikeStr = nimLikeStr.replacef(peg"^'result' {\d}", "fwd_result[$1]")
           nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {!\ident}", "$1fwd_result$2")
-          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'output' {!\ident}", "$1fwd_result$2")
+          nimLikeStr = nimLikeStr.replacef(peg"^'result' {!\ident}", "fwd_result$1")
 
-          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'fwd_result' {\d}", "$1fwd_result[$2]")
+          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'output' {!\ident}", "$1fwd_result$2")
+          nimLikeStr = nimLikeStr.replacef(peg"^'output' {!\ident}", "fwd_result$1")
+
+          # replace any fwd result tuple names with proper prefix if necessary
+          if info.returns.len > 1:
+            for retArg in info.returns:
+              nimLikeStr = nimLikeStr.replacef(peg("{[^_]} '" & retArg.originalName & "' {!\\ident}"), "$1fwd_result." & retArg.name & "$2")
+
+          # some gradient have grad_input_mask, find and add it
+          if not addedInputMask and nimLikeStr.contains(peg"{[^_]} 'grad_input_mask' {!\ident}"):
+            argsStr &= ", grad_input_mask: StdArray"
+            addedInputMask = true
+
+          # some gradients are multiple
+          if nimLikeStr.contains(peg"'grads[' \d ']'"):
+            # TODO
+            hasError = true
+            break generateProc
 
           # replace int lists {} to our @[]
           nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
+
+          # sometimes we have "training ?" pattern
+          if nimLikeStr.contains(peg"^ 'training ?'"):
+            nimLikeStr = nimLikeStr.replace(peg"^ 'training ?'", "")
+            if not generatedTrainingAssert:
+              body &= "  if not training:\n    raiseAssert(\"CuDNN cannot be used to compute backward in evaluation mode\")\n"
+              generatedTrainingAssert = true
 
           body &= "  discard cppctor(addr(result." & argName[0].name & "))\n"
 

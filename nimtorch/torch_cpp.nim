@@ -12,20 +12,7 @@ defineCppType(AScalarType, "at::ScalarType", "ATen/ATen.h")
 defineCppType(AIntList, "at::IntList", "ATen/ATen.h")
 defineCppType(AGenerator, "at::Generator", "ATen/ATen.h")
 defineCppType(AContext, "at::Context", "ATen/ATen.h")
-defineCppType(ATensors, "std::vector<at::Tensor>", "vector")  
-
-# some issues generating static[int] in cpp
-type
-  StdArray* {.importcpp: "std::array<'0, '1>", header: "array".} [T; S: static[int]] = object
-
-proc `[]`*[T; S: static[int]](v: StdArray[T, S]; index: int): T {.inline.} = v.toCpp[index].to(T)
-proc `[]=`*[T; S: static[int]](v: StdArray[T, S]; index: int; value: T) {.inline.} = v.toCpp[index] = value
-
-template `@`*[SIZE](a: array[SIZE, bool]): StdArray = 
-  var result: StdArray[bool, a.len]
-  for i in 0..a.high: 
-    result[i] = a[i]
-  result
+defineCppType(ATensors, "std::vector<at::Tensor>", "vector")
 
 var ATkByte {.importcpp: "at::kByte", nodecl.}: AScalarType
 var ATkChar {.importcpp: "at::kChar", nodecl.}: AScalarType
