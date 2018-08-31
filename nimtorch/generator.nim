@@ -69,12 +69,12 @@ proc validate(validName: var string) =
 var generatedProcs = newSeq[ProcInfo]()
 
 # add some known procs we created in torch.nim, don't care about args
-generatedProcs.add(ProcInfo(originalName: "maybe_multiply", name: "maybe_multiply", kind: Namespace))
-generatedProcs.add(ProcInfo(originalName: "mm_mat1_backward", name: "mm_mat1_backward", kind: Namespace))
-generatedProcs.add(ProcInfo(originalName: "mm_mat2_backward", name: "mm_mat2_backward",kind: Namespace))
-generatedProcs.add(ProcInfo(originalName: "sizes", name: "sizes", kind: Tensor))
-generatedProcs.add(ProcInfo(originalName: "strides", name: "strides", kind: Tensor))
-generatedProcs.add(ProcInfo(originalName: "type", name: "getType", kind: Tensor))
+generatedProcs.add(ProcInfo(originalName: "maybe_multiply", name: "maybe_multiply", kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "mm_mat1_backward", name: "mm_mat1_backward", kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "mm_mat2_backward", name: "mm_mat2_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "sizes", name: "sizes", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "strides", name: "strides", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
+generatedProcs.add(ProcInfo(originalName: "type", name: "getType", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
 
 block declarations:
   var output = newFileStream("nimtorch/declarations.nim", fmWrite)
@@ -250,7 +250,7 @@ block declarations:
       var validName = name
       validName.validate()
 
-      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo](), returns: newSeq[ArgInfo](), kind: Tensor)
+      var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: Tensor)
 
       # in Tensor kind add Tensor self
       procInfo.args.add(ArgInfo(originalName: "self", name: "self", nimType: "Tensor"))
@@ -287,7 +287,7 @@ block declarations:
       var validName = name
       validName.validate()
 
-      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo](), kind: Type)
+      var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: Type)
       
       var argsStr1 = ""
       var argsStr2 = ""
@@ -319,7 +319,7 @@ block declarations:
       var validName = name
       validName.validate()
 
-      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo](), kind: Namespace)
+      var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: Namespace)
       
       var argsStr1 = ""
       var argsStr2 = ""
