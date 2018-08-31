@@ -250,7 +250,7 @@ block declarations:
       var validName = name
       validName.validate()
 
-      var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: Tensor)
+      var procInfo = ProcInfo(originalName: name, name: validName, args: newSeq[ArgInfo](), returns: newSeq[ArgInfo](), kind: Tensor)
 
       # in Tensor kind add Tensor self
       procInfo.args.add(ArgInfo(originalName: "self", name: "self", nimType: "Tensor"))
