@@ -70,3 +70,7 @@ print(gmean.self)
 
 # o.backward()
 # print(x.grad)
+
+var emptyList: IntList
+let zeroTensor = torch.zeros(emptyList)
+zeroTensor.print()
