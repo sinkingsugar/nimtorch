@@ -25,29 +25,29 @@ proc `=destroy`*(x: var Tensor) {.inline.} =
   if x.hasTensor:
     cppdtor(addr(x.tensor))
     x.hasTensor = false
-  else:
-    # nim zeroes everything, make sure to write the right aten UndefinedTensor::singleton()
-    # this is a hacky workaround tho sadly
-    copyMem(addr(x.tensor), addr(undefinedTensor), sizeof(ATensor))
+  copyMem(addr(x.tensor), addr(undefinedTensor), sizeof(ATensor))
     
 proc `=sink`*(x: var Tensor; y: Tensor) {.inline.} =
   x.hasTensor = y.hasTensor
   if x.hasTensor:
     cppctor(addr(x.tensor))
     x.tensor = cppmove(y.tensor)
+  else:
+    copyMem(addr(x.tensor), addr(undefinedTensor), sizeof(ATensor))
 
 proc `=`*(x: var Tensor; y: Tensor) {.inline.} =
   x.hasTensor = y.hasTensor
   if x.hasTensor:
     cppctor(addr(x.tensor))
-    x.tensor = y.tensor
+    x.tensor = cppmove(y.tensor)
+  else:
+    copyMem(addr(x.tensor), addr(undefinedTensor), sizeof(ATensor))
 
 proc high*(v: TensorList): int {.inline.} = v.size().to(int) - 1
 
 proc len*(v: TensorList): int {.inline.} = v.size().to(int)
 
 proc get*(v: TensorList; index: int): Tensor {.inline, noinit.} =
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = v.toCpp[index].to(ATensor)
 
@@ -191,7 +191,7 @@ iterator flatIter[T](s: openarray[T]): auto {.inline.} =
     else:
       yield item
 
-proc tensor*(_: typedesc[torch]; data: openarray; dtype: TensorKind; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
+proc tensor*(_: typedesc[torch]; data: openarray; dtype: TensorKind; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline, noinit.} =
   # as noticed in Arraymancer as well:
   ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
@@ -213,13 +213,12 @@ proc tensor*(_: typedesc[torch]; data: openarray; dtype: TensorKind; device: Dev
   var tmp = ACPU(type(flatData[0]).toATenType()).dynamicCppCall(tensorFromBlob, addr(flatData[0]), shape).to(ATensor)
   
   # finally write into a tensor (notice: casting happens aten side!)
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   case device:
   of Device.CUDA: result.tensor = ACUDA(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: result.tensor = ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc tensor*(_: typedesc[torch]; data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
+proc tensor*(_: typedesc[torch]; data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline, noinit.} =
   return tensor(torch, data, defaultType, device)
 
 proc getType*(a: var Tensor): TensorType {.inline.} =
@@ -230,17 +229,14 @@ converter toTensorOptions*(tensorType: TensorType): TensorOptions =
   result = cppinit(TensorOptions, tensorType.toCpp)
 
 proc cpu*(a: var Tensor): Tensor {.inline, noinit.} =
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = a.tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
 
 proc cuda*(a: var Tensor): Tensor {.inline, noinit.} =
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = a.tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
 
 proc copy*(a: var Tensor; non_blocking: bool = false): Tensor {.inline, noinit.} =
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = a.tensor.dynamicCppCall("type").dynamicCppCall("copy", a.tensor, non_blocking).to(ATensor)
 
@@ -251,62 +247,50 @@ proc sizes*(a: var Tensor): IntList {.inline.} = a.tensor.dynamicCppCall("sizes"
 proc strides*(a: var Tensor): IntList = a.tensor.dynamicCppCall("strides").to(IntList)
 
 proc `-`*(a: Tensor): Tensor {.inline, noinit.} =
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (-(a.toCpp)).to(ATensor)
 
 proc `+`*(a, b: Tensor): Tensor {.inline, noinit.} =
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.tensor.toCpp + b.tensor.toCpp).to(ATensor)
 
 proc `<=`*(a, b: Tensor): Tensor {.inline, noinit.} = 
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.tensor.toCpp <= b.tensor.toCpp).to(ATensor)
 
 proc `>=`*(a, b: Tensor): Tensor {.inline, noinit.} =
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.tensor.toCpp >= b.tensor.toCpp).to(ATensor)
 
 proc `<=`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = 
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.tensor.toCpp <= b.float.toCpp).to(ATensor)
 
 proc `>=`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = 
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.tensor.toCpp >= b.float.toCpp).to(ATensor)
 
 proc `+`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = 
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.tensor.toCpp + b.float.toCpp).to(ATensor)
 
 proc `*`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.tensor.toCpp * b.float.toCpp).to(ATensor)
 
 proc `*`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} = 
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.float.toCpp * b.tensor.toCpp).to(ATensor)
 
 proc `/`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = 
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.tensor.toCpp / b.float.toCpp).to(ATensor)
 
 proc `*`*(a, b: Tensor): Tensor {.inline, noinit.} = 
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.tensor.toCpp * b.tensor.toCpp).to(ATensor)
 
 proc `-`*(a, b: Tensor): Tensor {.inline, noinit.} = 
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = (a.tensor.toCpp - b.tensor.toCpp).to(ATensor)
 
@@ -321,11 +305,13 @@ proc dim*(a: Tensor): int64 {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to
 proc `$`*(a: Tensor): string {.inline, noinit.} = $a.tensor.dynamicCppCall(toString).to(cstring)
 
 proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} = 
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = a.tensor.toCpp()[index].to(ATensor)
 
-macro chunk*(a: Tensor; chunks, dim: static[int]): untyped =
+proc `[]=`*(a: Tensor; index: int; b: Tensor) {.inline.} = 
+  a.tensor.toCpp()[index] = b.tensor
+
+macro chunk*(a: Tensor; chunks: static[int]; dim: int): untyped =
   # dumpAstGen:
   #   proc helper(a: Tensor): (Tensor, Tensor) {.gensym.} =
   #     let tensors = a.tensor.dynamicCppCall(chunk, chunks, dim).to(TensorList)
@@ -360,54 +346,50 @@ proc toSeq*[T](a: var Tensor): seq[T] {.inline, noinit.} =
   result = newSeq[T](elements)
 
   if a.is_cuda():
-    var tmp = a.cpu()
+    var tmp {.noinit.} = a.cpu()
     copyMem(addr(result[0]), tmp.data_ptr(), sizeof(T) * elements)
   else:
     copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
 
-proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]): Tensor {.inline.} =
+proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]): Tensor {.inline, noinit.} =
   let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
+proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]; device: Device): Tensor {.inline, noinit.} =
   let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   case device:
   of Device.CUDA: result.tensor = ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: result.tensor = ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]): Tensor {.inline.} =
+proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]): Tensor {.inline, noinit.} =
   let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
+proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device: Device): Tensor {.inline, noinit.} =
   let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
-  cppctor(addr(result.tensor))
   result.hasTensor = true
   case device:
   of Device.CUDA: result.tensor = ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)

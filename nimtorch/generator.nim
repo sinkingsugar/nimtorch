@@ -191,7 +191,7 @@ block declarations:
           if outputType == "Tensor":
             toType = ".to(ATensor)"
             preCode &= "\n"
-            preCode &= "  cppctor(addr(result.tensor))\n"
+            # preCode &= "  cppctor(addr(result.tensor))\n"
             preCode &= "  result.hasTensor = true\n"
             preCode &= "  result.tensor = "
 
@@ -587,7 +587,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
               body &= "  if not training:\n    raiseAssert(\"CuDNN cannot be used to compute backward in evaluation mode\")\n"
               generatedTrainingAssert = true
 
-          body &= "  discard cppctor(addr(result." & argName[0].name & "))\n"
+          # body &= "  discard cppctor(addr(result." & argName[0].name & "))\n"
 
           var valueName = argName[0].name & "_result"
           

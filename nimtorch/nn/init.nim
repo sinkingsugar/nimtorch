@@ -1,7 +1,7 @@
 import ../../nimtorch
 import math
 
-proc calculate_fan_in_and_fan_out(tensor: ATensor): (int64, int64) =
+proc calculate_fan_in_and_fan_out(tensor: Tensor): (int64, int64) =
   let dimensions = tensor.ndimension()
   if dimensions < 2:
       raiseAssert("Fan in and fan out can not be computed for tensor with less than 2 dimensions")
@@ -25,7 +25,7 @@ proc calculate_fan_in_and_fan_out(tensor: ATensor): (int64, int64) =
 
   return (fan_in, fan_out)
 
-proc xavier_normal*(tensor: ATensor; gain: float = 1.0): ATensor =
+proc xavier_normal*(tensor: Tensor; gain: float = 1.0): Tensor {.noinit.} =
   let
     (fan_in, fan_out) = calculate_fan_in_and_fan_out(tensor)
     std = gain * sqrt(2.0 / (fan_in.float + fan_out.float))
