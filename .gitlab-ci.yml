@@ -26,6 +26,8 @@ test:nimtorch:native:
     - nim cpp -r -o:test nimtorch/generator.nim
     - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch
     - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch/test_derivatives.nim
+    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch/nn/init.nim
+    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch/nn/functional.nim
   after_script:
     - docker stop docker_aten_native-temp
     - docker rm docker_aten_native-temp

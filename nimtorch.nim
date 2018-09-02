@@ -19,29 +19,29 @@ type
     FloatTensor, DoubleTensor, HalfTensor, ByteTensor, 
     CharTensor, ShortTensor, IntTensor, LongTensor
     
-proc `=destroy`(x: var Tensor) {.inline.} =
+proc `=destroy`*(x: var Tensor) {.inline.} =
   if x.hasTensor:
     cppdtor(addr(x.tensor))
     x.hasTensor = false
     
-proc `=sink`(x: var Tensor; y: Tensor) {.inline.} =
+proc `=sink`*(x: var Tensor; y: Tensor) {.inline.} =
   x.hasTensor = y.hasTensor
   if x.hasTensor:
     cppctor(addr(x.tensor))
     x.tensor = cppmove(y.tensor)
 
-proc `=`(x: var Tensor; y: Tensor) {.inline.} =
+proc `=`*(x: var Tensor; y: Tensor) {.inline.} =
   x.hasTensor = y.hasTensor
   if x.hasTensor:
     cppctor(addr(x.tensor))
     x.tensor = y.tensor
 
-converter toNimTensor(x: ATensor): Tensor {.inline.} =
+converter toNimTensor*(x: ATensor): Tensor {.inline.} =
   cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = x
   
-converter toATensor(x: Tensor): ATensor {.inline.} =
+converter toATensor*(x: Tensor): ATensor {.inline.} =
   cppctor(addr(result))
   if x.hasTensor:
     result = x.tensor
@@ -264,6 +264,8 @@ template `==`*(a, b: ATensor): bool =  a.dynamicCppCall(equal, b).to(bool)
 
 template sqrt*(_: typedesc[torch]; b: SomeFloat): SomeFloat = math.sqrt(b)
 
+proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.tensor.toCpp()[index].to(ATensor)
+
 proc maybe_multiply*(_: typedesc[torch]; a: ATensor; b: SomeNumber): Tensor {.inline.} =
   if b.tensor.float == 1.0:
     return a
@@ -374,11 +376,9 @@ proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType];
 proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromArray(s, size)
 proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromArray(s, size, device)
 
-proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.tensor.toCpp()[index].to(ATensor)
-
 converter toFloat32*(a: ATensor): float32 {.inline.} =
   proc scalarToF32(s: AScalar): float32 {.importcpp: "#.to<float>()".}
-  let scalar = cppinit(AScalar, a.tensor)
+  let scalar = cppinit(AScalar, a)
   return scalar.scalarToF32()
 
 proc internalManualSeed(seed: int) =
