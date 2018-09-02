@@ -16,13 +16,19 @@ type
     CPU, CUDA
   
   TensorKind* = enum
-    FloatTensor, DoubleTensor, HalfTensor, ByteTensor, 
+    FloatTensor, DoubleTensor, HalfTensor, ByteTensor,
     CharTensor, ShortTensor, IntTensor, LongTensor
+
+var undefinedTensor: ATensor
     
 proc `=destroy`*(x: var Tensor) {.inline.} =
   if x.hasTensor:
     cppdtor(addr(x.tensor))
     x.hasTensor = false
+  else:
+    # nim zeroes everything, make sure to write the right aten UndefinedTensor::singleton()
+    # this is a hacky workaround tho sadly
+    copyMem(addr(x.tensor), addr(undefinedTensor), sizeof(ATensor))
     
 proc `=sink`*(x: var Tensor; y: Tensor) {.inline.} =
   x.hasTensor = y.hasTensor
@@ -36,21 +42,16 @@ proc `=`*(x: var Tensor; y: Tensor) {.inline.} =
     cppctor(addr(x.tensor))
     x.tensor = y.tensor
 
-converter toNimTensor*(x: ATensor): Tensor {.inline.} =
-  cppctor(addr(result.tensor))
-  result.hasTensor = true
-  result.tensor = x
-  
-converter toATensor*(x: Tensor): ATensor {.inline.} =
-  cppctor(addr(result))
-  if x.hasTensor:
-    result = x.tensor
-
 proc high*(v: TensorList): int {.inline.} = v.size().to(int) - 1
 
 proc len*(v: TensorList): int {.inline.} = v.size().to(int)
 
-proc `[]`*(v: TensorList; index: int): Tensor {.inline.} = v.toCpp[index].to(ATensor)
+proc get*(v: TensorList; index: int): Tensor {.inline, noinit.} =
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = v.toCpp[index].to(ATensor)
+
+proc `[]`*(v: TensorList; index: int): Tensor {.inline, noinit.} = v.get(index)
 
 proc `[]=`*(v: TensorList; index: int; value: Tensor) {.inline.} = v.toCpp[index] = value.tensor
 
@@ -212,116 +213,149 @@ proc tensor*(_: typedesc[torch]; data: openarray; dtype: TensorKind; device: Dev
   var tmp = ACPU(type(flatData[0]).toATenType()).dynamicCppCall(tensorFromBlob, addr(flatData[0]), shape).to(ATensor)
   
   # finally write into a tensor (notice: casting happens aten side!)
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
   case device:
-  of Device.CUDA: return ACUDA(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
-  of Device.CPU: return ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CUDA: result.tensor = ACUDA(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CPU: result.tensor = ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc tensor*(_: typedesc[torch]; data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
   return tensor(torch, data, defaultType, device)
 
-template getType*(a: ATensor): TensorType = a.dynamicCppCall("type").to(TensorType)
+proc getType*(a: var Tensor): TensorType {.inline.} =
+  assert(a.hasTensor)
+  return a.tensor.dynamicCppCall("type").to(TensorType)
 
 converter toTensorOptions*(tensorType: TensorType): TensorOptions =
   result = cppinit(TensorOptions, tensorType.toCpp)
 
-template cpu*(a: ATensor): ATensor = a.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
+proc cpu*(a: var Tensor): Tensor {.inline, noinit.} =
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = a.tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
 
-template cuda*(a: ATensor): ATensor = a.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
+proc cuda*(a: var Tensor): Tensor {.inline, noinit.} =
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = a.tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
 
-template copy*(a: ATensor; non_blocking: bool = false): ATensor = a.dynamicCppCall("type").dynamicCppCall("copy", tensor, non_blocking).to(ATensor)
+proc copy*(a: var Tensor; non_blocking: bool = false): Tensor {.inline, noinit.} =
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = a.tensor.dynamicCppCall("type").dynamicCppCall("copy", a.tensor, non_blocking).to(ATensor)
 
-template is_defined*(a: ATensor): bool = a.dynamicCppCall("defined").to(bool)
+proc is_defined*(a: var Tensor): bool {.inline.} = a.tensor.dynamicCppCall("defined").to(bool)
 
-template sizes*(a: ATensor): IntList = a.dynamicCppCall("sizes").to(IntList)
+proc sizes*(a: var Tensor): IntList {.inline.} = a.tensor.dynamicCppCall("sizes").to(IntList)
 
-template strides*(a: ATensor): IntList = a.dynamicCppCall("strides").to(IntList)
+proc strides*(a: var Tensor): IntList = a.tensor.dynamicCppCall("strides").to(IntList)
 
-template `-`*(a: ATensor): ATensor = (-(a.toCpp)).to(ATensor)
+proc `-`*(a: Tensor): Tensor {.inline, noinit.} =
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (-(a.toCpp)).to(ATensor)
 
-template `+`*(a, b: ATensor): ATensor = (a.toCpp + b.toCpp).to(ATensor)
+proc `+`*(a, b: Tensor): Tensor {.inline, noinit.} =
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.tensor.toCpp + b.tensor.toCpp).to(ATensor)
 
-template `<=`*(a, b: ATensor): ATensor = (a.toCpp <= b.toCpp).to(ATensor)
+proc `<=`*(a, b: Tensor): Tensor {.inline, noinit.} = 
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.tensor.toCpp <= b.tensor.toCpp).to(ATensor)
 
-template `>=`*(a, b: ATensor): ATensor = (a.toCpp >= b.toCpp).to(ATensor)
+proc `>=`*(a, b: Tensor): Tensor {.inline, noinit.} =
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.tensor.toCpp >= b.tensor.toCpp).to(ATensor)
 
-template `<=`*(a: ATensor; b: SomeNumber): ATensor = (a.toCpp <= b.float.toCpp).to(ATensor)
+proc `<=`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = 
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.tensor.toCpp <= b.float.toCpp).to(ATensor)
 
-template `>=`*(a: ATensor; b: SomeNumber): ATensor = (a.toCpp >= b.float.toCpp).to(ATensor)
+proc `>=`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = 
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.tensor.toCpp >= b.float.toCpp).to(ATensor)
 
-template `+`*(a: ATensor; b: SomeNumber): ATensor = (a.toCpp + b.float.toCpp).to(ATensor)
+proc `+`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = 
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.tensor.toCpp + b.float.toCpp).to(ATensor)
 
-template `*`*(a: ATensor; b: SomeNumber): ATensor = (a.toCpp * b.float.toCpp).to(ATensor)
+proc `*`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.tensor.toCpp * b.float.toCpp).to(ATensor)
 
-template `*`*(a: SomeNumber; b: ATensor): ATensor = (a.float.toCpp * b.toCpp).to(ATensor)
+proc `*`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} = 
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.float.toCpp * b.tensor.toCpp).to(ATensor)
 
-template `/`*(a: ATensor; b: SomeNumber): ATensor = (a.toCpp / b.float.toCpp).to(ATensor)
+proc `/`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = 
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.tensor.toCpp / b.float.toCpp).to(ATensor)
 
-template `*`*(a, b: ATensor): ATensor = (a.toCpp * b.toCpp).to(ATensor)
+proc `*`*(a, b: Tensor): Tensor {.inline, noinit.} = 
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.tensor.toCpp * b.tensor.toCpp).to(ATensor)
 
-template `-`*(a, b: ATensor): ATensor = (a.toCpp - b.toCpp).to(ATensor)
+proc `-`*(a, b: Tensor): Tensor {.inline, noinit.} = 
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = (a.tensor.toCpp - b.tensor.toCpp).to(ATensor)
 
-template `==`*(a, b: ATensor): bool =  a.dynamicCppCall(equal, b).to(bool)
+proc `==`*(a, b: Tensor): bool {.inline, noinit.} = a.tensor.dynamicCppCall(equal, b.tensor).to(bool)
 
-template sqrt*(_: typedesc[torch]; b: SomeFloat): SomeFloat = math.sqrt(b)
+proc sqrt*(_: typedesc[torch]; b: SomeFloat): SomeFloat {.inline, noinit.} = math.sqrt(b)
 
-template ndimension*(a: ATensor): int64 = a.dynamicCppCall(ndimension).to(int64)
+proc ndimension*(a: Tensor): int64 {.inline, noinit.} = a.tensor.dynamicCppCall(ndimension).to(int64)
 
-template dim*(a: ATensor): int64 = a.dynamicCppCall(dim).to(int64)
+proc dim*(a: Tensor): int64 {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(int64)
 
-template `$`*(a: ATensor): string = $a.dynamicCppCall(toString).to(cstring)
+proc `$`*(a: Tensor): string {.inline, noinit.} = $a.tensor.dynamicCppCall(toString).to(cstring)
 
-proc `[]`*(a: ATensor; index: int): ATensor {.inline.} = a.toCpp()[index].to(ATensor)
+proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} = 
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = a.tensor.toCpp()[index].to(ATensor)
 
-proc maybe_multiply*(_: typedesc[torch]; a: ATensor; b: SomeNumber): Tensor {.inline.} =
-  if b.tensor.float == 1.0:
-    return a
-  else:
-    return a * b
-
-proc mm_mat1_backward*(_: typedesc[torch]; grad, mat2: ATensor; sizes, strides: IntList; alpha: float): ATensor =
-  if strides[0] == 1 and strides[1] == sizes[0]:
-    return torch.maybe_multiply(mat2.mm(grad.t()).t(), alpha)
-  else:
-    return torch.maybe_multiply(grad.mm(mat2.t()), alpha)
-
-proc mm_mat2_backward*(_: typedesc[torch]; grad, mat1: ATensor; sizes, strides: IntList; alpha: float): ATensor =
-  if strides[0] == 1 and strides[1] == sizes[0]:
-    return torch.maybe_multiply(grad.t().mm(mat1).t(), alpha)
-  else:
-    return torch.maybe_multiply(mat1.t().mm(grad), alpha)
-
-macro chunk*(a: Tensor; chunks, dim: int): untyped =
+macro chunk*(a: Tensor; chunks, dim: static[int]): untyped =
   # dumpAstGen:
   #   proc helper(a: Tensor): (Tensor, Tensor) {.gensym.} =
-  #     let
-  #       tensors = a.tensor.dynamicCppCall(chunk, chunks, dim).to(ATensors)
-  #     return (tensors[0].to(ATensor), tensors[1].to(ATensor))
+  #     let tensors = a.tensor.dynamicCppCall(chunk, chunks, dim).to(TensorList)
+  #     return (tensors.get(0), tensors.get(1), tensors.get(3))
   #   helper(a)
 
   var tensors = genSym()
   var tupleTree = nnkTupleConstr.newTree()
 
-  for i in 0..<chunks.intVal:
-    tupleTree.add(nnkCall.newTree(
-      nnkDotExpr.newTree(
-        nnkBracketExpr.newTree(
+  for i in 0..<chunks:
+    tupleTree.add(
+      nnkCall.newTree(
+        nnkDotExpr.newTree(
           tensors,
-          newLit(i)
+          newIdentNode("get")
         ),
-        newIdentNode("to")
-      ),
-      newIdentNode("ATensor")
-    ))
-
+        newLit(i)
+      )
+    )
+  
   result = quote do:
-    let `tensors` = `a`.dynamicCppCall(chunk, `chunks`, `dim`).to(ATensors)
+    let `tensors` = `a`.tensor.dynamicCppCall("chunk", `chunks`, `dim`).to(TensorList)
+    assert(`tensors` is TensorList)
     `tupleTree`
 
 proc print*(a: Tensor) =
-  printTensor(a)
+  printTensor(a.tensor)
   echo ""
 
-proc toSeq*[T](a: Tensor): seq[T] {.inline.} =
+proc toSeq*[T](a: var Tensor): seq[T] {.inline, noinit.} =
   let elements = a.numel()
   result = newSeq[T](elements)
 
@@ -335,50 +369,58 @@ proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]): Tensor {.inlin
   let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(Tensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
-  return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(Tensor)
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
   let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(Tensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
   case device:
-  of Device.CUDA: return ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(Tensor)
-  of Device.CPU: return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(Tensor)
+  of Device.CUDA: result.tensor = ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CPU: result.tensor = ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]): Tensor {.inline.} =
   let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(Tensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
-  return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(Tensor)
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device: Device): Tensor {.inline.} =
   let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(Tensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   # finally write into a tensor
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
   case device:
-  of Device.CUDA: return ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(Tensor)
-  of Device.CPU: return ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(Tensor)
+  of Device.CUDA: result.tensor = ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CPU: result.tensor = ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeq(s, size)
 proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeq(s, size, device)
 proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromArray(s, size)
 proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromArray(s, size, device)
 
-converter toFloat32*(a: ATensor): float32 {.inline.} =
+converter toFloat32*(a: Tensor): float32 {.inline, noinit.} =
   proc scalarToF32(s: AScalar): float32 {.importcpp: "#.to<float>()".}
-  let scalar = cppinit(AScalar, a)
+  let scalar = cppinit(AScalar, a.tensor)
   return scalar.scalarToF32()
 
 proc internalManualSeed(seed: int) =
@@ -487,6 +529,8 @@ when isMainModule:
   x.print()
   echo z.size(0)
 
+  var emptyTensor: Tensor
+
   let zmul = z * 3
 
   # grucell
@@ -502,6 +546,8 @@ when isMainModule:
     hy = newgate + inputgate * (hidden - newgate)
   
   hy.print()
+
+  var hycopy = hy.copy()
 
   var longt = torch.zeros(@[1, 1, 1], dtype = LongTensor)
   longt.print()
@@ -535,9 +581,8 @@ when isMainModule:
     tos = toSeq[float32](hy)
     froms = tos.fromSeq(2, 3, 2)
     
-  var (ra, rb) = torch.prelu_backward(gi, gh, hy, @[true, true])
+  # var (ra, rb) = torch.prelu_backward(gi, gh, hy, @[true, true])
   
-
   echo tos
   froms.print()
   
@@ -546,10 +591,10 @@ when isMainModule:
       echo "Cuda available"
       echo "Cuda device ", globalContext().current_device().to(int)
       var cudaTensor = torch.zeros(@[7, 7, 7], device = torch.device("cuda"), dtype = DoubleTensor)
-      cudaTensor.printTensor()
+      cudaTensor.print()
 
       froms = froms.cuda()
-      froms.printTensor()
+      froms.print()
 
       x = x.cuda()
       hidden = hidden.cuda()
@@ -567,7 +612,7 @@ when isMainModule:
       newgate = (i_nn + resetgate * h_n).tanh()
       hy = newgate + inputgate * (hidden - newgate)
 
-      hy.printTensor()
+      hy.print()
   
   torch.manual_seed(1)
 

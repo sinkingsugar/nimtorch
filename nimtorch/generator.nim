@@ -5,9 +5,10 @@ import os, strutils, macros, osproc, json, sequtils, streams, pegs, tables
 # underscores are replaced with "u_", "_" = "u_" or "_u"
 
 const
-  ofTensorTo = "template $1*(self: ATensor$4): $2 $7= self.dynamicCppCall(\"$3\"$5).$6"
-  ofTypeTo = "template $1*(ty: TensorType; $4): $2 $7= ty.dynamicCppCall(\"$3\"$5).$6"
-  ofNamespaceTo = "template $1*(_: typedesc[torch]; $4): $2 $7= dynamicCCall(\"at::$3\"$5).$6"
+  ofTensorTo = "proc $1*(self: Tensor$4): $2 $7= $8self.tensor.dynamicCppCall(\"$3\"$5)$6"
+  ofTypeTo = "proc $1*(ty: TensorType; $4): $2 $7= $8ty.dynamicCppCall(\"$3\"$5)$6"
+  ofNamespaceTo = "proc $1*(_: typedesc[torch]; $4): $2 $7= $8dynamicCCall(\"at::$3\"$5)$6"
+  
   backwardGrad = "proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 {.inline, noinit.} =$5"
   backwardGrads = "proc $1_bwd*(grads: TensorList; fwd_result: $2$3): $4 {.inline, noinit.} =$5"
 
@@ -35,7 +36,7 @@ type
 
 proc toNimType(typeName: string): string =
   case typeName
-  of "Tensor", "BoolTensor", "IndexTensor", "IntegerTensor": return "ATensor"
+  of "Tensor", "BoolTensor", "IndexTensor", "IntegerTensor": return "Tensor"
   of "TensorOptions": return "TensorOptions"
   of "Storage": return "AStorage"
   of "TensorList": return "TensorList"
@@ -171,18 +172,30 @@ block declarations:
           discard
           
     template generateProc(ofTemplateTo: untyped): untyped =
-      var deprecatedStr = ""
+      var pragmasStr = ""
       if deprecated:
-        deprecatedStr = "{.deprecated.} "
+        pragmasStr = "{.deprecated, inline, noinit.} "
+      else:
+        pragmasStr = "{.inline, noinit.} "
       
       try:
         if not node.hasKey("returns") or node["returns"].len == 0:
           raise newException(InvalidReturnException, "Method has no returns") # should not happen by design
           
         elif node["returns"].len == 1:
-          let outputType = toNimType(node["returns"][0]["dynamic_type"].getStr())
-          
-          output.writeLine ofTemplateTo % [validName, outputType, name, argsStr1, argsStr2, "to(" & outputType & ")", deprecatedStr]
+          var
+            outputType = toNimType(node["returns"][0]["dynamic_type"].getStr())
+            toType = ".to(" & outputType & ")"
+            preCode = ""
+
+          if outputType == "Tensor":
+            toType = ".to(ATensor)"
+            preCode &= "\n"
+            preCode &= "  cppctor(addr(result.tensor))\n"
+            preCode &= "  result.hasTensor = true\n"
+            preCode &= "  result.tensor = "
+
+          output.writeLine ofTemplateTo % [validName, outputType, name, argsStr1, argsStr2, toType, pragmasStr, preCode]
 
           procInfo.returns.add(ArgInfo(originalName: "", name: "", nimType: outputType))
           procInfo.nimReturnType = outputType
@@ -195,11 +208,9 @@ block declarations:
           
           let returnsHigh = node["returns"].len - 1
           for i in 0..returnsHigh:
-            let
+            var
               res = node["returns"][i]["dynamic_type"].getStr()
-              resType = node["returns"][i]["type"].getStr()
-              
-            var returnName = node["returns"][i]["name"].getStr()
+              returnName = node["returns"][i]["name"].getStr()
             
             # Need to
             # turn any grad_input into self because of:
@@ -214,21 +225,22 @@ block declarations:
             var
               originalReturnName = returnName
               outputType = res.toNimType
+              toType = if outputType == "Tensor": "ATensor" else: outputType
 
             returnName.validate()
 
             procInfo.returns.add(ArgInfo(originalName: originalReturnName, name: returnName, nimType: outputType))
 
-            tupleStr1 &= returnName & ": " & outputType
-            tupleStr2 &= outputType
+            tupleStr1 &= returnName & ": " & toType
+            tupleStr2 &= toType
             
             if i != returnsHigh:
               tupleStr1 &= ", "
               tupleStr2 &= ", "
             else:
-              convertStr = "to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple()"
+              convertStr = ".to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple()"
             
-          output.writeLine ofTemplateTo % [validName, "tuple[" & tupleStr1 & "]", name, argsStr1, argsStr2, convertStr, deprecatedStr]
+          output.writeLine ofTemplateTo % [validName, "tuple[" & tupleStr1 & "]", name, argsStr1, argsStr2, convertStr, pragmasStr, ""]
 
           procInfo.nimReturnType = "tuple[" & tupleStr1 & "]"
             
@@ -279,7 +291,10 @@ block declarations:
         fillArgumentDefaults()
         
         argsStr1 &= ", $1: $2$3" % [argName, nimType, defaultStr]
-        argsStr2 &= ", $1" % [argName]
+        if nimType == "Tensor":
+          argsStr2 &= ", $1.tensor" % [argName]
+        else:
+          argsStr2 &= ", $1" % [argName]
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
       
@@ -311,7 +326,10 @@ block declarations:
         
         var prefix = if i == 0: "" else: ", "
         argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
-        argsStr2 &= ", $1" % [argName]
+        if nimType == "Tensor":
+          argsStr2 &= ", $1.tensor" % [argName]
+        else:
+          argsStr2 &= ", $1" % [argName]
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
       
@@ -343,7 +361,10 @@ block declarations:
         
         var prefix = if i == 0: "" else: ", "
         argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
-        argsStr2 &= ", $1" % [argName]
+        if nimType == "Tensor":
+          argsStr2 &= ", $1.tensor" % [argName]
+        else:
+          argsStr2 &= ", $1" % [argName]
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
       
