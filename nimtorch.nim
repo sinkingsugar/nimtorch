@@ -264,7 +264,13 @@ template `==`*(a, b: ATensor): bool =  a.dynamicCppCall(equal, b).to(bool)
 
 template sqrt*(_: typedesc[torch]; b: SomeFloat): SomeFloat = math.sqrt(b)
 
-proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.tensor.toCpp()[index].to(ATensor)
+template ndimension*(a: ATensor): int64 = a.dynamicCppCall(ndimension).to(int64)
+
+template dim*(a: ATensor): int64 = a.dynamicCppCall(dim).to(int64)
+
+template `$`*(a: ATensor): string = $a.dynamicCppCall(toString).to(cstring)
+
+proc `[]`*(a: ATensor; index: int): ATensor {.inline.} = a.toCpp()[index].to(ATensor)
 
 proc maybe_multiply*(_: typedesc[torch]; a: ATensor; b: SomeNumber): Tensor {.inline.} =
   if b.tensor.float == 1.0:
@@ -310,12 +316,6 @@ macro chunk*(a: Tensor; chunks, dim: int): untyped =
   result = quote do:
     let `tensors` = `a`.dynamicCppCall(chunk, `chunks`, `dim`).to(ATensors)
     `tupleTree`
-
-template ndimension*(a: Tensor): int64 = a.tensor.dynamicCppCall(ndimension).to(int64)
-
-template dim*(a: Tensor): int64 = a.tensor.dynamicCppCall(dim).to(int64)
-
-template `$`*(a: Tensor): string = $a.tensor.dynamicCppCall(toString).to(cstring)
 
 proc print*(a: Tensor) =
   printTensor(a)
