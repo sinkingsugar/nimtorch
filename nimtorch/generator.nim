@@ -5,10 +5,10 @@ import os, strutils, macros, osproc, json, sequtils, streams, pegs, tables
 # underscores are replaced with "u_", "_" = "u_" or "_u"
 
 const
-  ofTensorTo = "template $1*(self: Tensor$4): $2 $7= self.dynamicCppCall(\"$3\"$5).$6"
+  ofTensorTo = "template $1*(self: ATensor$4): $2 $7= self.dynamicCppCall(\"$3\"$5).$6"
   ofTypeTo = "template $1*(ty: TensorType; $4): $2 $7= ty.dynamicCppCall(\"$3\"$5).$6"
   ofNamespaceTo = "template $1*(_: typedesc[torch]; $4): $2 $7= dynamicCCall(\"at::$3\"$5).$6"
-  backward = "proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 =$5"
+  backward = "proc $1_bwd*(grad: ATensor; fwd_result: $2$3): $4 =$5"
 
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
@@ -34,7 +34,7 @@ type
 
 proc toNimType(typeName: string): string =
   case typeName
-  of "Tensor", "BoolTensor", "IndexTensor", "IntegerTensor": return "Tensor"
+  of "Tensor", "BoolTensor", "IndexTensor", "IntegerTensor": return "ATensor"
   of "TensorOptions": return "TensorOptions"
   of "Storage": return "AStorage"
   of "TensorList": return "TensorList"

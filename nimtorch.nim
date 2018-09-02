@@ -2,7 +2,10 @@ include nimtorch/torch_cpp
 import macros, sequtils, math
 
 type
-  Tensor* = ATensor
+  Tensor* = object
+    hasTensor: bool
+    tensor: ATensor
+    
   TensorType* = AType
   TensorOptions* = ATensorOptions
   TensorList* = ATensors
@@ -15,16 +18,41 @@ type
   TensorKind* = enum
     FloatTensor, DoubleTensor, HalfTensor, ByteTensor, 
     CharTensor, ShortTensor, IntTensor, LongTensor
+    
+proc `=destroy`(x: var Tensor) {.inline.} =
+  if x.hasTensor:
+    cppdtor_only(x.tensor)
+    x.hasTensor = false
+    
+proc `=sink`(x: var Tensor; y: Tensor) {.inline.} =
+  x.hasTensor = y.hasTensor
+  if x.hasTensor:
+    x.tensor = y.tensor
+
+proc `=`(x: var Tensor; y: Tensor) {.inline.} =
+  x.hasTensor = y.hasTensor
+  if x.hasTensor:
+    x.tensor = y.tensor
+
+converter toNimTensor(x: ATensor): Tensor {.inline.} =
+  cppctor(addr(result.tensor))
+  result.hasTensor = true
+  result.tensor = x
+  
+converter toATensor(x: Tensor): ATensor {.inline.} =
+  cppctor(addr(result))
+  if x.hasTensor:
+    result = x.tensor
 
 proc high*(v: TensorList): int {.inline.} = v.size().to(int) - 1
 
 proc len*(v: TensorList): int {.inline.} = v.size().to(int)
 
-proc `[]`*(v: TensorList; index: int): Tensor {.inline.} = v.toCpp[index].to(Tensor)
+proc `[]`*(v: TensorList; index: int): Tensor {.inline.} = v.toCpp[index].to(ATensor)
 
-proc `[]=`*(v: TensorList; index: int; value: Tensor) {.inline.} = v.toCpp[index] = value
+proc `[]=`*(v: TensorList; index: int; value: Tensor) {.inline.} = v.toCpp[index] = value.tensor
 
-proc add*(v: TensorList; value: Tensor) {.inline.} = v.push_back(value).to(void)
+proc add*(v: TensorList; value: Tensor) {.inline.} = v.push_back(value.tensor).to(void)
 
 iterator items*(tensors: TensorList): Tensor {.inline.} =
   var cppTensors = tensors
@@ -189,47 +217,47 @@ proc tensor*(_: typedesc[torch]; data: openarray; dtype: TensorKind; device: Dev
 proc tensor*(_: typedesc[torch]; data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline.} =
   return tensor(torch, data, defaultType, device)
 
-template getType*(tensor: Tensor): TensorType = tensor.dynamicCppCall("type").to(TensorType)
+template getType*(a: Tensor): TensorType = a.tensor.dynamicCppCall("type").to(TensorType)
 
 converter toTensorOptions*(tensorType: TensorType): TensorOptions =
   result = cppinit(TensorOptions, tensorType.toCpp)
 
-template cpu*(tensor: Tensor): Tensor = tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
+template cpu*(a: Tensor): Tensor = a.tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
 
-template cuda*(tensor: Tensor): Tensor = tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
+template cuda*(a: Tensor): Tensor = a.tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
 
-template copy*(tensor: Tensor; non_blocking: bool = false): Tensor = tensor.dynamicCppCall("type").dynamicCppCall("copy", tensor, non_blocking).to(ATensor)
+template copy*(a: Tensor; non_blocking: bool = false): Tensor = a.tensor.dynamicCppCall("type").dynamicCppCall("copy", tensor, non_blocking).to(ATensor)
 
-template is_defined*(tensor: Tensor): bool = tensor.dynamicCppCall("defined").to(bool)
+template is_defined*(a: Tensor): bool = a.tensor.dynamicCppCall("defined").to(bool)
 
-template sizes*(tensor: Tensor): IntList = tensor.dynamicCppCall("sizes").to(IntList)
+template sizes*(a: Tensor): IntList = a.tensor.dynamicCppCall("sizes").to(IntList)
 
-template strides*(tensor: Tensor): IntList = tensor.dynamicCppCall("strides").to(IntList)
+template strides*(a: Tensor): IntList = a.tensor.dynamicCppCall("strides").to(IntList)
 
-template `-`*(a): Tensor = (-(a.toCpp)).to(ATensor)
+template `-`*(a): Tensor = (-(a.tensor.toCpp)).to(ATensor)
 
-template `+`*(a, b: Tensor): Tensor = (a.toCpp + b.toCpp).to(ATensor)
+template `+`*(a, b: Tensor): Tensor = (a.tensor.toCpp + b.tensor.toCpp).to(ATensor)
 
-template `<=`*(a, b: Tensor): Tensor = (a.toCpp <= b.toCpp).to(ATensor)
+template `<=`*(a, b: Tensor): Tensor = (a.tensor.toCpp <= b.tensor.toCpp).to(ATensor)
 
-template `>=`*(a, b: Tensor): Tensor = (a.toCpp >= b.toCpp).to(ATensor)
+template `>=`*(a, b: Tensor): Tensor = (a.tensor.toCpp >= b.tensor.toCpp).to(ATensor)
 
-template `<=`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp <= b.float.toCpp).to(ATensor)
+template `<=`*(a: Tensor; b: SomeNumber): Tensor = (a.tensor.toCpp <= b.tensor.float.toCpp).to(ATensor)
 
-template `>=`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp >= b.float.toCpp).to(ATensor)
+template `>=`*(a: Tensor; b: SomeNumber): Tensor = (a.tensor.toCpp >= b.tensor.float.toCpp).to(ATensor)
 
-template `+`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp + b.float.toCpp).to(ATensor)
+template `+`*(a: Tensor; b: SomeNumber): Tensor = (a.tensor.toCpp + b.tensor.float.toCpp).to(ATensor)
 
-template `*`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp * b.float.toCpp).to(ATensor)
+template `*`*(a: Tensor; b: SomeNumber): Tensor = (a.tensor.toCpp * b.tensor.float.toCpp).to(ATensor)
 
-template `*`*(a: SomeNumber; b: Tensor): Tensor = (a.float.toCpp * b.toCpp).to(ATensor)
+template `*`*(a: SomeNumber; b: Tensor): Tensor = (a.tensor.float.toCpp * b.tensor.toCpp).to(ATensor)
 
-template `/`*(a: Tensor; b: SomeNumber): Tensor = (a.toCpp / b.float.toCpp).to(ATensor)
+template `/`*(a: Tensor; b: SomeNumber): Tensor = (a.tensor.toCpp / b.tensor.float.toCpp).to(ATensor)
 
 template sqrt*(_: typedesc[torch]; b: SomeFloat): SomeFloat = math.sqrt(b)
 
 proc maybe_multiply*(_: typedesc[torch]; a: Tensor; b: SomeNumber): Tensor {.inline.} =
-  if b.float == 1.0:
+  if b.tensor.float == 1.0:
     return a
   else:
     return a * b
@@ -246,13 +274,13 @@ proc mm_mat2_backward*(_: typedesc[torch]; grad, mat1: Tensor; sizes, strides: I
   else:
     return torch.maybe_multiply(mat1.t().mm(grad), alpha)
 
-template `==`*(a, b: Tensor): bool =  a.dynamicCppCall(equal, b).to(bool)
+template `==`*(a, b: Tensor): bool =  a.tensor.dynamicCppCall(equal, b).to(bool)
 
 macro chunk*(a: Tensor; chunks, dim: int): untyped =
   # dumpAstGen:
   #   proc helper(a: Tensor): (Tensor, Tensor) {.gensym.} =
   #     let
-  #       tensors = a.dynamicCppCall(chunk, chunks, dim).to(ATensors)
+  #       tensors = a.tensor.dynamicCppCall(chunk, chunks, dim).to(ATensors)
   #     return (tensors[0].to(ATensor), tensors[1].to(ATensor))
   #   helper(a)
 
@@ -275,15 +303,15 @@ macro chunk*(a: Tensor; chunks, dim: int): untyped =
     let `tensors` = `a`.dynamicCppCall(chunk, `chunks`, `dim`).to(ATensors)
     `tupleTree`
 
-template `*`*(a, b: Tensor): Tensor = (a.toCpp * b.toCpp).to(ATensor)
+template `*`*(a, b: Tensor): Tensor = (a.tensor.toCpp * b.tensor.toCpp).to(ATensor)
 
-template `-`*(a, b: Tensor): Tensor = (a.toCpp - b.toCpp).to(ATensor)
+template `-`*(a, b: Tensor): Tensor = (a.tensor.toCpp - b.tensor.toCpp).to(ATensor)
 
-template ndimension*(a: Tensor): int64 = a.dynamicCppCall(ndimension).to(int64)
+template ndimension*(a: Tensor): int64 = a.tensor.dynamicCppCall(ndimension).to(int64)
 
-template dim*(a: Tensor): int64 = a.dynamicCppCall(dim).to(int64)
+template dim*(a: Tensor): int64 = a.tensor.dynamicCppCall(dim).to(int64)
 
-template `$`*(a: Tensor): string = $a.dynamicCppCall(toString).to(cstring)
+template `$`*(a: Tensor): string = $a.tensor.dynamicCppCall(toString).to(cstring)
 
 proc print*(a: Tensor) =
   printTensor(a)
@@ -344,7 +372,7 @@ proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType];
 proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromArray(s, size)
 proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromArray(s, size, device)
 
-proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.toCpp()[index].to(ATensor)
+proc `[]`*(a: Tensor; index: int): Tensor {.inline.} = a.tensor.toCpp()[index].to(ATensor)
 
 converter toFloat32*(a: Tensor): float32 {.inline.} =
   proc scalarToF32(s: AScalar): float32 {.importcpp: "#.to<float>()".}
