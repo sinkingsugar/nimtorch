@@ -10,4 +10,4 @@ skipFiles   = @[".gitlab-ci.yml"]
 # Deps
 
 requires "nim >= 0.18.1"
-requires "fragments >= 0.1.15"
+requires "fragments >= 0.1.16"
