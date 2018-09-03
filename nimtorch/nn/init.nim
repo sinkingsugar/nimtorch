@@ -38,3 +38,8 @@ when isMainModule:
     xav = z.xavier_normal()
   
   xav.print()
+
+  var
+    v = torch.zeros(@[2, 1, 4])
+  v = v.xavier_normal()
+  v.print()

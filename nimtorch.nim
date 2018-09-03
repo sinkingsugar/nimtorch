@@ -4,6 +4,7 @@ import macros, sequtils, math
 type
   Tensor* = object
     hasTensor: bool
+    owner: bool
     tensor: ATensor
     
   TensorType* = AType
@@ -20,28 +21,35 @@ type
     CharTensor, ShortTensor, IntTensor, LongTensor
 
 var undefinedTensor: ATensor
-    
+
+proc use_count*(x: var Tensor): int = 
+  x.tensor.dynamicCppCall("get()->use_count").to(int)
+
 proc `=destroy`*(x: var Tensor) {.inline.} =
-  if x.hasTensor:
+  if x.hasTensor and x.owner:
     cppdtor(addr(x.tensor))
     x.hasTensor = false
-  copyMem(addr(x.tensor), addr(undefinedTensor), sizeof(ATensor))
-    
+    copyMem(addr(x.tensor), addr(undefinedTensor), sizeof(ATensor))
+  elif not x.hasTensor:
+    # nim memset us.. so a normal cpp dtor will screw us completely
+    copyMem(addr(x.tensor), addr(undefinedTensor), sizeof(ATensor))
+
 proc `=sink`*(x: var Tensor; y: Tensor) {.inline.} =
   x.hasTensor = y.hasTensor
   if x.hasTensor:
-    cppctor(addr(x.tensor))
-    x.tensor = cppmove(y.tensor)
-  else:
+    # x was not valid before, so we need to make it like to ATen with this memcpy first
+    # the reason is that internally the dtor will be called and we want a valid undefined tensor
     copyMem(addr(x.tensor), addr(undefinedTensor), sizeof(ATensor))
+    x.tensor = y.tensor
 
 proc `=`*(x: var Tensor; y: Tensor) {.inline.} =
   x.hasTensor = y.hasTensor
   if x.hasTensor:
-    cppctor(addr(x.tensor))
-    x.tensor = cppmove(y.tensor)
-  else:
+    # x was not valid before, so we need to make it like to ATen with this memcpy first
+    # the reason is that internally the dtor will be called and we want a valid undefined tensor
     copyMem(addr(x.tensor), addr(undefinedTensor), sizeof(ATensor))
+    x.tensor = y.tensor
+    x.owner = true
 
 proc high*(v: TensorList): int {.inline.} = v.size().to(int) - 1
 
@@ -304,7 +312,7 @@ proc dim*(a: Tensor): int64 {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to
 
 proc `$`*(a: Tensor): string {.inline, noinit.} = $a.tensor.dynamicCppCall(toString).to(cstring)
 
-proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} = 
+proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
   result.hasTensor = true
   result.tensor = a.tensor.toCpp()[index].to(ATensor)
 
