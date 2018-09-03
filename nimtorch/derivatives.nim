@@ -156,7 +156,7 @@ proc conv_tbc_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tenso
   result.weight = self_result[1]
   result.bias = self_result[2]
 
-proc u_ctc_loss_bwd*(grad: Tensor; fwd_result: tuple[result0: ATensor, result1: ATensor], log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64): tuple[log_probs: Tensor] {.inline, noinit.} =
+proc u_ctc_loss_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor], log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64): tuple[log_probs: Tensor] {.inline, noinit.} =
   let log_probs_result = torch.u_ctc_loss_backward(grad, log_probs, targets, input_lengths, target_lengths, fwd_result[0], fwd_result[1], blank)
   result.log_probs = log_probs_result
 
@@ -486,7 +486,7 @@ proc remainder_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tenso
   let self_result = grad
   result.self = self_result
 
-proc RoiPooling2d_forward_bwd*(grad: Tensor; fwd_result: tuple[result0: ATensor, result1: ATensor], input: Tensor, rois: Tensor, pooledHeight: int64, pooledWidth: int64, spatialScale: float64): tuple[input: Tensor] {.inline, noinit.} =
+proc RoiPooling2d_forward_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor], input: Tensor, rois: Tensor, pooledHeight: int64, pooledWidth: int64, spatialScale: float64): tuple[input: Tensor] {.inline, noinit.} =
   let input_result = torch.RoiPooling2d_backward(input, rois, pooledHeight, pooledWidth, spatialScale, grad, fwd_result[1])
   result.input = input_result
 
@@ -634,7 +634,7 @@ proc embedding_bwd*(grad: Tensor; fwd_result: Tensor, weight: Tensor, indices: T
   let weight_result = torch.embedding_backward(grad, indices, weight.size(0), padding_idx, scale_grad_by_freq, sparse)
   result.weight = weight_result
 
-proc u_embedding_bag_bwd*(grad: Tensor; fwd_result: tuple[result0: ATensor, result1: ATensor, result2: ATensor, result3: ATensor], weight: Tensor, indices: Tensor, offsets: Tensor, scale_grad_by_freq: bool, mode: int64, sparse: bool): tuple[weight: Tensor] {.inline, noinit.} =
+proc u_embedding_bag_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor], weight: Tensor, indices: Tensor, offsets: Tensor, scale_grad_by_freq: bool, mode: int64, sparse: bool): tuple[weight: Tensor] {.inline, noinit.} =
   let weight_result = torch.u_embedding_bag_backward(grad, indices, offsets, fwd_result[1], fwd_result[2], fwd_result[3], weight.size(0), scale_grad_by_freq, mode, sparse)
   result.weight = weight_result
 
@@ -650,15 +650,15 @@ proc multi_margin_loss_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tens
   let self_result = torch.multi_margin_loss_backward(grad, self, target, p, margin, weight, reduction)
   result.self = self_result
 
-proc multilabel_margin_loss_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, is_target: ATensor], self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] {.inline, noinit.} =
+proc multilabel_margin_loss_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, is_target: Tensor], self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.multilabel_margin_loss_backward(grad, self, target, reduction, fwd_result.is_target)
   result.self = self_result
 
-proc nll_loss_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, total_weight: ATensor], self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64): tuple[self: Tensor] {.inline, noinit.} =
+proc nll_loss_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, total_weight: Tensor], self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.nll_loss_backward(grad, self, target, weight, reduction, ignore_index, fwd_result.total_weight)
   result.self = self_result
 
-proc nll_loss2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, total_weight: ATensor], self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64): tuple[self: Tensor] {.inline, noinit.} =
+proc nll_loss2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, total_weight: Tensor], self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.nll_loss2d_backward(grad, self, target, weight, reduction, ignore_index, fwd_result.total_weight)
   result.self = self_result
 
@@ -708,7 +708,7 @@ proc leaky_relu_forward_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, n
   let self_result = torch.leaky_relu_backward(grad, fwd_result, negative_slope)
   result.self = self_result
 
-proc log_sigmoid_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, buffer: ATensor], self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
+proc log_sigmoid_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, buffer: Tensor], self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.log_sigmoid_backward(grad, self, fwd_result.buffer)
   result.self = self_result
 
@@ -801,11 +801,11 @@ proc adaptive_avg_pool3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Te
   let self_result = torch.adaptive_avg_pool3d_backward(grad, self)
   result.self = self_result
 
-proc adaptive_max_pool2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, indices: ATensor], self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
+proc adaptive_max_pool2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.adaptive_max_pool2d_backward(grad, self, fwd_result.indices)
   result.self = self_result
 
-proc adaptive_max_pool3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, indices: ATensor], self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
+proc adaptive_max_pool3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.adaptive_max_pool3d_backward(grad, self, fwd_result.indices)
   result.self = self_result
 
@@ -817,15 +817,15 @@ proc avg_pool3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, ker
   let self_result = torch.avg_pool3d_backward(grad, self, kernel_size, stride, padding, ceil_mode, count_include_pad)
   result.self = self_result
 
-proc fractional_max_pool2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, indices: ATensor], self: Tensor, kernel_size: IntList, output_size: IntList, random_samples: Tensor): tuple[self: Tensor] {.inline, noinit.} =
+proc fractional_max_pool2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, kernel_size: IntList, output_size: IntList, random_samples: Tensor): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.fractional_max_pool2d_backward(grad, self, kernel_size, output_size, fwd_result.indices)
   result.self = self_result
 
-proc max_pool2d_with_indices_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, indices: ATensor], self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, ceil_mode: bool): tuple[self: Tensor] {.inline, noinit.} =
+proc max_pool2d_with_indices_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, ceil_mode: bool): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.max_pool2d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices)
   result.self = self_result
 
-proc max_pool3d_with_indices_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, indices: ATensor], self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, ceil_mode: bool): tuple[self: Tensor] {.inline, noinit.} =
+proc max_pool3d_with_indices_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, ceil_mode: bool): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.max_pool3d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices)
   result.self = self_result
 
@@ -837,25 +837,25 @@ proc max_unpool3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, i
   let self_result = torch.max_unpool3d_backward(grad, self, indices, output_size, stride, padding)
   result.self = self_result
 
-proc thnn_batch_norm_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, save_mean: ATensor, save_std: ATensor], self: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, momentum: float64, eps: float64, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
+proc thnn_batch_norm_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, save_mean: Tensor, save_std: Tensor], self: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, momentum: float64, eps: float64, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = torch.thnn_batch_norm_backward(grad.contiguous(), self, weight, running_mean, running_var, training, eps, fwd_result.save_mean, fwd_result.save_std, grad_input_mask)
   result.self = self_result[0]
   result.weight = self_result[1]
   result.bias = self_result[2]
 
-proc thnn_conv_transpose2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, columns: ATensor, ones: ATensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
+proc thnn_conv_transpose2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = torch.thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   result.self = self_result[0]
   result.weight = self_result[1]
   result.bias = self_result[2]
 
-proc thnn_conv_transpose3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, finput: ATensor, fgrad_input: ATensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
+proc thnn_conv_transpose3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = torch.thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   result.self = self_result[0]
   result.weight = self_result[1]
   result.bias = self_result[2]
 
-proc thnn_conv2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, finput: ATensor, fgrad_input: ATensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
+proc thnn_conv2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = torch.thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   result.self = self_result[0]
   result.weight = self_result[1]
@@ -868,19 +868,19 @@ proc thnn_conv_depthwise2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: 
   let bias_result = grad.contiguous().view(@[grad.size(0), grad.size(1), -1]).sum(0).sum(1)
   result.bias = bias_result
 
-proc thnn_conv3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, finput: ATensor, fgrad_input: ATensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
+proc thnn_conv3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = torch.thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   result.self = self_result[0]
   result.weight = self_result[1]
   result.bias = self_result[2]
 
-proc thnn_conv_dilated2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, columns: ATensor, ones: ATensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
+proc thnn_conv_dilated2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = torch.thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   result.self = self_result[0]
   result.weight = self_result[1]
   result.bias = self_result[2]
 
-proc thnn_conv_dilated3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: ATensor, columns: ATensor, ones: ATensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
+proc thnn_conv_dilated3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = torch.thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   result.self = self_result[0]
   result.weight = self_result[1]
@@ -1024,7 +1024,7 @@ proc u_tanh_backward_bwd*(grad: Tensor; fwd_result: Tensor, grad_output: Tensor,
   let output_result = -2 * fwd_result * grad * grad_output
   result.output = output_result
 
-proc u_cudnn_ctc_loss_bwd*(grad: Tensor; fwd_result: tuple[result0: ATensor, result1: ATensor], log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64, deterministic: bool): tuple[log_probs: Tensor] {.inline, noinit.} =
+proc u_cudnn_ctc_loss_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor], log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64, deterministic: bool): tuple[log_probs: Tensor] {.inline, noinit.} =
   let log_probs_result = fwd_result[1]
   result.log_probs = log_probs_result
 
@@ -1049,7 +1049,7 @@ proc cudnn_affine_grid_generator_bwd*(grad: Tensor; fwd_result: Tensor, theta: T
   let theta_result = torch.cudnn_affine_grid_generator_backward(grad, N, C, H, W)
   result.theta = theta_result
 
-proc cudnn_batch_norm_bwd*(grad: Tensor; fwd_result: tuple[result0: ATensor, result1: ATensor, result2: ATensor], input: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, exponential_average_factor: float64, epsilon: float64, grad_input_mask: StdArray): tuple[input: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
+proc cudnn_batch_norm_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor, result2: Tensor], input: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, exponential_average_factor: float64, epsilon: float64, grad_input_mask: StdArray): tuple[input: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   if not training:
     raiseAssert("CuDNN cannot be used to compute backward in evaluation mode")
   let input_result =  torch.cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, fwd_result[1], fwd_result[2], epsilon) : torch.thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, fwd_result[1], fwd_result[2], grad_input_mask)
@@ -1067,7 +1067,7 @@ proc stack_bwd*(grad: Tensor; fwd_result: Tensor, tensors: TensorList, dim: int6
   let tensors_result = torch.unbind(grad, dim)
   result.tensors = tensors_result
 
-proc u_thnn_fused_gru_cell_bwd*(grad: Tensor; fwd_result: tuple[result0: ATensor, result1: ATensor], input_gates: Tensor, hidden_gates: Tensor, hx: Tensor, input_bias: Tensor, hidden_bias: Tensor): tuple[input_gates: Tensor, hidden_gates: Tensor, hx: Tensor, input_bias: Tensor, hidden_bias: Tensor] {.inline, noinit.} =
+proc u_thnn_fused_gru_cell_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor], input_gates: Tensor, hidden_gates: Tensor, hx: Tensor, input_bias: Tensor, hidden_bias: Tensor): tuple[input_gates: Tensor, hidden_gates: Tensor, hx: Tensor, input_bias: Tensor, hidden_bias: Tensor] {.inline, noinit.} =
   let input_gates_result = torch.u_thnn_fused_gru_cell_backward(grad, fwd_result[1], input_bias.defined())
   result.input_gates = input_gates_result[0]
   result.hidden_gates = input_gates_result[1]

@@ -190,10 +190,7 @@ block declarations:
 
           if outputType == "Tensor":
             toType = ".to(ATensor)"
-            preCode &= "\n"
-            # preCode &= "  cppctor(addr(result.tensor))\n"
-            preCode &= "  result.hasTensor = true\n"
-            preCode &= "  result.tensor = "
+            preCode &= "\n  result = newTensor "
 
           output.writeLine ofTemplateTo % [validName, outputType, name, argsStr1, argsStr2, toType, pragmasStr, preCode]
 
@@ -205,6 +202,8 @@ block declarations:
             tupleStr1 = ""
             tupleStr2 = ""
             convertStr = ""
+            preCode = ""
+            resultStr = ""
           
           let returnsHigh = node["returns"].len - 1
           for i in 0..returnsHigh:
@@ -231,16 +230,27 @@ block declarations:
 
             procInfo.returns.add(ArgInfo(originalName: originalReturnName, name: returnName, nimType: outputType))
 
-            tupleStr1 &= returnName & ": " & toType
+            tupleStr1 &= returnName & ": " & outputType
             tupleStr2 &= toType
             
             if i != returnsHigh:
               tupleStr1 &= ", "
               tupleStr2 &= ", "
+              if outputType == "Tensor":
+                resultStr &= "  result." & returnName & " = newTensor tupleRes[" & $i & "]\n"
+              else:
+                resultStr &= "  result." & returnName & " = tupleRes[" & $i & "]\n"
             else:
-              convertStr = ".to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple()"
+              # last of the loop! write final version
+              if outputType == "Tensor":
+                resultStr &= "  result." & returnName & " = newTensor tupleRes[" & $i & "]"
+              else:
+                resultStr &= "  result." & returnName & " = tupleRes[" & $i & "]"
+              preCode = "\n  let tupleRes = "
+              convertStr = ".to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple()\n"
+              convertStr &= resultStr
             
-          output.writeLine ofTemplateTo % [validName, "tuple[" & tupleStr1 & "]", name, argsStr1, argsStr2, convertStr, pragmasStr, ""]
+          output.writeLine ofTemplateTo % [validName, "tuple[" & tupleStr1 & "]", name, argsStr1, argsStr2, convertStr, pragmasStr, preCode]
 
           procInfo.nimReturnType = "tuple[" & tupleStr1 & "]"
             
@@ -586,8 +596,6 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             if not generatedTrainingAssert:
               body &= "  if not training:\n    raiseAssert(\"CuDNN cannot be used to compute backward in evaluation mode\")\n"
               generatedTrainingAssert = true
-
-          # body &= "  discard cppctor(addr(result." & argName[0].name & "))\n"
 
           var valueName = argName[0].name & "_result"
           
