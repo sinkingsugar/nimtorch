@@ -300,6 +300,9 @@ proc `-`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
 proc `==`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
   newTensor (a.tensor.toCpp == b.float.toCpp).to(ATensor)
 
+proc `==`*(a, b: Tensor): bool {.inline.} =
+  cast[pointer](a) == cast[pointer](b)
+
 proc `+=`*(a, b: Tensor) {.inline.} =
   a.tensor.toCpp += b.tensor.toCpp
 
