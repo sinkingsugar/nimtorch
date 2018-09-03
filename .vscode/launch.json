@@ -5,26 +5,26 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch nimtorch",
+            "name": "(gdb) Launch test",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/nimtorch",
+            "program": "${workspaceFolder}/test",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [
                 {
                     "name": "LD_LIBRARY_PATH",
-                    "value": "/data/work/aten-native/lib"
+                    "value": "/data/Storage/Development/aten-native/lib"
                 },
                 {
                     "name": "ATEN",
-                    "value": "/data/work/aten-native"
+                    "value": "/data/Storage/Development/aten-native"
                 }
             ],
             "externalConsole": true,
             "MIMode": "gdb",
-            "miDebuggerPath": "/data/work/Nim/bin/nim-gdb",
+            // "miDebuggerPath": "/data/work/Nim/bin/nim-gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -44,16 +44,16 @@
             "environment": [
                 {
                     "name": "LD_LIBRARY_PATH",
-                    "value": "/data/work/aten-native/lib"
+                    "value": "/data/Storage/Development/aten-native/lib"
                 },
                 {
                     "name": "ATEN",
-                    "value": "/data/work/aten-native"
+                    "value": "/data/Storage/Development/aten-native"
                 }
             ],
             "externalConsole": true,
             "MIMode": "gdb",
-            "miDebuggerPath": "/data/work/Nim/bin/nim-gdb",
+            // "miDebuggerPath": "/data/work/Nim/bin/nim-gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

@@ -25,7 +25,7 @@ proc calculate_fan_in_and_fan_out(tensor: Tensor): (int64, int64) =
 
   return (fan_in, fan_out)
 
-proc xavier_normal*(tensor: Tensor; gain: float = 1.0): Tensor =
+proc xavier_normal*(tensor: Tensor; gain: float = 1.0): Tensor {.noinit.} =
   let
     (fan_in, fan_out) = calculate_fan_in_and_fan_out(tensor)
     std = gain * sqrt(2.0 / (fan_in.float + fan_out.float))
@@ -34,7 +34,12 @@ proc xavier_normal*(tensor: Tensor; gain: float = 1.0): Tensor =
 
 when isMainModule:
   let
-    z = torch.zeros(2, 1, 4)
+    z = torch.zeros(@[2, 1, 4])
     xav = z.xavier_normal()
   
   xav.print()
+
+  var
+    v = torch.zeros(@[2, 1, 4])
+  v = v.xavier_normal()
+  v.print()
