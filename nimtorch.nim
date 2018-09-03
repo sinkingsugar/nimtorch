@@ -1,10 +1,15 @@
 include nimtorch/torch_cpp
-import macros, sequtils, math
+import macros, sequtils, math, queues
 
 type
   Tensor* = ref object
     hasTensor: bool
     tensor: ATensor
+
+    requires_grad*: bool
+    grad_fn: Function
+    grad: Tensor
+    inputs: seq[Tensor]
     
   TensorType* = AType
   TensorOptions* = ATensorOptions
@@ -18,6 +23,11 @@ type
   TensorKind* = enum
     FloatTensor, DoubleTensor, HalfTensor, ByteTensor,
     CharTensor, ShortTensor, IntTensor, LongTensor
+
+  Function* = ref object of RootObj
+
+method apply*(self: Function; grad: Tensor; inputs: openarray[Tensor]): seq[Tensor] {.base.} =
+  discard
 
 var undefinedTensor: ATensor
 
@@ -290,6 +300,12 @@ proc `-`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
 proc `==`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
   newTensor (a.tensor.toCpp == b.float.toCpp).to(ATensor)
 
+proc `+=`*(a, b: Tensor) {.inline.} =
+  a.tensor.toCpp += b.tensor.toCpp
+
+proc `-=`*(a, b: Tensor) {.inline.} =
+  a.tensor.toCpp += b.tensor.toCpp
+
 proc sqrt*(_: typedesc[torch]; b: SomeFloat): SomeFloat {.inline, noinit.} = math.sqrt(b)
 
 proc ndimension*(a: Tensor): int64 {.inline, noinit.} = a.tensor.dynamicCppCall(ndimension).to(int64)
@@ -406,6 +422,46 @@ proc set_num_threads(num: int) {.importcpp: "at::set_num_threads(#)", header: "A
 proc set_num_threads*(_: typedesc[torch]; num: int) = set_num_threads(num)
 
 proc get_num_threads*(_: typedesc[torch];): int {.importcpp: "at::get_num_threads()".}
+
+proc backward*(tensors, grads: openarray[Tensor]) =
+
+  var
+    remainingNodes = initQueue[Tensor]()
+    sortedNodes: seq[Tensor]
+
+  for i in 0 ..< tensors.len:
+    remainingNodes.enqueue(tensors[i])
+    tensors[i].grad = grads[i]
+
+  # Topologically sort the graph
+  while remainingNodes.len > 0:
+    let node = remainingNodes.dequeue()
+
+    # Already visited
+    # TODO: Use hashset
+    if sortedNodes.contains(node):
+      continue
+
+    # Gradient along this path is not defined or needed
+    if not node.requires_grad or node.grad_fn == nil:
+      continue
+
+    sortedNodes.add(node)
+    node.grad = torch.zeros_like(node)
+
+    for input in node.inputs:
+      remainingNodes.enqueue(input)
+
+  # Accumulate grads
+  for node in sortedNodes:
+    # TODO: Input mask
+    let grads = node.grad_fn.apply(node.grad, node.inputs)
+    for i, input in node.inputs:
+      if input.requires_grad:
+        input.grad += grads[i]
+
+proc backward*(tensor: Tensor) =
+  backward([tensor], [torch.ones_like(tensor)])
 
 when isMainModule:
   # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim
