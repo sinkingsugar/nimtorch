@@ -388,10 +388,11 @@ proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType];
 proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromArray(s, size)
 proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromArray(s, size, device)
 
-# converter toFloat32*(a: Tensor): float32 {.inline, noinit.} =
-#   proc scalarToF32(s: AScalar): float32 {.importcpp: "#.to<float>()".}
-#   let scalar = cppinit(AScalar, a.tensor)
-#   return scalar.scalarToF32()
+converter toFloat32*(a: Tensor): float32 {.inline, noinit.} =
+  doAssert(a.numel() == 1, "Trying to call converter toFloat32 on a multi element tensor")
+  proc scalarToF32(s: AScalar): float32 {.importcpp: "#.to<float>()".}
+  let scalar = cppinit(AScalar, a.tensor)
+  return scalar.scalarToF32()
 
 proc internalManualSeed(seed: int) =
   globalContext().defaultGenerator(DeviceTypeCPU).manualSeed(seed).to(void)
