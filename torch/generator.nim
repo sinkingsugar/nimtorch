@@ -118,6 +118,12 @@ block declarations:
 
     assert(node.hasKey("method_of"))
 
+    # NN function with no _forward/_backward suffix don't have cimpls. They call the _forward function and discard any buffer returns
+    # See https://github.com/pytorch/pytorch/blob/dccd0f2de69396de99f45cf6792c684b5a095c49/aten/src/ATen/function_wrapper.py#L822
+    if node.hasKey("mode") and node["mode"].getStr() == "NN":
+      if not name.contains("_forward") and not name.contains("_backward"):
+        continue
+
     var methodKind: set[MethodOfKind]
     for ofNode in node["method_of"]:
       case ofNode.getStr()
@@ -198,6 +204,12 @@ block declarations:
           validateArguments()
       
       var validName = name
+
+      # NN methods without "_forward", directly invoke the forward version
+      if node.hasKey("mode") and node["mode"].getStr() == "NN":
+        if validName.contains("_forward"):
+          validName = validName.replace("_forward", "")
+
       validName.validate()
 
       var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: kind)
