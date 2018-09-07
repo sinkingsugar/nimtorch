@@ -171,7 +171,7 @@ block declarations:
           # skipping defaults, might cause integration issues tho
           discard
           
-    template generateProc(ofTemplateTo: untyped): untyped =
+    proc generateProc(procInfo: var ProcInfo; ofTemplateTo: string; name, validName, argsStr1, argsStr2: string) =
       var pragmasStr = ""
       if deprecated:
         pragmasStr = "{.deprecated, inline, noinit.} "
@@ -294,7 +294,7 @@ block declarations:
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
       
-      generateProc(ofTensorTo)
+      generateProc(procInfo, ofTensorTo, name, validName, argsStr1, argsStr2)
 
       generatedProcs.add(procInfo)
 
@@ -329,7 +329,7 @@ block declarations:
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
       
-      generateProc(ofTypeTo)
+      generateProc(procInfo, ofTypeTo, name, validName, argsStr1, argsStr2)
 
       generatedProcs.add(procInfo)
         
@@ -364,7 +364,7 @@ block declarations:
 
         procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
       
-      generateProc(ofNamespaceTo)
+      generateProc(procInfo, ofNamespaceTo, name, validName, argsStr1, argsStr2)
 
       generatedProcs.add(procInfo)
       
