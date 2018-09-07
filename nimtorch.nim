@@ -344,32 +344,12 @@ proc toSeq*[T](a: Tensor): seq[T] {.inline, noinit.} =
   else:
     copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
 
-proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]): Tensor {.inline, noinit.} =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
-  
-  # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
-  
-  result = newTensor ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
-
-proc internalFromSeq*[T](s: var seq[T], size: openarray[ilsize]; device: Device): Tensor {.inline, noinit.} =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
-  
-  # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
-  
-  # finally write into a tensor
-  case device:
-  of Device.CUDA: result = newTensor ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
-  of Device.CPU: result = newTensor ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
-
 proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]): Tensor {.inline, noinit.} =
   let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
-  # finally write into a tensor
   result = newTensor ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
 proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device: Device): Tensor {.inline, noinit.} =
@@ -383,10 +363,28 @@ proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device:
   of Device.CUDA: result = newTensor ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: result = newTensor ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromSeq(s, size)
-proc fromSeq*[T; I: SomeInteger](s: var seq[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromSeq(s, size, device)
-proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromArray(s, size)
-proc fromArray*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromArray(s, size, device)
+proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; dtype: TensorType): Tensor {.inline, noinit.} =
+  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  
+  # create a temporary CPU tensor with our GCed data
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
+  result = newTensor ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+
+proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; dtype: TensorType; device: Device): Tensor {.inline, noinit.} =
+  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+  
+  # create a temporary CPU tensor with our GCed data
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
+  
+  # finally write into a tensor
+  case device:
+  of Device.CUDA: result = newTensor ACUDA(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+  of Device.CPU: result = newTensor ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+
+proc toTensor*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]): Tensor {.inline.} = internalFromArray(s, size)
+proc toTensor*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; device: Device): Tensor {.inline.} = internalFromArray(s, size, device)
+proc toTensor*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; dtype: TensorKind): Tensor {.inline.} = internalFromArray(s, size, dtype)
+proc toTensor*[T; I: SomeInteger](s: var openarray[T], size: varargs[I, toIntListType]; dtype: TensorKind; device: Device): Tensor {.inline.} = internalFromArray(s, size, dtype, device)
 
 converter toFloat32*(a: Tensor): float32 {.inline, noinit.} =
   doAssert(a.numel() == 1, "Trying to call converter toFloat32 on a multi element tensor")
@@ -550,7 +548,7 @@ when isMainModule:
 
   var
     tos = toSeq[float32](hy)
-    froms = tos.fromSeq(2, 3, 2)
+    froms = tos.toTensor(2, 3, 2)
     
   # var (ra, rb) = torch.prelu_backward(gi, gh, hy, @[true, true])
   
