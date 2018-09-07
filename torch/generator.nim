@@ -295,9 +295,15 @@ block declarations:
           raise newException(InvalidReturnException, "Not implemented returns length")
 
         case kind:
-          of Tensor: procInfo.expression = fmt"self.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
-          of Type: procInfo.expression = fmt"ty.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
-          of Namespace: procInfo.expression = fmt"dynamicCCall(""at::{procInfo.originalName}""{argsStr2}){convertStr}"
+          of Tensor:
+            procInfo.argsStr = "self: Tensor" & argsStr1
+            procInfo.expression = fmt"self.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
+          of Type:
+            procInfo.argsStr = "ty: TensorType; " & argsStr1
+            procInfo.expression = fmt"ty.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
+          of Namespace:
+            procInfo.argsStr = argsStr1
+            procInfo.expression = fmt"dynamicCCall(""at::{procInfo.originalName}""{argsStr2}){convertStr}"
 
         output.writeLine(procInfo.kind.procFormatString % [procInfo.name, procInfo.nimReturnType, procInfo.originalName, argsStr1, argsStr2, convertStr, pragmasStr, preCode])
         generatedProcs.add(procInfo)
@@ -444,20 +450,22 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
       head: string
       bodyText: string
   
-    for i, arg in info.args:
-      argsStr &= ", " & arg.name & ": " & arg.nimType
-      if i > 0: argsText &= ", "
-      argsText &= arg.name & ": " & arg.nimType
+    argsText = info.argsStr
+    # for i, arg in info.args:
+    #   argsStr &= ", " & arg.name & ": " & arg.nimType
+    #   if i > 0: argsText &= ", "
+    #   argsText &= arg.name & ": " & arg.nimType
 
-    case info.returns.len:
-      of 0: discard
-      of 1: resultText = info.returns[0].nimType
-      else:
-        resultText = "tuple["
-        for i, arg in info.returns:
-          if i > 0: argsText &= ", "
-          resultText &= arg.name & ": " & arg.nimType
-        resultText &= "]"
+    resultText = info.nimReturnType
+    # case info.returns.len:
+    #   of 0: discard
+    #   of 1: resultText = info.returns[0].nimType
+    #   else:
+    #     resultText = "tuple["
+    #     for i, arg in info.returns:
+    #       if i > 0: argsText &= ", "
+    #       resultText &= arg.name & ": " & arg.nimType
+    #     resultText &= "]"
 
     bodyText &= fmt"  result: {info.expression}" & "\n"
 
