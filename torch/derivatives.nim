@@ -1,8 +1,8 @@
 # Automatically generated, to update run again the generator from the torch root path
-# nim c -r nimtorch/generator.nim
+# nim c -r torch/generator.nim
 
 import math
-import ../nimtorch
+import ../torch
 import autograd_helpers
 
 const M_PI = math.PI
@@ -12,7 +12,7 @@ const M_PI = math.PI
   result.self = self_result
  ]#
 autograd abs(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("abs", self.tensor).to(ATensor).newTensor()
   self: grad * self.sign()
 
 #[ proc acos_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -20,7 +20,7 @@ autograd abs(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd acos(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("acos", self.tensor).to(ATensor).newTensor()
   self: grad * -((-self * self + 1).rsqrt())
 
 #[ proc add_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor, alpha: float): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -30,7 +30,7 @@ autograd acos(self: Tensor) -> Tensor:
   result.other = other_result
  ]#
 autograd add(self: Tensor, other: Tensor, alpha: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("add", self.tensor, other.tensor, alpha).to(ATensor).newTensor()
   self: grad
   other: torch.maybe_multiply(grad, alpha)
 
@@ -39,7 +39,7 @@ autograd add(self: Tensor, other: Tensor, alpha: float) -> Tensor:
   result.self = self_result
  ]#
 autograd add(self: Tensor, other: float, alpha: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("add", self.tensor, other, alpha).to(ATensor).newTensor()
   self: grad
 
 #[ proc addbmm_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, batch1: Tensor, batch2: Tensor, beta: float, alpha: float): tuple[self: Tensor, batch1: Tensor, batch2: Tensor] {.inline, noinit.} =
@@ -51,7 +51,7 @@ autograd add(self: Tensor, other: float, alpha: float) -> Tensor:
   result.batch2 = batch2_result
  ]#
 autograd addbmm(self: Tensor, batch1: Tensor, batch2: Tensor, beta: float, alpha: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("addbmm", self.tensor, batch1.tensor, batch2.tensor, beta, alpha).to(ATensor).newTensor()
   self: torch.maybe_multiply(grad, beta)
   batch1: grad.unsqueeze(0).expand(@[ batch1.size(0), batch1.size(1), batch2.size(2) ]).bmm(batch2.transpose(1, 2)) * alpha
   batch2: batch1.transpose(1, 2).bmm(grad.unsqueeze(0).expand(@[ batch1.size(0), batch1.size(1), batch2.size(2) ])) * alpha
@@ -65,7 +65,7 @@ autograd addbmm(self: Tensor, batch1: Tensor, batch2: Tensor, beta: float, alpha
   result.tensor2 = tensor2_result
  ]#
 autograd addcdiv(self: Tensor, tensor1: Tensor, tensor2: Tensor, value: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("addcdiv", self.tensor, tensor1.tensor, tensor2.tensor, value).to(ATensor).newTensor()
   self: grad
   tensor1: grad * value / tensor2
   tensor2: -grad * value * tensor1 / (tensor2 * tensor2)
@@ -79,7 +79,7 @@ autograd addcdiv(self: Tensor, tensor1: Tensor, tensor2: Tensor, value: float) -
   result.tensor2 = tensor2_result
  ]#
 autograd addcmul(self: Tensor, tensor1: Tensor, tensor2: Tensor, value: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("addcmul", self.tensor, tensor1.tensor, tensor2.tensor, value).to(ATensor).newTensor()
   self: grad
   tensor1: grad * tensor2 * value
   tensor2: grad * tensor1 * value
@@ -93,7 +93,7 @@ autograd addcmul(self: Tensor, tensor1: Tensor, tensor2: Tensor, value: float) -
   result.mat2 = mat2_result
  ]#
 autograd th_addmm(self: Tensor, mat1: Tensor, mat2: Tensor, beta: float, alpha: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("th_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
   self: torch.maybe_multiply(grad, beta)
   mat1: torch.mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha)
   mat2: torch.mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha)
@@ -107,7 +107,7 @@ autograd th_addmm(self: Tensor, mat1: Tensor, mat2: Tensor, beta: float, alpha: 
   result.mat2 = mat2_result
  ]#
 autograd s_native_addmm(self: Tensor, mat1: Tensor, mat2: Tensor, beta: float, alpha: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("s_native_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
   self: torch.maybe_multiply(grad, beta)
   mat1: torch.mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha)
   mat2: torch.mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha)
@@ -121,7 +121,7 @@ autograd s_native_addmm(self: Tensor, mat1: Tensor, mat2: Tensor, beta: float, a
   result.vec = vec_result
  ]#
 autograd u_addmv(self: Tensor, mat: Tensor, vec: Tensor, beta: float, alpha: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("_addmv", self.tensor, mat.tensor, vec.tensor, beta, alpha).to(ATensor).newTensor()
   self: torch.maybe_multiply(grad, beta)
   mat: grad.ger(vec) * alpha
   vec: mat.t().mv(grad) * alpha
@@ -135,7 +135,7 @@ autograd u_addmv(self: Tensor, mat: Tensor, vec: Tensor, beta: float, alpha: flo
   result.vec2 = vec2_result
  ]#
 autograd u_addr(self: Tensor, vec1: Tensor, vec2: Tensor, beta: float, alpha: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("_addr", self.tensor, vec1.tensor, vec2.tensor, beta, alpha).to(ATensor).newTensor()
   self: torch.maybe_multiply(grad, beta)
   vec1: grad.mv(vec2) * alpha
   vec2: grad.t().mv(vec1) * alpha
@@ -145,7 +145,7 @@ autograd u_addr(self: Tensor, vec1: Tensor, vec2: Tensor, beta: float, alpha: fl
   result.self = self_result
  ]#
 autograd alias(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("alias", self.tensor).to(ATensor).newTensor()
   self: grad
 
 #[ proc asin_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -153,7 +153,7 @@ autograd alias(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd asin(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("asin", self.tensor).to(ATensor).newTensor()
   self: grad * (-self * self + 1).rsqrt()
 
 #[ proc atan_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -161,7 +161,7 @@ autograd asin(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd atan(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("atan", self.tensor).to(ATensor).newTensor()
   self: grad / (self * self + 1)
 
 #[ proc atan2_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor, grad_input_mask: StdArray): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -170,7 +170,7 @@ autograd atan(self: Tensor) -> Tensor:
   result.other = self_result[1]
  ]#
 autograd atan2(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("atan2", self.tensor, other.tensor).to(ATensor).newTensor()
   self: torch.atan2_backward(grad, self, other, grad_input_mask)
   other: torch.atan2_backward(grad, self, other, grad_input_mask)
 
@@ -183,7 +183,7 @@ autograd atan2(self: Tensor, other: Tensor) -> Tensor:
   result.batch2 = batch2_result
  ]#
 autograd baddbmm(self: Tensor, batch1: Tensor, batch2: Tensor, beta: float, alpha: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("baddbmm", self.tensor, batch1.tensor, batch2.tensor, beta, alpha).to(ATensor).newTensor()
   self: torch.maybe_multiply(grad, beta)
   batch1: grad.bmm(batch2.transpose(1, 2)) * alpha
   batch2: batch1.transpose(1, 2).bmm(grad) * alpha
@@ -193,7 +193,7 @@ autograd baddbmm(self: Tensor, batch1: Tensor, batch2: Tensor, beta: float, alph
   result.self = self_result
  ]#
 autograd bernoulli(self: Tensor, p: float64, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("bernoulli", self.tensor, p, generator).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc bmm_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, mat2: Tensor): tuple[self: Tensor, mat2: Tensor] {.inline, noinit.} =
@@ -203,7 +203,7 @@ autograd bernoulli(self: Tensor, p: float64, generator: pointer) -> Tensor:
   result.mat2 = mat2_result
  ]#
 autograd bmm(self: Tensor, mat2: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("bmm", self.tensor, mat2.tensor).to(ATensor).newTensor()
   self: grad.bmm(mat2.transpose(1, 2))
   mat2: self.transpose(1, 2).bmm(grad)
 
@@ -212,7 +212,7 @@ autograd bmm(self: Tensor, mat2: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd cauchy_u(self: Tensor, median: float64, sigma: float64, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("cauchy_", self.tensor, median, sigma, generator).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc ceil_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -220,7 +220,7 @@ autograd cauchy_u(self: Tensor, median: float64, sigma: float64, generator: poin
   result.self = self_result
  ]#
 autograd ceil(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("ceil", self.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc clamp_min_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, min: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -228,7 +228,7 @@ autograd ceil(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd clamp_min(self: Tensor, min: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("clamp_min", self.tensor, min).to(ATensor).newTensor()
   self: grad * (self >= min).type_as(grad)
 
 #[ proc clamp_max_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, max: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -236,7 +236,7 @@ autograd clamp_min(self: Tensor, min: float) -> Tensor:
   result.self = self_result
  ]#
 autograd clamp_max(self: Tensor, max: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("clamp_max", self.tensor, max).to(ATensor).newTensor()
   self: grad * (self <= max).type_as(grad)
 
 #[ proc clone_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -244,7 +244,7 @@ autograd clamp_max(self: Tensor, max: float) -> Tensor:
   result.self = self_result
  ]#
 autograd clone(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("clone", self.tensor).to(ATensor).newTensor()
   self: grad
 
 #[ proc cos_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -252,7 +252,7 @@ autograd clone(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd cos(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("cos", self.tensor).to(ATensor).newTensor()
   self: grad * -self.sin()
 
 #[ proc cosh_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -260,7 +260,7 @@ autograd cos(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd cosh(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("cosh", self.tensor).to(ATensor).newTensor()
   self: grad * self.sinh()
 
 #[ proc cross_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor, dim: int64): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -270,7 +270,7 @@ autograd cosh(self: Tensor) -> Tensor:
   result.other = other_result
  ]#
 autograd cross(self: Tensor, other: Tensor, dim: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("cross", self.tensor, other.tensor, dim).to(ATensor).newTensor()
   self: other.cross(grad, dim)
   other: grad.cross(self, dim)
 
@@ -281,7 +281,7 @@ autograd cross(self: Tensor, other: Tensor, dim: int64) -> Tensor:
   result.bias = self_result[2]
  ]#
 autograd conv_tbc(self: Tensor, weight: Tensor, bias: Tensor, pad: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("conv_tbc", self.tensor, weight.tensor, bias.tensor, pad).to(ATensor).newTensor()
   self: torch.conv_tbc_backward(grad, self, weight, bias, pad)
   weight: torch.conv_tbc_backward(grad, self, weight, bias, pad)
   bias: torch.conv_tbc_backward(grad, self, weight, bias, pad)
@@ -291,7 +291,7 @@ autograd conv_tbc(self: Tensor, weight: Tensor, bias: Tensor, pad: int64) -> Ten
   result.log_probs = log_probs_result
  ]#
 autograd u_ctc_loss(log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64, ) -> tuple[result0: Tensorresult1: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("_ctc_loss", log_probs.tensor, targets.tensor, input_lengths, target_lengths, blank).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   log_probs: torch.u_ctc_loss_backward(grad, log_probs, targets, input_lengths, target_lengths, fwd_result[0], fwd_result[1], blank)
 
 #[ proc adiv_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -301,7 +301,7 @@ autograd u_ctc_loss(log_probs: Tensor, targets: Tensor, input_lengths: IntList, 
   result.other = other_result
  ]#
 autograd adiv(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("div", self.tensor, other.tensor).to(ATensor).newTensor()
   self: grad / other
   other: -grad * self / (other * other)
 
@@ -310,7 +310,7 @@ autograd adiv(self: Tensor, other: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd adiv(self: Tensor, other: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("div", self.tensor, other).to(ATensor).newTensor()
   self: grad / other
 
 #[ proc dot_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, tensor: Tensor): tuple[self: Tensor, tensor: Tensor] {.inline, noinit.} =
@@ -320,7 +320,7 @@ autograd adiv(self: Tensor, other: float) -> Tensor:
   result.tensor = tensor_result
  ]#
 autograd dot(self: Tensor, tensor: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("dot", self.tensor, tensor.tensor).to(ATensor).newTensor()
   self: grad * tensor
   tensor: grad * self
 
@@ -329,7 +329,7 @@ autograd dot(self: Tensor, tensor: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd eq_u(self: Tensor, other: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("eq_", self.tensor, other).to(ATensor).newTensor()
   self: torch.zeros_like(self)
 
 #[ proc eq_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -339,7 +339,7 @@ autograd eq_u(self: Tensor, other: float) -> Tensor:
   result.other = other_result
  ]#
 autograd eq_u(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("eq_", self.tensor, other.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(self)
   other: torch.zeros_like(other)
 
@@ -348,7 +348,7 @@ autograd eq_u(self: Tensor, other: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd erf(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("erf", self.tensor).to(ATensor).newTensor()
   self: 2.0 / sqrt(M_PI) * exp(-(self.pow(2))) * grad
 
 #[ proc erfc_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -356,7 +356,7 @@ autograd erf(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd erfc(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("erfc", self.tensor).to(ATensor).newTensor()
   self: -2.0 / sqrt(M_PI) * exp(-(self.pow(2))) * grad
 
 #[ proc erfinv_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -364,7 +364,7 @@ autograd erfc(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd erfinv(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("erfinv", self.tensor).to(ATensor).newTensor()
   self: 0.5 * sqrt(M_PI) * exp(self.erfinv().pow(2)) * grad
 
 #[ proc exp_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -372,7 +372,7 @@ autograd erfinv(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd exp(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("exp", self.tensor).to(ATensor).newTensor()
   self: grad * fwd_result
 
 #[ proc expm1_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -380,7 +380,7 @@ autograd exp(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd expm1(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("expm1", self.tensor).to(ATensor).newTensor()
   self: grad * (fwd_result + 1)
 
 #[ proc exponential_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, lambd: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
@@ -388,7 +388,7 @@ autograd expm1(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd exponential_u(self: Tensor, lambd: float64, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("exponential_", self.tensor, lambd, generator).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc fill_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, value: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -396,7 +396,7 @@ autograd exponential_u(self: Tensor, lambd: float64, generator: pointer) -> Tens
   result.self = self_result
  ]#
 autograd fill_u(self: Tensor, value: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("fill_", self.tensor, value).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc fill_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, value: Tensor): tuple[self: Tensor, value: Tensor] {.inline, noinit.} =
@@ -406,7 +406,7 @@ autograd fill_u(self: Tensor, value: float) -> Tensor:
   result.value = value_result
  ]#
 autograd fill_u(self: Tensor, value: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("fill_", self.tensor, value.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
   value: grad.sum()
 
@@ -415,7 +415,7 @@ autograd fill_u(self: Tensor, value: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd floor(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("floor", self.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc fmod_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -423,7 +423,7 @@ autograd floor(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd fmod(self: Tensor, other: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("fmod", self.tensor, other).to(ATensor).newTensor()
   self: grad
 
 #[ proc fmod_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -431,7 +431,7 @@ autograd fmod(self: Tensor, other: float) -> Tensor:
   result.self = self_result
  ]#
 autograd fmod(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("fmod", self.tensor, other.tensor).to(ATensor).newTensor()
   self: grad
 
 #[ proc frac_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -439,7 +439,7 @@ autograd fmod(self: Tensor, other: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd frac(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("frac", self.tensor).to(ATensor).newTensor()
   self: grad
 
 #[ proc ge_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -447,7 +447,7 @@ autograd frac(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd ge_u(self: Tensor, other: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("ge_", self.tensor, other).to(ATensor).newTensor()
   self: torch.zeros_like(self)
 
 #[ proc ge_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -457,7 +457,7 @@ autograd ge_u(self: Tensor, other: float) -> Tensor:
   result.other = other_result
  ]#
 autograd ge_u(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("ge_", self.tensor, other.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(self)
   other: torch.zeros_like(other)
 
@@ -466,7 +466,7 @@ autograd ge_u(self: Tensor, other: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd geometric_u(self: Tensor, p: float64, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("geometric_", self.tensor, p, generator).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc ger_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, vec2: Tensor): tuple[self: Tensor, vec2: Tensor] {.inline, noinit.} =
@@ -476,7 +476,7 @@ autograd geometric_u(self: Tensor, p: float64, generator: pointer) -> Tensor:
   result.vec2 = vec2_result
  ]#
 autograd ger(self: Tensor, vec2: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("ger", self.tensor, vec2.tensor).to(ATensor).newTensor()
   self: grad.mv(vec2)
   vec2: grad.t().mv(self)
 
@@ -486,7 +486,7 @@ autograd ger(self: Tensor, vec2: Tensor) -> Tensor:
   result.grid = input_result[1]
  ]#
 autograd grid_sampler_2d(input: Tensor, grid: Tensor, interpolation_mode: int64, padding_mode: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("grid_sampler_2d", input.tensor, grid.tensor, interpolation_mode, padding_mode).to(ATensor).newTensor()
   input: torch.grid_sampler_2d_backward(grad, input, grid, interpolation_mode, padding_mode)
   grid: torch.grid_sampler_2d_backward(grad, input, grid, interpolation_mode, padding_mode)
 
@@ -496,7 +496,7 @@ autograd grid_sampler_2d(input: Tensor, grid: Tensor, interpolation_mode: int64,
   result.grid = input_result[1]
  ]#
 autograd grid_sampler_3d(input: Tensor, grid: Tensor, interpolation_mode: int64, padding_mode: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("grid_sampler_3d", input.tensor, grid.tensor, interpolation_mode, padding_mode).to(ATensor).newTensor()
   input: torch.grid_sampler_3d_backward(grad, input, grid, interpolation_mode, padding_mode)
   grid: torch.grid_sampler_3d_backward(grad, input, grid, interpolation_mode, padding_mode)
 
@@ -505,7 +505,7 @@ autograd grid_sampler_3d(input: Tensor, grid: Tensor, interpolation_mode: int64,
   result.self = self_result
  ]#
 autograd gt_u(self: Tensor, other: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("gt_", self.tensor, other).to(ATensor).newTensor()
   self: torch.zeros_like(self)
 
 #[ proc gt_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -515,7 +515,7 @@ autograd gt_u(self: Tensor, other: float) -> Tensor:
   result.other = other_result
  ]#
 autograd gt_u(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("gt_", self.tensor, other.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(self)
   other: torch.zeros_like(other)
 
@@ -526,7 +526,7 @@ autograd gt_u(self: Tensor, other: Tensor) -> Tensor:
   result.source = source_result
  ]#
 autograd index_add_u(self: Tensor, dim: int64, index: Tensor, source: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("index_add_", self.tensor, dim, index.tensor, source.tensor).to(ATensor).newTensor()
   self: grad
   source: grad.index_select(dim, index)
 
@@ -537,7 +537,7 @@ autograd index_add_u(self: Tensor, dim: int64, index: Tensor, source: Tensor) ->
   result.source = source_result
  ]#
 autograd index_copy_u(self: Tensor, dim: int64, index: Tensor, source: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("index_copy_", self.tensor, dim, index.tensor, source.tensor).to(ATensor).newTensor()
   self: grad.clone().index_fill_u(dim, index, 0)
   source: grad.index_select(dim, index)
 
@@ -546,7 +546,7 @@ autograd index_copy_u(self: Tensor, dim: int64, index: Tensor, source: Tensor) -
   result.self = self_result
  ]#
 autograd index_fill_u(self: Tensor, dim: int64, index: Tensor, value: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("index_fill_", self.tensor, dim, index.tensor, value).to(ATensor).newTensor()
   self: grad.clone().index_fill_u(dim, index, 0)
 
 #[ proc index_fill_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim: int64, index: Tensor, value: Tensor): tuple[self: Tensor, value: Tensor] {.inline, noinit.} =
@@ -556,7 +556,7 @@ autograd index_fill_u(self: Tensor, dim: int64, index: Tensor, value: float) -> 
   result.value = value_result
  ]#
 autograd index_fill_u(self: Tensor, dim: int64, index: Tensor, value: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("index_fill_", self.tensor, dim, index.tensor, value.tensor).to(ATensor).newTensor()
   self: grad.clone().index_fill_u(dim, index, 0)
   value: grad.index_select(dim, index).sum()
 
@@ -565,7 +565,7 @@ autograd index_fill_u(self: Tensor, dim: int64, index: Tensor, value: Tensor) ->
   result.self = self_result
  ]#
 autograd inverse(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("inverse", self.tensor).to(ATensor).newTensor()
   self: -mm(fwd_result.t(), mm(grad, fwd_result.t()))
 
 #[ proc le_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -573,7 +573,7 @@ autograd inverse(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd le_u(self: Tensor, other: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("le_", self.tensor, other).to(ATensor).newTensor()
   self: torch.zeros_like(self)
 
 #[ proc le_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -583,7 +583,7 @@ autograd le_u(self: Tensor, other: float) -> Tensor:
   result.other = other_result
  ]#
 autograd le_u(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("le_", self.tensor, other.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(self)
   other: torch.zeros_like(other)
 
@@ -592,7 +592,7 @@ autograd le_u(self: Tensor, other: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd lgamma(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("lgamma", self.tensor).to(ATensor).newTensor()
   self: grad * digamma(self)
 
 #[ proc digamma_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -600,7 +600,7 @@ autograd lgamma(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd digamma(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("digamma", self.tensor).to(ATensor).newTensor()
   self: grad * polygamma(1, self)
 
 #[ proc polygamma_bwd*(grad: Tensor; fwd_result: Tensor, n: int64, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -608,7 +608,7 @@ autograd digamma(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd polygamma(n: int64, self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("polygamma", n, self.tensor).to(ATensor).newTensor()
   self: grad * polygamma(n + 1, self)
 
 #[ proc log_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -616,7 +616,7 @@ autograd polygamma(n: int64, self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd log(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("log", self.tensor).to(ATensor).newTensor()
   self: grad.adiv(self)
 
 #[ proc log10_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -624,7 +624,7 @@ autograd log(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd log10(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("log10", self.tensor).to(ATensor).newTensor()
   self: grad / (self * 2.3025850929940456)
 
 #[ proc log2_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -632,7 +632,7 @@ autograd log10(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd log2(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("log2", self.tensor).to(ATensor).newTensor()
   self: grad / (self * 0.6931471805599453)
 
 #[ proc log_normal_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, mean: float64, std: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
@@ -640,7 +640,7 @@ autograd log2(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd log_normal_u(self: Tensor, mean: float64, std: float64, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("log_normal_", self.tensor, mean, std, generator).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc lt_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -648,7 +648,7 @@ autograd log_normal_u(self: Tensor, mean: float64, std: float64, generator: poin
   result.self = self_result
  ]#
 autograd lt_u(self: Tensor, other: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("lt_", self.tensor, other).to(ATensor).newTensor()
   self: torch.zeros_like(self)
 
 #[ proc lt_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -658,7 +658,7 @@ autograd lt_u(self: Tensor, other: float) -> Tensor:
   result.other = other_result
  ]#
 autograd lt_u(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("lt_", self.tensor, other.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(self)
   other: torch.zeros_like(other)
 
@@ -667,7 +667,7 @@ autograd lt_u(self: Tensor, other: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd masked_fill_u(self: Tensor, mask: Tensor, value: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("masked_fill_", self.tensor, mask.tensor, value).to(ATensor).newTensor()
   self: grad.clone().masked_fill_u(mask, 0)
 
 #[ proc masked_fill_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, mask: Tensor, value: Tensor): tuple[self: Tensor, value: Tensor] {.inline, noinit.} =
@@ -677,7 +677,7 @@ autograd masked_fill_u(self: Tensor, mask: Tensor, value: float) -> Tensor:
   result.value = value_result
  ]#
 autograd masked_fill_u(self: Tensor, mask: Tensor, value: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("masked_fill_", self.tensor, mask.tensor, value.tensor).to(ATensor).newTensor()
   self: grad.clone().masked_fill_u(mask, 0)
   value: where(mask, grad, torch.zeros_like(grad)).sum()
 
@@ -686,7 +686,7 @@ autograd masked_fill_u(self: Tensor, mask: Tensor, value: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd masked_select(self: Tensor, mask: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("masked_select", self.tensor, mask.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(self).masked_scatter_u(mask, grad)
 
 #[ proc max_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -696,7 +696,7 @@ autograd masked_select(self: Tensor, mask: Tensor) -> Tensor:
   result.other = other_result
  ]#
 autograd max(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("max", self.tensor, other.tensor).to(ATensor).newTensor()
   self: grad.clone().masked_fill_u(self <= other, 0)
   other: grad.clone().masked_fill_u(self > other, 0)
 
@@ -705,7 +705,7 @@ autograd max(self: Tensor, other: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd mean(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("mean", self.tensor).to(ATensor).newTensor()
   self: grad.expand(self.sizes()) / self.numel()
 
 #[ proc min_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -715,7 +715,7 @@ autograd mean(self: Tensor) -> Tensor:
   result.other = other_result
  ]#
 autograd min(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("min", self.tensor, other.tensor).to(ATensor).newTensor()
   self: grad.clone().masked_fill_u(self >= other, 0)
   other: grad.clone().masked_fill_u(self < other, 0)
 
@@ -726,7 +726,7 @@ autograd min(self: Tensor, other: Tensor) -> Tensor:
   result.mat2 = mat2_result
  ]#
 autograd u_mm(self: Tensor, mat2: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("_mm", self.tensor, mat2.tensor).to(ATensor).newTensor()
   self: torch.mm_mat1_backward(grad, mat2, self.sizes(), self.strides(), 1)
   mat2: torch.mm_mat2_backward(grad, self, mat2.sizes(), mat2.strides(), 1)
 
@@ -737,7 +737,7 @@ autograd u_mm(self: Tensor, mat2: Tensor) -> Tensor:
   result.other = other_result
  ]#
 autograd mul(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("mul", self.tensor, other.tensor).to(ATensor).newTensor()
   self: grad * other
   other: grad * self
 
@@ -746,7 +746,7 @@ autograd mul(self: Tensor, other: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd mul(self: Tensor, other: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("mul", self.tensor, other).to(ATensor).newTensor()
   self: grad * other
 
 #[ proc mv_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, vec: Tensor): tuple[self: Tensor, vec: Tensor] {.inline, noinit.} =
@@ -756,7 +756,7 @@ autograd mul(self: Tensor, other: float) -> Tensor:
   result.vec = vec_result
  ]#
 autograd mv(self: Tensor, vec: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("mv", self.tensor, vec.tensor).to(ATensor).newTensor()
   self: grad.ger(vec)
   vec: self.t().mv(grad)
 
@@ -765,7 +765,7 @@ autograd mv(self: Tensor, vec: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd ne_u(self: Tensor, other: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("ne_", self.tensor, other).to(ATensor).newTensor()
   self: torch.zeros_like(self)
 
 #[ proc ne_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -775,7 +775,7 @@ autograd ne_u(self: Tensor, other: float) -> Tensor:
   result.other = other_result
  ]#
 autograd ne_u(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("ne_", self.tensor, other.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(self)
   other: torch.zeros_like(other)
 
@@ -784,7 +784,7 @@ autograd ne_u(self: Tensor, other: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd neg(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("neg", self.tensor).to(ATensor).newTensor()
   self: grad.neg()
 
 #[ proc normal_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, mean: float64, std: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
@@ -792,7 +792,7 @@ autograd neg(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd normal_u(self: Tensor, mean: float64, std: float64, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("normal_", self.tensor, mean, std, generator).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc poisson_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
@@ -800,7 +800,7 @@ autograd normal_u(self: Tensor, mean: float64, std: float64, generator: pointer)
   result.self = self_result
  ]#
 autograd poisson(self: Tensor, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("poisson", self.tensor, generator).to(ATensor).newTensor()
   self: torch.zeros_like(self)
 
 #[ proc pow_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, exponent: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -808,7 +808,7 @@ autograd poisson(self: Tensor, generator: pointer) -> Tensor:
   result.self = self_result
  ]#
 autograd pow(self: Tensor, exponent: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("pow", self.tensor, exponent).to(ATensor).newTensor()
   self: torch.pow_backward(grad, self, exponent)
 
 #[ proc pow_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, exponent: Tensor): tuple[self: Tensor, exponent: Tensor] {.inline, noinit.} =
@@ -818,7 +818,7 @@ autograd pow(self: Tensor, exponent: float) -> Tensor:
   result.exponent = exponent_result
  ]#
 autograd pow(self: Tensor, exponent: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("pow", self.tensor, exponent.tensor).to(ATensor).newTensor()
   self: torch.pow_backward_self(grad, self, exponent)
   exponent: torch.pow_backward_exponent(grad, self, exponent)
 
@@ -829,7 +829,7 @@ autograd pow(self: Tensor, exponent: Tensor) -> Tensor:
   result.source = source_result
  ]#
 autograd put_u(self: Tensor, index: Tensor, source: Tensor, accumulate: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("put_", self.tensor, index.tensor, source.tensor, accumulate).to(ATensor).newTensor()
   self: grad.clone().put_u(index, torch.zeros_like(source), accumulate)
   source: grad.take(index)
 
@@ -838,7 +838,7 @@ autograd put_u(self: Tensor, index: Tensor, source: Tensor, accumulate: bool) ->
   result.self = self_result
  ]#
 autograd random_u(self: Tensor, afrom: int64, ato: int64, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("random_", self.tensor, afrom, ato, generator).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc random_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, ato: int64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
@@ -846,7 +846,7 @@ autograd random_u(self: Tensor, afrom: int64, ato: int64, generator: pointer) ->
   result.self = self_result
  ]#
 autograd random_u(self: Tensor, ato: int64, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("random_", self.tensor, ato, generator).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc random_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
@@ -854,7 +854,7 @@ autograd random_u(self: Tensor, ato: int64, generator: pointer) -> Tensor:
   result.self = self_result
  ]#
 autograd random_u(self: Tensor, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("random_", self.tensor, generator).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc reciprocal_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -862,7 +862,7 @@ autograd random_u(self: Tensor, generator: pointer) -> Tensor:
   result.self = self_result
  ]#
 autograd reciprocal(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("reciprocal", self.tensor).to(ATensor).newTensor()
   self: -grad * fwd_result * fwd_result
 
 #[ proc remainder_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -870,7 +870,7 @@ autograd reciprocal(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd remainder(self: Tensor, other: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("remainder", self.tensor, other).to(ATensor).newTensor()
   self: grad
 
 #[ proc remainder_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -878,7 +878,7 @@ autograd remainder(self: Tensor, other: float) -> Tensor:
   result.self = self_result
  ]#
 autograd remainder(self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("remainder", self.tensor, other.tensor).to(ATensor).newTensor()
   self: grad
 
 #[ proc RoiPooling2d_forward_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor], input: Tensor, rois: Tensor, pooledHeight: int64, pooledWidth: int64, spatialScale: float64): tuple[input: Tensor] {.inline, noinit.} =
@@ -886,7 +886,7 @@ autograd remainder(self: Tensor, other: Tensor) -> Tensor:
   result.input = input_result
  ]#
 autograd RoiPooling2d_forward(input: Tensor, rois: Tensor, pooledHeight: int64, pooledWidth: int64, spatialScale: float64, ) -> tuple[result0: Tensorresult1: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("RoiPooling2d_forward", input.tensor, rois.tensor, pooledHeight, pooledWidth, spatialScale).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   input: torch.RoiPooling2d_backward(input, rois, pooledHeight, pooledWidth, spatialScale, grad, fwd_result[1])
 
 #[ proc round_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -894,7 +894,7 @@ autograd RoiPooling2d_forward(input: Tensor, rois: Tensor, pooledHeight: int64, 
   result.self = self_result
  ]#
 autograd round(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("round", self.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc rsqrt_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -902,7 +902,7 @@ autograd round(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd rsqrt(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("rsqrt", self.tensor).to(ATensor).newTensor()
   self: -0.5 * grad * fwd_result.pow(3)
 
 #[ proc scatter_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim: int64, index: Tensor, src: Tensor): tuple[self: Tensor, src: Tensor] {.inline, noinit.} =
@@ -912,7 +912,7 @@ autograd rsqrt(self: Tensor) -> Tensor:
   result.src = src_result
  ]#
 autograd scatter_u(self: Tensor, dim: int64, index: Tensor, src: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("scatter_", self.tensor, dim, index.tensor, src.tensor).to(ATensor).newTensor()
   self: grad.clone().scatter_u(dim, index, 0)
   src: grad.gather(dim, index)
 
@@ -921,7 +921,7 @@ autograd scatter_u(self: Tensor, dim: int64, index: Tensor, src: Tensor) -> Tens
   result.self = self_result
  ]#
 autograd scatter_u(self: Tensor, dim: int64, index: Tensor, value: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("scatter_", self.tensor, dim, index.tensor, value).to(ATensor).newTensor()
   self: grad.clone().scatter_u(dim, index, 0)
 
 #[ proc scatter_add_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim: int64, index: Tensor, src: Tensor): tuple[self: Tensor, src: Tensor] {.inline, noinit.} =
@@ -931,7 +931,7 @@ autograd scatter_u(self: Tensor, dim: int64, index: Tensor, value: float) -> Ten
   result.src = src_result
  ]#
 autograd scatter_add_u(self: Tensor, dim: int64, index: Tensor, src: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("scatter_add_", self.tensor, dim, index.tensor, src.tensor).to(ATensor).newTensor()
   self: grad
   src: grad.gather(dim, index)
 
@@ -940,7 +940,7 @@ autograd scatter_add_u(self: Tensor, dim: int64, index: Tensor, src: Tensor) -> 
   result.self = self_result
  ]#
 autograd sigmoid(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("sigmoid", self.tensor).to(ATensor).newTensor()
   self: torch.u_sigmoid_backward(grad, fwd_result)
 
 #[ proc sign_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -948,7 +948,7 @@ autograd sigmoid(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd sign(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("sign", self.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc sin_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -956,7 +956,7 @@ autograd sign(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd sin(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("sin", self.tensor).to(ATensor).newTensor()
   self: grad * self.cos()
 
 #[ proc sinh_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -964,7 +964,7 @@ autograd sin(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd sinh(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("sinh", self.tensor).to(ATensor).newTensor()
   self: grad * self.cosh()
 
 #[ proc sqrt_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -972,7 +972,7 @@ autograd sinh(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd sqrt(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("sqrt", self.tensor).to(ATensor).newTensor()
   self: grad / (2 * fwd_result)
 
 #[ proc sub_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor, alpha: float): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -982,7 +982,7 @@ autograd sqrt(self: Tensor) -> Tensor:
   result.other = other_result
  ]#
 autograd sub(self: Tensor, other: Tensor, alpha: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("sub", self.tensor, other.tensor, alpha).to(ATensor).newTensor()
   self: grad
   other: -grad * alpha
 
@@ -991,7 +991,7 @@ autograd sub(self: Tensor, other: Tensor, alpha: float) -> Tensor:
   result.self = self_result
  ]#
 autograd sub(self: Tensor, other: float, alpha: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("sub", self.tensor, other, alpha).to(ATensor).newTensor()
   self: grad
 
 #[ proc u_sum_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -999,7 +999,7 @@ autograd sub(self: Tensor, other: float, alpha: float) -> Tensor:
   result.self = self_result
  ]#
 autograd u_sum(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("_sum", self.tensor).to(ATensor).newTensor()
   self: grad.expand(self.sizes())
 
 #[ proc t_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -1007,7 +1007,7 @@ autograd u_sum(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd t(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("t", self.tensor).to(ATensor).newTensor()
   self: grad.t()
 
 #[ proc flip_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dims: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1015,7 +1015,7 @@ autograd t(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd flip(self: Tensor, dims: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("flip", self.tensor, dims).to(ATensor).newTensor()
   self: grad.flip(dims)
 
 #[ proc rot90_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, k: int64, dims: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1023,7 +1023,7 @@ autograd flip(self: Tensor, dims: IntList) -> Tensor:
   result.self = self_result
  ]#
 autograd rot90(self: Tensor, k: int64, dims: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("rot90", self.tensor, k, dims).to(ATensor).newTensor()
   self: grad.rot90(-k, dims)
 
 #[ proc take_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, index: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -1031,7 +1031,7 @@ autograd rot90(self: Tensor, k: int64, dims: IntList) -> Tensor:
   result.self = self_result
  ]#
 autograd take(self: Tensor, index: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("take", self.tensor, index.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(self).put_u(index, grad, true)
 
 #[ proc tan_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -1039,7 +1039,7 @@ autograd take(self: Tensor, index: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd tan(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("tan", self.tensor).to(ATensor).newTensor()
   self: grad * (1 + fwd_result.pow(2))
 
 #[ proc tanh_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -1047,7 +1047,7 @@ autograd tan(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd tanh(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("tanh", self.tensor).to(ATensor).newTensor()
   self: torch.u_tanh_backward(grad, fwd_result)
 
 #[ proc transpose_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim0: int64, dim1: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1055,7 +1055,7 @@ autograd tanh(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd transpose(self: Tensor, dim0: int64, dim1: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("transpose", self.tensor, dim0, dim1).to(ATensor).newTensor()
   self: grad.transpose(dim0, dim1)
 
 #[ proc transpose_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim0: int64, dim1: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1063,7 +1063,7 @@ autograd transpose(self: Tensor, dim0: int64, dim1: int64) -> Tensor:
   result.self = self_result
  ]#
 autograd transpose_u(self: Tensor, dim0: int64, dim1: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("transpose_", self.tensor, dim0, dim1).to(ATensor).newTensor()
   self: grad.transpose(dim0, dim1)
 
 #[ proc tril_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, diagonal: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1071,7 +1071,7 @@ autograd transpose_u(self: Tensor, dim0: int64, dim1: int64) -> Tensor:
   result.self = self_result
  ]#
 autograd tril(self: Tensor, diagonal: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("tril", self.tensor, diagonal).to(ATensor).newTensor()
   self: grad.tril(diagonal)
 
 #[ proc triu_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, diagonal: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1079,7 +1079,7 @@ autograd tril(self: Tensor, diagonal: int64) -> Tensor:
   result.self = self_result
  ]#
 autograd triu(self: Tensor, diagonal: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("triu", self.tensor, diagonal).to(ATensor).newTensor()
   self: grad.triu(diagonal)
 
 #[ proc trunc_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -1087,7 +1087,7 @@ autograd triu(self: Tensor, diagonal: int64) -> Tensor:
   result.self = self_result
  ]#
 autograd trunc(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("trunc", self.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc uniform_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, afrom: float64, ato: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
@@ -1095,7 +1095,7 @@ autograd trunc(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd uniform_u(self: Tensor, afrom: float64, ato: float64, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("uniform_", self.tensor, afrom, ato, generator).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc u_unsafe_view_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, size: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1103,7 +1103,7 @@ autograd uniform_u(self: Tensor, afrom: float64, ato: float64, generator: pointe
   result.self = self_result
  ]#
 autograd u_unsafe_view(self: Tensor, size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("_unsafe_view", self.tensor, size).to(ATensor).newTensor()
   self: grad.reshape(self.sizes())
 
 #[ proc unsqueeze_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1111,7 +1111,7 @@ autograd u_unsafe_view(self: Tensor, size: IntList) -> Tensor:
   result.self = self_result
  ]#
 autograd unsqueeze(self: Tensor, dim: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("unsqueeze", self.tensor, dim).to(ATensor).newTensor()
   self: grad.squeeze(dim)
 
 #[ proc unsqueeze_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1119,7 +1119,7 @@ autograd unsqueeze(self: Tensor, dim: int64) -> Tensor:
   result.self = self_result
  ]#
 autograd unsqueeze_u(self: Tensor, dim: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("unsqueeze_", self.tensor, dim).to(ATensor).newTensor()
   self: grad.squeeze(dim)
 
 #[ proc view_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, size: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1127,7 +1127,7 @@ autograd unsqueeze_u(self: Tensor, dim: int64) -> Tensor:
   result.self = self_result
  ]#
 autograd view(self: Tensor, size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("view", self.tensor, size).to(ATensor).newTensor()
   self: grad.reshape(self.sizes())
 
 #[ proc u_s_where_bwd*(grad: Tensor; fwd_result: Tensor, condition: Tensor, self: Tensor, other: Tensor): tuple[self: Tensor, other: Tensor] {.inline, noinit.} =
@@ -1137,7 +1137,7 @@ autograd view(self: Tensor, size: IntList) -> Tensor:
   result.other = other_result
  ]#
 autograd u_s_where(condition: Tensor, self: Tensor, other: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("_s_where", condition.tensor, self.tensor, other.tensor).to(ATensor).newTensor()
   self: where(condition, grad, torch.zeros_like(grad))
   other: where(condition, torch.zeros_like(grad), grad)
 
@@ -1146,7 +1146,7 @@ autograd u_s_where(condition: Tensor, self: Tensor, other: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd zero_u(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("zero_", self.tensor).to(ATensor).newTensor()
   self: torch.zeros_like(grad)
 
 #[ proc u_standard_gamma_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
@@ -1154,7 +1154,7 @@ autograd zero_u(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd u_standard_gamma(self: Tensor, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("_standard_gamma", self.tensor, generator).to(ATensor).newTensor()
   self: grad * self.u_standard_gamma_grad(fwd_result)
 
 #[ proc binary_cross_entropy_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, target: Tensor, weight: Tensor, reduction: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1162,7 +1162,7 @@ autograd u_standard_gamma(self: Tensor, generator: pointer) -> Tensor:
   result.self = self_result
  ]#
 autograd binary_cross_entropy_forward(self: Tensor, target: Tensor, weight: Tensor, reduction: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("binary_cross_entropy_forward", self.tensor, target.tensor, weight.tensor, reduction).to(ATensor).newTensor()
   self: torch.binary_cross_entropy_backward(grad, self, target, weight, reduction)
 
 #[ proc embedding_bwd*(grad: Tensor; fwd_result: Tensor, weight: Tensor, indices: Tensor, padding_idx: int64, scale_grad_by_freq: bool, sparse: bool): tuple[weight: Tensor] {.inline, noinit.} =
@@ -1170,7 +1170,7 @@ autograd binary_cross_entropy_forward(self: Tensor, target: Tensor, weight: Tens
   result.weight = weight_result
  ]#
 autograd embedding(weight: Tensor, indices: Tensor, padding_idx: int64, scale_grad_by_freq: bool, sparse: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("embedding", weight.tensor, indices.tensor, padding_idx, scale_grad_by_freq, sparse).to(ATensor).newTensor()
   weight: torch.embedding_backward(grad, indices, weight.size(0), padding_idx, scale_grad_by_freq, sparse)
 
 #[ proc u_embedding_bag_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor], weight: Tensor, indices: Tensor, offsets: Tensor, scale_grad_by_freq: bool, mode: int64, sparse: bool): tuple[weight: Tensor] {.inline, noinit.} =
@@ -1178,7 +1178,7 @@ autograd embedding(weight: Tensor, indices: Tensor, padding_idx: int64, scale_gr
   result.weight = weight_result
  ]#
 autograd u_embedding_bag(weight: Tensor, indices: Tensor, offsets: Tensor, scale_grad_by_freq: bool, mode: int64, sparse: bool, , , ) -> tuple[result0: Tensorresult1: Tensorresult2: Tensorresult3: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("_embedding_bag", weight.tensor, indices.tensor, offsets.tensor, scale_grad_by_freq, mode, sparse).to(StdTuple4[ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   weight: torch.u_embedding_bag_backward(grad, indices, offsets, fwd_result[1], fwd_result[2], fwd_result[3], weight.size(0), scale_grad_by_freq, mode, sparse)
 
 #[ proc l1_loss_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1186,7 +1186,7 @@ autograd u_embedding_bag(weight: Tensor, indices: Tensor, offsets: Tensor, scale
   result.self = self_result
  ]#
 autograd l1_loss_forward(self: Tensor, target: Tensor, reduction: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("l1_loss_forward", self.tensor, target.tensor, reduction).to(ATensor).newTensor()
   self: torch.l1_loss_backward(grad, self, target, reduction)
 
 #[ proc mse_loss_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1194,7 +1194,7 @@ autograd l1_loss_forward(self: Tensor, target: Tensor, reduction: int64) -> Tens
   result.self = self_result
  ]#
 autograd mse_loss_forward(self: Tensor, target: Tensor, reduction: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("mse_loss_forward", self.tensor, target.tensor, reduction).to(ATensor).newTensor()
   self: torch.mse_loss_backward(grad, self, target, reduction)
 
 #[ proc multi_margin_loss_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, target: Tensor, p: float, margin: float, weight: Tensor, reduction: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1202,7 +1202,7 @@ autograd mse_loss_forward(self: Tensor, target: Tensor, reduction: int64) -> Ten
   result.self = self_result
  ]#
 autograd multi_margin_loss_forward(self: Tensor, target: Tensor, p: float, margin: float, weight: Tensor, reduction: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("multi_margin_loss_forward", self.tensor, target.tensor, p, margin, weight.tensor, reduction).to(ATensor).newTensor()
   self: torch.multi_margin_loss_backward(grad, self, target, p, margin, weight, reduction)
 
 #[ proc multilabel_margin_loss_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, is_target: Tensor], self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1210,7 +1210,7 @@ autograd multi_margin_loss_forward(self: Tensor, target: Tensor, p: float, margi
   result.self = self_result
  ]#
 autograd multilabel_margin_loss_forward(self: Tensor, target: Tensor, reduction: int64, ) -> tuple[output: Tensoris_target: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("multilabel_margin_loss_forward", self.tensor, target.tensor, reduction).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.multilabel_margin_loss_backward(grad, self, target, reduction, fwd_result.is_target)
 
 #[ proc nll_loss_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, total_weight: Tensor], self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1218,7 +1218,7 @@ autograd multilabel_margin_loss_forward(self: Tensor, target: Tensor, reduction:
   result.self = self_result
  ]#
 autograd nll_loss_forward(self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64, ) -> tuple[output: Tensortotal_weight: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("nll_loss_forward", self.tensor, target.tensor, weight.tensor, reduction, ignore_index).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.nll_loss_backward(grad, self, target, weight, reduction, ignore_index, fwd_result.total_weight)
 
 #[ proc nll_loss2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, total_weight: Tensor], self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1226,7 +1226,7 @@ autograd nll_loss_forward(self: Tensor, target: Tensor, weight: Tensor, reductio
   result.self = self_result
  ]#
 autograd nll_loss2d_forward(self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64, ) -> tuple[output: Tensortotal_weight: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("nll_loss2d_forward", self.tensor, target.tensor, weight.tensor, reduction, ignore_index).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.nll_loss2d_backward(grad, self, target, weight, reduction, ignore_index, fwd_result.total_weight)
 
 #[ proc smooth_l1_loss_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1234,7 +1234,7 @@ autograd nll_loss2d_forward(self: Tensor, target: Tensor, weight: Tensor, reduct
   result.self = self_result
  ]#
 autograd smooth_l1_loss_forward(self: Tensor, target: Tensor, reduction: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("smooth_l1_loss_forward", self.tensor, target.tensor, reduction).to(ATensor).newTensor()
   self: torch.smooth_l1_loss_backward(grad, self, target, reduction)
 
 #[ proc soft_margin_loss_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, target: Tensor, reduction: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1242,7 +1242,7 @@ autograd smooth_l1_loss_forward(self: Tensor, target: Tensor, reduction: int64) 
   result.self = self_result
  ]#
 autograd soft_margin_loss_forward(self: Tensor, target: Tensor, reduction: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("soft_margin_loss_forward", self.tensor, target.tensor, reduction).to(ATensor).newTensor()
   self: torch.soft_margin_loss_backward(grad, self, target, reduction)
 
 #[ proc relu_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -1250,7 +1250,7 @@ autograd soft_margin_loss_forward(self: Tensor, target: Tensor, reduction: int64
   result.self = self_result
  ]#
 autograd relu(self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("relu", self.tensor).to(ATensor).newTensor()
   self: torch.threshold_backward(grad, self, 0, 0)
 
 #[ proc elu_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, alpha: float, scale: float, input_scale: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -1258,7 +1258,7 @@ autograd relu(self: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd elu_forward(self: Tensor, alpha: float, scale: float, input_scale: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("elu_forward", self.tensor, alpha, scale, input_scale).to(ATensor).newTensor()
   self: torch.elu_backward(grad, alpha, scale, input_scale, fwd_result)
 
 #[ proc glu_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1266,7 +1266,7 @@ autograd elu_forward(self: Tensor, alpha: float, scale: float, input_scale: floa
   result.self = self_result
  ]#
 autograd glu_forward(self: Tensor, dim: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("glu_forward", self.tensor, dim).to(ATensor).newTensor()
   self: torch.glu_backward(grad, self, dim)
 
 #[ proc hardshrink_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, lambd: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -1274,7 +1274,7 @@ autograd glu_forward(self: Tensor, dim: int64) -> Tensor:
   result.self = self_result
  ]#
 autograd hardshrink(self: Tensor, lambd: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("hardshrink", self.tensor, lambd).to(ATensor).newTensor()
   self: hardshrink_backward(grad, self, lambd)
 
 #[ proc hardshrink_backward_bwd*(grad: Tensor; fwd_result: Tensor, grad_out: Tensor, self: Tensor, lambd: float): tuple[grad_out: Tensor, self: Tensor] {.inline, noinit.} =
@@ -1284,7 +1284,7 @@ autograd hardshrink(self: Tensor, lambd: float) -> Tensor:
   result.self = self_result
  ]#
 autograd hardshrink_backward(grad_out: Tensor, self: Tensor, lambd: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("hardshrink_backward", grad_out.tensor, self.tensor, lambd).to(ATensor).newTensor()
   grad_out: hardshrink_backward(grad, self, lambd)
   self: torch.zeros_like(grad)
 
@@ -1293,7 +1293,7 @@ autograd hardshrink_backward(grad_out: Tensor, self: Tensor, lambd: float) -> Te
   result.self = self_result
  ]#
 autograd hardtanh_forward(self: Tensor, min_val: float, max_val: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("hardtanh_forward", self.tensor, min_val, max_val).to(ATensor).newTensor()
   self: torch.hardtanh_backward(grad, self, min_val, max_val)
 
 #[ proc hardtanh_forward_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, min_val: float, max_val: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -1301,7 +1301,7 @@ autograd hardtanh_forward(self: Tensor, min_val: float, max_val: float) -> Tenso
   result.self = self_result
  ]#
 autograd hardtanh_forward_u(self: Tensor, min_val: float, max_val: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("hardtanh_forward_", self.tensor, min_val, max_val).to(ATensor).newTensor()
   self: torch.hardtanh_backward(grad, fwd_result, min_val, max_val)
 
 #[ proc leaky_relu_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, negative_slope: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -1309,7 +1309,7 @@ autograd hardtanh_forward_u(self: Tensor, min_val: float, max_val: float) -> Ten
   result.self = self_result
  ]#
 autograd leaky_relu_forward(self: Tensor, negative_slope: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("leaky_relu_forward", self.tensor, negative_slope).to(ATensor).newTensor()
   self: torch.leaky_relu_backward(grad, self, negative_slope)
 
 #[ proc leaky_relu_forward_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, negative_slope: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -1317,7 +1317,7 @@ autograd leaky_relu_forward(self: Tensor, negative_slope: float) -> Tensor:
   result.self = self_result
  ]#
 autograd leaky_relu_forward_u(self: Tensor, negative_slope: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("leaky_relu_forward_", self.tensor, negative_slope).to(ATensor).newTensor()
   self: torch.leaky_relu_backward(grad, fwd_result, negative_slope)
 
 #[ proc log_sigmoid_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, buffer: Tensor], self: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -1325,7 +1325,7 @@ autograd leaky_relu_forward_u(self: Tensor, negative_slope: float) -> Tensor:
   result.self = self_result
  ]#
 autograd log_sigmoid_forward(self: Tensor, ) -> tuple[output: Tensorbuffer: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("log_sigmoid_forward", self.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.log_sigmoid_backward(grad, self, fwd_result.buffer)
 
 #[ proc log_softmax_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1333,7 +1333,7 @@ autograd log_sigmoid_forward(self: Tensor, ) -> tuple[output: Tensorbuffer: Tens
   result.self = self_result
  ]#
 autograd log_softmax(self: Tensor, dim: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("log_softmax", self.tensor, dim).to(ATensor).newTensor()
   self: torch.log_softmax_backward_data(grad, fwd_result, dim, self)
 
 #[ proc prelu_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor] {.inline, noinit.} =
@@ -1342,7 +1342,7 @@ autograd log_softmax(self: Tensor, dim: int64) -> Tensor:
   result.weight = self_result[1]
  ]#
 autograd prelu_forward(self: Tensor, weight: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("prelu_forward", self.tensor, weight.tensor).to(ATensor).newTensor()
   self: torch.prelu_backward(grad, self, weight, grad_input_mask)
   weight: torch.prelu_backward(grad, self, weight, grad_input_mask)
 
@@ -1351,7 +1351,7 @@ autograd prelu_forward(self: Tensor, weight: Tensor) -> Tensor:
   result.self = self_result
  ]#
 autograd rrelu_with_noise_forward(self: Tensor, noise: Tensor, lower: float, upper: float, training: bool, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("rrelu_with_noise_forward", self.tensor, noise.tensor, lower, upper, training, generator).to(ATensor).newTensor()
   self: torch.rrelu_with_noise_backward(grad, self, noise, lower, upper, training)
 
 #[ proc rrelu_with_noise_forward_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, noise: Tensor, lower: float, upper: float, training: bool, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
@@ -1359,7 +1359,7 @@ autograd rrelu_with_noise_forward(self: Tensor, noise: Tensor, lower: float, upp
   result.self = self_result
  ]#
 autograd rrelu_with_noise_forward_u(self: Tensor, noise: Tensor, lower: float, upper: float, training: bool, generator: pointer) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("rrelu_with_noise_forward_", self.tensor, noise.tensor, lower, upper, training, generator).to(ATensor).newTensor()
   self: torch.rrelu_with_noise_backward(grad, fwd_result, noise, lower, upper, training)
 
 #[ proc softmax_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, dim: int64): tuple[self: Tensor] {.inline, noinit.} =
@@ -1367,7 +1367,7 @@ autograd rrelu_with_noise_forward_u(self: Tensor, noise: Tensor, lower: float, u
   result.self = self_result
  ]#
 autograd softmax(self: Tensor, dim: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("softmax", self.tensor, dim).to(ATensor).newTensor()
   self: torch.softmax_backward_data(grad, fwd_result, dim, self)
 
 #[ proc softplus_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, beta: float, threshold: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -1375,7 +1375,7 @@ autograd softmax(self: Tensor, dim: int64) -> Tensor:
   result.self = self_result
  ]#
 autograd softplus_forward(self: Tensor, beta: float, threshold: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("softplus_forward", self.tensor, beta, threshold).to(ATensor).newTensor()
   self: torch.softplus_backward(grad, self, beta, threshold, fwd_result)
 
 #[ proc softshrink_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, lambd: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -1383,7 +1383,7 @@ autograd softplus_forward(self: Tensor, beta: float, threshold: float) -> Tensor
   result.self = self_result
  ]#
 autograd softshrink_forward(self: Tensor, lambd: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("softshrink_forward", self.tensor, lambd).to(ATensor).newTensor()
   self: torch.softshrink_backward(grad, self, lambd)
 
 #[ proc threshold_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, threshold: float, value: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -1391,7 +1391,7 @@ autograd softshrink_forward(self: Tensor, lambd: float) -> Tensor:
   result.self = self_result
  ]#
 autograd threshold_forward(self: Tensor, threshold: float, value: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("threshold_forward", self.tensor, threshold, value).to(ATensor).newTensor()
   self: torch.threshold_backward(grad, self, threshold, value)
 
 #[ proc threshold_forward_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, threshold: float, value: float): tuple[self: Tensor] {.inline, noinit.} =
@@ -1399,7 +1399,7 @@ autograd threshold_forward(self: Tensor, threshold: float, value: float) -> Tens
   result.self = self_result
  ]#
 autograd threshold_forward_u(self: Tensor, threshold: float, value: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("threshold_forward_", self.tensor, threshold, value).to(ATensor).newTensor()
   self: torch.threshold_backward(grad, fwd_result, threshold, value)
 
 #[ proc reflection_pad1d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, padding: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1407,7 +1407,7 @@ autograd threshold_forward_u(self: Tensor, threshold: float, value: float) -> Te
   result.self = self_result
  ]#
 autograd reflection_pad1d_forward(self: Tensor, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("reflection_pad1d_forward", self.tensor, padding).to(ATensor).newTensor()
   self: torch.reflection_pad1d_backward(grad, self, padding)
 
 #[ proc reflection_pad2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, padding: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1415,7 +1415,7 @@ autograd reflection_pad1d_forward(self: Tensor, padding: IntList) -> Tensor:
   result.self = self_result
  ]#
 autograd reflection_pad2d_forward(self: Tensor, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("reflection_pad2d_forward", self.tensor, padding).to(ATensor).newTensor()
   self: torch.reflection_pad2d_backward(grad, self, padding)
 
 #[ proc replication_pad1d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, padding: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1423,7 +1423,7 @@ autograd reflection_pad2d_forward(self: Tensor, padding: IntList) -> Tensor:
   result.self = self_result
  ]#
 autograd replication_pad1d_forward(self: Tensor, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("replication_pad1d_forward", self.tensor, padding).to(ATensor).newTensor()
   self: torch.replication_pad1d_backward(grad, self, padding)
 
 #[ proc replication_pad2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, padding: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1431,7 +1431,7 @@ autograd replication_pad1d_forward(self: Tensor, padding: IntList) -> Tensor:
   result.self = self_result
  ]#
 autograd replication_pad2d_forward(self: Tensor, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("replication_pad2d_forward", self.tensor, padding).to(ATensor).newTensor()
   self: torch.replication_pad2d_backward(grad, self, padding)
 
 #[ proc replication_pad3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, padding: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1439,7 +1439,7 @@ autograd replication_pad2d_forward(self: Tensor, padding: IntList) -> Tensor:
   result.self = self_result
  ]#
 autograd replication_pad3d_forward(self: Tensor, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("replication_pad3d_forward", self.tensor, padding).to(ATensor).newTensor()
   self: torch.replication_pad3d_backward(grad, self, padding)
 
 #[ proc upsample_linear1d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, output_size: IntList, align_corners: bool): tuple[self: Tensor] {.inline, noinit.} =
@@ -1447,7 +1447,7 @@ autograd replication_pad3d_forward(self: Tensor, padding: IntList) -> Tensor:
   result.self = self_result
  ]#
 autograd upsample_linear1d_forward(self: Tensor, output_size: IntList, align_corners: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_linear1d_forward", self.tensor, output_size, align_corners).to(ATensor).newTensor()
   self: torch.upsample_linear1d_backward(grad, output_size, self.sizes(), align_corners)
 
 #[ proc upsample_bilinear2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, output_size: IntList, align_corners: bool): tuple[self: Tensor] {.inline, noinit.} =
@@ -1455,7 +1455,7 @@ autograd upsample_linear1d_forward(self: Tensor, output_size: IntList, align_cor
   result.self = self_result
  ]#
 autograd upsample_bilinear2d_forward(self: Tensor, output_size: IntList, align_corners: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_bilinear2d_forward", self.tensor, output_size, align_corners).to(ATensor).newTensor()
   self: torch.upsample_bilinear2d_backward(grad, output_size, self.sizes(), align_corners)
 
 #[ proc upsample_trilinear3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, output_size: IntList, align_corners: bool): tuple[self: Tensor] {.inline, noinit.} =
@@ -1463,7 +1463,7 @@ autograd upsample_bilinear2d_forward(self: Tensor, output_size: IntList, align_c
   result.self = self_result
  ]#
 autograd upsample_trilinear3d_forward(self: Tensor, output_size: IntList, align_corners: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_trilinear3d_forward", self.tensor, output_size, align_corners).to(ATensor).newTensor()
   self: torch.upsample_trilinear3d_backward(grad, output_size, self.sizes(), align_corners)
 
 #[ proc upsample_nearest1d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1471,7 +1471,7 @@ autograd upsample_trilinear3d_forward(self: Tensor, output_size: IntList, align_
   result.self = self_result
  ]#
 autograd upsample_nearest1d_forward(self: Tensor, output_size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_nearest1d_forward", self.tensor, output_size).to(ATensor).newTensor()
   self: torch.upsample_nearest1d_backward(grad, output_size, self.sizes())
 
 #[ proc upsample_nearest2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1479,7 +1479,7 @@ autograd upsample_nearest1d_forward(self: Tensor, output_size: IntList) -> Tenso
   result.self = self_result
  ]#
 autograd upsample_nearest2d_forward(self: Tensor, output_size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_nearest2d_forward", self.tensor, output_size).to(ATensor).newTensor()
   self: torch.upsample_nearest2d_backward(grad, output_size, self.sizes())
 
 #[ proc upsample_nearest3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1487,7 +1487,7 @@ autograd upsample_nearest2d_forward(self: Tensor, output_size: IntList) -> Tenso
   result.self = self_result
  ]#
 autograd upsample_nearest3d_forward(self: Tensor, output_size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_nearest3d_forward", self.tensor, output_size).to(ATensor).newTensor()
   self: torch.upsample_nearest3d_backward(grad, output_size, self.sizes())
 
 #[ proc adaptive_avg_pool2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1495,7 +1495,7 @@ autograd upsample_nearest3d_forward(self: Tensor, output_size: IntList) -> Tenso
   result.self = self_result
  ]#
 autograd adaptive_avg_pool2d_forward(self: Tensor, output_size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("adaptive_avg_pool2d_forward", self.tensor, output_size).to(ATensor).newTensor()
   self: torch.adaptive_avg_pool2d_backward(grad, self)
 
 #[ proc adaptive_avg_pool3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1503,7 +1503,7 @@ autograd adaptive_avg_pool2d_forward(self: Tensor, output_size: IntList) -> Tens
   result.self = self_result
  ]#
 autograd adaptive_avg_pool3d_forward(self: Tensor, output_size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("adaptive_avg_pool3d_forward", self.tensor, output_size).to(ATensor).newTensor()
   self: torch.adaptive_avg_pool3d_backward(grad, self)
 
 #[ proc adaptive_max_pool2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1511,7 +1511,7 @@ autograd adaptive_avg_pool3d_forward(self: Tensor, output_size: IntList) -> Tens
   result.self = self_result
  ]#
 autograd adaptive_max_pool2d_forward(self: Tensor, output_size: IntList, ) -> tuple[output: Tensorindices: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("adaptive_max_pool2d_forward", self.tensor, output_size).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.adaptive_max_pool2d_backward(grad, self, fwd_result.indices)
 
 #[ proc adaptive_max_pool3d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1519,7 +1519,7 @@ autograd adaptive_max_pool2d_forward(self: Tensor, output_size: IntList, ) -> tu
   result.self = self_result
  ]#
 autograd adaptive_max_pool3d_forward(self: Tensor, output_size: IntList, ) -> tuple[output: Tensorindices: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("adaptive_max_pool3d_forward", self.tensor, output_size).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.adaptive_max_pool3d_backward(grad, self, fwd_result.indices)
 
 #[ proc avg_pool2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool): tuple[self: Tensor] {.inline, noinit.} =
@@ -1527,7 +1527,7 @@ autograd adaptive_max_pool3d_forward(self: Tensor, output_size: IntList, ) -> tu
   result.self = self_result
  ]#
 autograd avg_pool2d_forward(self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("avg_pool2d_forward", self.tensor, kernel_size, stride, padding, ceil_mode, count_include_pad).to(ATensor).newTensor()
   self: torch.avg_pool2d_backward(grad, self, kernel_size, stride, padding, ceil_mode, count_include_pad)
 
 #[ proc avg_pool3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool): tuple[self: Tensor] {.inline, noinit.} =
@@ -1535,7 +1535,7 @@ autograd avg_pool2d_forward(self: Tensor, kernel_size: IntList, stride: IntList,
   result.self = self_result
  ]#
 autograd avg_pool3d_forward(self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("avg_pool3d_forward", self.tensor, kernel_size, stride, padding, ceil_mode, count_include_pad).to(ATensor).newTensor()
   self: torch.avg_pool3d_backward(grad, self, kernel_size, stride, padding, ceil_mode, count_include_pad)
 
 #[ proc fractional_max_pool2d_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, kernel_size: IntList, output_size: IntList, random_samples: Tensor): tuple[self: Tensor] {.inline, noinit.} =
@@ -1543,7 +1543,7 @@ autograd avg_pool3d_forward(self: Tensor, kernel_size: IntList, stride: IntList,
   result.self = self_result
  ]#
 autograd fractional_max_pool2d_forward(self: Tensor, kernel_size: IntList, output_size: IntList, random_samples: Tensor, ) -> tuple[output: Tensorindices: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("fractional_max_pool2d_forward", self.tensor, kernel_size, output_size, random_samples.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.fractional_max_pool2d_backward(grad, self, kernel_size, output_size, fwd_result.indices)
 
 #[ proc max_pool2d_with_indices_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, ceil_mode: bool): tuple[self: Tensor] {.inline, noinit.} =
@@ -1551,7 +1551,7 @@ autograd fractional_max_pool2d_forward(self: Tensor, kernel_size: IntList, outpu
   result.self = self_result
  ]#
 autograd max_pool2d_with_indices_forward(self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, ceil_mode: bool, ) -> tuple[output: Tensorindices: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("max_pool2d_with_indices_forward", self.tensor, kernel_size, stride, padding, dilation, ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.max_pool2d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices)
 
 #[ proc max_pool3d_with_indices_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, indices: Tensor], self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, ceil_mode: bool): tuple[self: Tensor] {.inline, noinit.} =
@@ -1559,7 +1559,7 @@ autograd max_pool2d_with_indices_forward(self: Tensor, kernel_size: IntList, str
   result.self = self_result
  ]#
 autograd max_pool3d_with_indices_forward(self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, dilation: IntList, ceil_mode: bool, ) -> tuple[output: Tensorindices: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("max_pool3d_with_indices_forward", self.tensor, kernel_size, stride, padding, dilation, ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.max_pool3d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices)
 
 #[ proc max_unpool2d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, indices: Tensor, output_size: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1567,7 +1567,7 @@ autograd max_pool3d_with_indices_forward(self: Tensor, kernel_size: IntList, str
   result.self = self_result
  ]#
 autograd max_unpool2d_forward(self: Tensor, indices: Tensor, output_size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("max_unpool2d_forward", self.tensor, indices.tensor, output_size).to(ATensor).newTensor()
   self: torch.max_unpool2d_backward(grad, self, indices, output_size)
 
 #[ proc max_unpool3d_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, indices: Tensor, output_size: IntList, stride: IntList, padding: IntList): tuple[self: Tensor] {.inline, noinit.} =
@@ -1575,7 +1575,7 @@ autograd max_unpool2d_forward(self: Tensor, indices: Tensor, output_size: IntLis
   result.self = self_result
  ]#
 autograd max_unpool3d_forward(self: Tensor, indices: Tensor, output_size: IntList, stride: IntList, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("max_unpool3d_forward", self.tensor, indices.tensor, output_size, stride, padding).to(ATensor).newTensor()
   self: torch.max_unpool3d_backward(grad, self, indices, output_size, stride, padding)
 
 #[ proc thnn_batch_norm_forward_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, save_mean: Tensor, save_std: Tensor], self: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, momentum: float64, eps: float64, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
@@ -1585,7 +1585,7 @@ autograd max_unpool3d_forward(self: Tensor, indices: Tensor, output_size: IntLis
   result.bias = self_result[2]
  ]#
 autograd thnn_batch_norm_forward(self: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, momentum: float64, eps: float64, , ) -> tuple[output: Tensorsave_mean: Tensorsave_std: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("thnn_batch_norm_forward", self.tensor, weight.tensor, bias.tensor, running_mean.tensor, running_var.tensor, training, momentum, eps).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.thnn_batch_norm_backward(grad.contiguous(), self, weight, running_mean, running_var, training, eps, fwd_result.save_mean, fwd_result.save_std, grad_input_mask)
   weight: torch.thnn_batch_norm_backward(grad.contiguous(), self, weight, running_mean, running_var, training, eps, fwd_result.save_mean, fwd_result.save_std, grad_input_mask)
   bias: torch.thnn_batch_norm_backward(grad.contiguous(), self, weight, running_mean, running_var, training, eps, fwd_result.save_mean, fwd_result.save_std, grad_input_mask)
@@ -1597,7 +1597,7 @@ autograd thnn_batch_norm_forward(self: Tensor, weight: Tensor, bias: Tensor, run
   result.bias = self_result[2]
  ]#
 autograd thnn_conv_transpose2d_forward(self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList, , ) -> tuple[output: Tensorcolumns: Tensorones: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("thnn_conv_transpose2d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding, output_padding, dilation).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   weight: torch.thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   bias: torch.thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
@@ -1609,7 +1609,7 @@ autograd thnn_conv_transpose2d_forward(self: Tensor, weight: Tensor, kernel_size
   result.bias = self_result[2]
  ]#
 autograd thnn_conv_transpose3d_forward(self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList, , ) -> tuple[output: Tensorfinput: Tensorfgrad_input: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("thnn_conv_transpose3d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding, output_padding, dilation).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   weight: torch.thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   bias: torch.thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
@@ -1621,7 +1621,7 @@ autograd thnn_conv_transpose3d_forward(self: Tensor, weight: Tensor, kernel_size
   result.bias = self_result[2]
  ]#
 autograd thnn_conv2d_forward(self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, , ) -> tuple[output: Tensorfinput: Tensorfgrad_input: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("thnn_conv2d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   weight: torch.thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   bias: torch.thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
@@ -1634,7 +1634,7 @@ autograd thnn_conv2d_forward(self: Tensor, weight: Tensor, kernel_size: IntList,
   result.bias = bias_result
  ]#
 autograd thnn_conv_depthwise2d_forward(self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("thnn_conv_depthwise2d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding, dilation).to(ATensor).newTensor()
   self: torch.thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
   weight: torch.thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
   bias: grad.contiguous().view(@[grad.size(0), grad.size(1), -1]).sum(0).sum(1)
@@ -1646,7 +1646,7 @@ autograd thnn_conv_depthwise2d_forward(self: Tensor, weight: Tensor, kernel_size
   result.bias = self_result[2]
  ]#
 autograd thnn_conv3d_forward(self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, , ) -> tuple[output: Tensorfinput: Tensorfgrad_input: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("thnn_conv3d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   weight: torch.thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
   bias: torch.thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
@@ -1658,7 +1658,7 @@ autograd thnn_conv3d_forward(self: Tensor, weight: Tensor, kernel_size: IntList,
   result.bias = self_result[2]
  ]#
 autograd thnn_conv_dilated2d_forward(self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList, , ) -> tuple[output: Tensorcolumns: Tensorones: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("thnn_conv_dilated2d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding, dilation).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   weight: torch.thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   bias: torch.thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
@@ -1670,7 +1670,7 @@ autograd thnn_conv_dilated2d_forward(self: Tensor, weight: Tensor, kernel_size: 
   result.bias = self_result[2]
  ]#
 autograd thnn_conv_dilated3d_forward(self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList, , ) -> tuple[output: Tensorcolumns: Tensorones: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("thnn_conv_dilated3d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding, dilation).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   self: torch.thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   weight: torch.thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
   bias: torch.thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
@@ -1682,7 +1682,7 @@ autograd thnn_conv_dilated3d_forward(self: Tensor, weight: Tensor, kernel_size: 
   result.self = self_result
  ]#
 autograd adaptive_avg_pool2d_backward(grad_output: Tensor, self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("adaptive_avg_pool2d_backward", grad_output.tensor, self.tensor).to(ATensor).newTensor()
   grad_output: torch.adaptive_avg_pool2d(grad, @[ grad_output.size(-2), grad_output.size(-1) ])
   self: torch.zeros_like(self)
 
@@ -1693,7 +1693,7 @@ autograd adaptive_avg_pool2d_backward(grad_output: Tensor, self: Tensor) -> Tens
   result.self = self_result
  ]#
 autograd adaptive_avg_pool3d_backward(grad_output: Tensor, self: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("adaptive_avg_pool3d_backward", grad_output.tensor, self.tensor).to(ATensor).newTensor()
   grad_output: torch.adaptive_avg_pool3d(grad, @[ grad_output.size(-3), grad_output.size(-2), grad_output.size(-1) ])
   self: torch.zeros_like(self)
 
@@ -1704,7 +1704,7 @@ autograd adaptive_avg_pool3d_backward(grad_output: Tensor, self: Tensor) -> Tens
   result.self = self_result
  ]#
 autograd avg_pool2d_backward(grad_output: Tensor, self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("avg_pool2d_backward", grad_output.tensor, self.tensor, kernel_size, stride, padding, ceil_mode, count_include_pad).to(ATensor).newTensor()
   grad_output: torch.avg_pool2d(grad, kernel_size, stride, padding, ceil_mode, count_include_pad)
   self: torch.zeros_like(self)
 
@@ -1715,7 +1715,7 @@ autograd avg_pool2d_backward(grad_output: Tensor, self: Tensor, kernel_size: Int
   result.self = self_result
  ]#
 autograd avg_pool3d_backward(grad_output: Tensor, self: Tensor, kernel_size: IntList, stride: IntList, padding: IntList, ceil_mode: bool, count_include_pad: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("avg_pool3d_backward", grad_output.tensor, self.tensor, kernel_size, stride, padding, ceil_mode, count_include_pad).to(ATensor).newTensor()
   grad_output: torch.avg_pool3d(grad, kernel_size, stride, padding, ceil_mode, count_include_pad)
   self: torch.zeros_like(self)
 
@@ -1726,7 +1726,7 @@ autograd avg_pool3d_backward(grad_output: Tensor, self: Tensor, kernel_size: Int
   result.self = self_result
  ]#
 autograd hardtanh_backward(grad_output: Tensor, self: Tensor, min_val: float, max_val: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("hardtanh_backward", grad_output.tensor, self.tensor, min_val, max_val).to(ATensor).newTensor()
   grad_output: torch.hardtanh_backward(grad, self, min_val, max_val)
   self: torch.zeros_like(grad)
 
@@ -1737,7 +1737,7 @@ autograd hardtanh_backward(grad_output: Tensor, self: Tensor, min_val: float, ma
   result.self = self_result
  ]#
 autograd leaky_relu_backward(grad_output: Tensor, self: Tensor, negative_slope: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("leaky_relu_backward", grad_output.tensor, self.tensor, negative_slope).to(ATensor).newTensor()
   grad_output: torch.leaky_relu_backward(grad, self, negative_slope)
   self: torch.zeros_like(grad)
 
@@ -1748,7 +1748,7 @@ autograd leaky_relu_backward(grad_output: Tensor, self: Tensor, negative_slope: 
   result.self = self_result
  ]#
 autograd max_unpool2d_backward(grad_output: Tensor, self: Tensor, indices: Tensor, output_size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("max_unpool2d_backward", grad_output.tensor, self.tensor, indices.tensor, output_size).to(ATensor).newTensor()
   grad_output: torch.max_unpool2d(grad, indices, output_size)
   self: torch.zeros_like(self)
 
@@ -1759,7 +1759,7 @@ autograd max_unpool2d_backward(grad_output: Tensor, self: Tensor, indices: Tenso
   result.self = self_result
  ]#
 autograd nll_loss_backward(grad_output: Tensor, self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64, total_weight: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("nll_loss_backward", grad_output.tensor, self.tensor, target.tensor, weight.tensor, reduction, ignore_index, total_weight.tensor).to(ATensor).newTensor()
   grad_output: torch.nll_loss(grad, target, weight, reduction, ignore_index)
   self: torch.zeros_like(grad)
 
@@ -1770,7 +1770,7 @@ autograd nll_loss_backward(grad_output: Tensor, self: Tensor, target: Tensor, we
   result.self = self_result
  ]#
 autograd nll_loss2d_backward(grad_output: Tensor, self: Tensor, target: Tensor, weight: Tensor, reduction: int64, ignore_index: int64, total_weight: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("nll_loss2d_backward", grad_output.tensor, self.tensor, target.tensor, weight.tensor, reduction, ignore_index, total_weight.tensor).to(ATensor).newTensor()
   grad_output: torch.nll_loss2d(grad, target, weight, reduction, ignore_index)
   self: torch.zeros_like(grad)
 
@@ -1781,7 +1781,7 @@ autograd nll_loss2d_backward(grad_output: Tensor, self: Tensor, target: Tensor, 
   result.self = self_result
  ]#
 autograd rrelu_with_noise_backward(grad_output: Tensor, self: Tensor, noise: Tensor, lower: float, upper: float, training: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("rrelu_with_noise_backward", grad_output.tensor, self.tensor, noise.tensor, lower, upper, training).to(ATensor).newTensor()
   grad_output: torch.rrelu_with_noise_backward(grad, self, noise, lower, upper, training)
   self: torch.zeros_like(grad)
 
@@ -1792,7 +1792,7 @@ autograd rrelu_with_noise_backward(grad_output: Tensor, self: Tensor, noise: Ten
   result.self = self_result
  ]#
 autograd reflection_pad1d_backward(grad_output: Tensor, self: Tensor, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("reflection_pad1d_backward", grad_output.tensor, self.tensor, padding).to(ATensor).newTensor()
   grad_output: torch.reflection_pad1d(grad, padding)
   self: torch.zeros_like(self)
 
@@ -1803,7 +1803,7 @@ autograd reflection_pad1d_backward(grad_output: Tensor, self: Tensor, padding: I
   result.self = self_result
  ]#
 autograd reflection_pad2d_backward(grad_output: Tensor, self: Tensor, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("reflection_pad2d_backward", grad_output.tensor, self.tensor, padding).to(ATensor).newTensor()
   grad_output: torch.reflection_pad2d(grad, padding)
   self: torch.zeros_like(self)
 
@@ -1814,7 +1814,7 @@ autograd reflection_pad2d_backward(grad_output: Tensor, self: Tensor, padding: I
   result.self = self_result
  ]#
 autograd replication_pad1d_backward(grad_output: Tensor, self: Tensor, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("replication_pad1d_backward", grad_output.tensor, self.tensor, padding).to(ATensor).newTensor()
   grad_output: torch.replication_pad1d(grad, padding)
   self: torch.zeros_like(self)
 
@@ -1825,7 +1825,7 @@ autograd replication_pad1d_backward(grad_output: Tensor, self: Tensor, padding: 
   result.self = self_result
  ]#
 autograd replication_pad2d_backward(grad_output: Tensor, self: Tensor, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("replication_pad2d_backward", grad_output.tensor, self.tensor, padding).to(ATensor).newTensor()
   grad_output: torch.replication_pad2d(grad, padding)
   self: torch.zeros_like(self)
 
@@ -1836,7 +1836,7 @@ autograd replication_pad2d_backward(grad_output: Tensor, self: Tensor, padding: 
   result.self = self_result
  ]#
 autograd replication_pad3d_backward(grad_output: Tensor, self: Tensor, padding: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("replication_pad3d_backward", grad_output.tensor, self.tensor, padding).to(ATensor).newTensor()
   grad_output: torch.replication_pad3d(grad, padding)
   self: torch.zeros_like(self)
 
@@ -1847,7 +1847,7 @@ autograd replication_pad3d_backward(grad_output: Tensor, self: Tensor, padding: 
   result.self = self_result
  ]#
 autograd softshrink_backward(grad_output: Tensor, self: Tensor, lambd: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("softshrink_backward", grad_output.tensor, self.tensor, lambd).to(ATensor).newTensor()
   grad_output: torch.softshrink_backward(grad, self, lambd)
   self: torch.zeros_like(grad)
 
@@ -1858,7 +1858,7 @@ autograd softshrink_backward(grad_output: Tensor, self: Tensor, lambd: float) ->
   result.self = self_result
  ]#
 autograd threshold_backward(grad_output: Tensor, self: Tensor, threshold: float, value: float) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("threshold_backward", grad_output.tensor, self.tensor, threshold, value).to(ATensor).newTensor()
   grad_output: torch.threshold_backward(grad, self, threshold, value)
   self: torch.zeros_like(grad)
 
@@ -1867,7 +1867,7 @@ autograd threshold_backward(grad_output: Tensor, self: Tensor, threshold: float,
   result.grad_output = grad_output_result
  ]#
 autograd upsample_linear1d_backward(grad_output: Tensor, output_size: IntList, input_size: IntList, align_corners: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_linear1d_backward", grad_output.tensor, output_size, input_size, align_corners).to(ATensor).newTensor()
   grad_output: torch.upsample_linear1d(grad, output_size, align_corners)
 
 #[ proc upsample_bilinear2d_backward_bwd*(grad: Tensor; fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList, align_corners: bool): tuple[grad_output: Tensor] {.inline, noinit.} =
@@ -1875,7 +1875,7 @@ autograd upsample_linear1d_backward(grad_output: Tensor, output_size: IntList, i
   result.grad_output = grad_output_result
  ]#
 autograd upsample_bilinear2d_backward(grad_output: Tensor, output_size: IntList, input_size: IntList, align_corners: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_bilinear2d_backward", grad_output.tensor, output_size, input_size, align_corners).to(ATensor).newTensor()
   grad_output: torch.upsample_bilinear2d(grad, output_size, align_corners)
 
 #[ proc upsample_trilinear3d_backward_bwd*(grad: Tensor; fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList, align_corners: bool): tuple[grad_output: Tensor] {.inline, noinit.} =
@@ -1883,7 +1883,7 @@ autograd upsample_bilinear2d_backward(grad_output: Tensor, output_size: IntList,
   result.grad_output = grad_output_result
  ]#
 autograd upsample_trilinear3d_backward(grad_output: Tensor, output_size: IntList, input_size: IntList, align_corners: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_trilinear3d_backward", grad_output.tensor, output_size, input_size, align_corners).to(ATensor).newTensor()
   grad_output: torch.upsample_trilinear3d(grad, output_size, align_corners)
 
 #[ proc upsample_nearest1d_backward_bwd*(grad: Tensor; fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList): tuple[grad_output: Tensor] {.inline, noinit.} =
@@ -1891,7 +1891,7 @@ autograd upsample_trilinear3d_backward(grad_output: Tensor, output_size: IntList
   result.grad_output = grad_output_result
  ]#
 autograd upsample_nearest1d_backward(grad_output: Tensor, output_size: IntList, input_size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_nearest1d_backward", grad_output.tensor, output_size, input_size).to(ATensor).newTensor()
   grad_output: torch.upsample_nearest1d(grad, output_size)
 
 #[ proc upsample_nearest2d_backward_bwd*(grad: Tensor; fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList): tuple[grad_output: Tensor] {.inline, noinit.} =
@@ -1899,7 +1899,7 @@ autograd upsample_nearest1d_backward(grad_output: Tensor, output_size: IntList, 
   result.grad_output = grad_output_result
  ]#
 autograd upsample_nearest2d_backward(grad_output: Tensor, output_size: IntList, input_size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_nearest2d_backward", grad_output.tensor, output_size, input_size).to(ATensor).newTensor()
   grad_output: torch.upsample_nearest2d(grad, output_size)
 
 #[ proc upsample_nearest3d_backward_bwd*(grad: Tensor; fwd_result: Tensor, grad_output: Tensor, output_size: IntList, input_size: IntList): tuple[grad_output: Tensor] {.inline, noinit.} =
@@ -1907,7 +1907,7 @@ autograd upsample_nearest2d_backward(grad_output: Tensor, output_size: IntList, 
   result.grad_output = grad_output_result
  ]#
 autograd upsample_nearest3d_backward(grad_output: Tensor, output_size: IntList, input_size: IntList) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("upsample_nearest3d_backward", grad_output.tensor, output_size, input_size).to(ATensor).newTensor()
   grad_output: torch.upsample_nearest3d(grad, output_size)
 
 #[ proc u_sigmoid_backward_bwd*(grad: Tensor; fwd_result: Tensor, grad_output: Tensor, output: Tensor): tuple[grad_output: Tensor, output: Tensor] {.inline, noinit.} =
@@ -1917,7 +1917,7 @@ autograd upsample_nearest3d_backward(grad_output: Tensor, output_size: IntList, 
   result.output = output_result
  ]#
 autograd u_sigmoid_backward(grad_output: Tensor, output: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("_sigmoid_backward", grad_output.tensor, output.tensor).to(ATensor).newTensor()
   grad_output: torch.u_sigmoid_backward(grad, fwd_result)
   output: grad * grad_output * (-2 * fwd_result + 1)
 
@@ -1928,7 +1928,7 @@ autograd u_sigmoid_backward(grad_output: Tensor, output: Tensor) -> Tensor:
   result.output = output_result
  ]#
 autograd u_tanh_backward(grad_output: Tensor, output: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("_tanh_backward", grad_output.tensor, output.tensor).to(ATensor).newTensor()
   grad_output: torch.u_tanh_backward(grad, fwd_result)
   output: -2 * fwd_result * grad * grad_output
 
@@ -1937,7 +1937,7 @@ autograd u_tanh_backward(grad_output: Tensor, output: Tensor) -> Tensor:
   result.log_probs = log_probs_result
  ]#
 autograd u_cudnn_ctc_loss(log_probs: Tensor, targets: Tensor, input_lengths: IntList, target_lengths: IntList, blank: int64, deterministic: bool, ) -> tuple[result0: Tensorresult1: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("_cudnn_ctc_loss", log_probs.tensor, targets.tensor, input_lengths, target_lengths, blank, deterministic).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   log_probs: fwd_result[1]
 
 #[ proc cudnn_convolution_transpose_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, output_padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
@@ -1947,7 +1947,7 @@ autograd u_cudnn_ctc_loss(log_probs: Tensor, targets: Tensor, input_lengths: Int
   result.bias = self_result[2]
  ]#
 autograd cudnn_convolution_transpose(self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, output_padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("cudnn_convolution_transpose", self.tensor, weight.tensor, bias.tensor, padding, output_padding, stride, dilation, groups, benchmark, deterministic).to(ATensor).newTensor()
   self: torch.cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
   weight: torch.cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
   bias: torch.cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
@@ -1959,7 +1959,7 @@ autograd cudnn_convolution_transpose(self: Tensor, weight: Tensor, bias: Tensor,
   result.bias = self_result[2]
  ]#
 autograd cudnn_convolution(self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("cudnn_convolution", self.tensor, weight.tensor, bias.tensor, padding, stride, dilation, groups, benchmark, deterministic).to(ATensor).newTensor()
   self: torch.cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
   weight: torch.cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
   bias: torch.cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
@@ -1970,7 +1970,7 @@ autograd cudnn_convolution(self: Tensor, weight: Tensor, bias: Tensor, padding: 
   result.grid = self_result[1]
  ]#
 autograd cudnn_grid_sampler(self: Tensor, grid: Tensor) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("cudnn_grid_sampler", self.tensor, grid.tensor).to(ATensor).newTensor()
   self: torch.cudnn_grid_sampler_backward(self, grid, grad)
   grid: torch.cudnn_grid_sampler_backward(self, grid, grad)
 
@@ -1979,7 +1979,7 @@ autograd cudnn_grid_sampler(self: Tensor, grid: Tensor) -> Tensor:
   result.theta = theta_result
  ]#
 autograd cudnn_affine_grid_generator(theta: Tensor, N: int64, C: int64, H: int64, W: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("cudnn_affine_grid_generator", theta.tensor, N, C, H, W).to(ATensor).newTensor()
   theta: torch.cudnn_affine_grid_generator_backward(grad, N, C, H, W)
 
 #[ proc cudnn_batch_norm_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor, result2: Tensor], input: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, exponential_average_factor: float64, epsilon: float64, grad_input_mask: StdArray): tuple[input: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
@@ -1991,7 +1991,7 @@ autograd cudnn_affine_grid_generator(theta: Tensor, N: int64, C: int64, H: int64
   result.bias = input_result[2]
  ]#
 autograd cudnn_batch_norm(input: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, exponential_average_factor: float64, epsilon: float64, , ) -> tuple[result0: Tensorresult1: Tensorresult2: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("cudnn_batch_norm", input.tensor, weight.tensor, bias.tensor, running_mean.tensor, running_var.tensor, training, exponential_average_factor, epsilon).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   input:  torch.cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, fwd_result[1], fwd_result[2], epsilon) : torch.thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, fwd_result[1], fwd_result[2], grad_input_mask)
   weight:  torch.cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, fwd_result[1], fwd_result[2], epsilon) : torch.thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, fwd_result[1], fwd_result[2], grad_input_mask)
   bias:  torch.cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, fwd_result[1], fwd_result[2], epsilon) : torch.thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, fwd_result[1], fwd_result[2], grad_input_mask)
@@ -2003,7 +2003,7 @@ autograd cudnn_batch_norm(input: Tensor, weight: Tensor, bias: Tensor, running_m
   result.bias = self_result[2]
  ]#
 autograd mkldnn_convolution(self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("mkldnn_convolution", self.tensor, weight.tensor, bias.tensor, padding, stride, dilation, groups).to(ATensor).newTensor()
   self: torch.mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
   weight: torch.mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
   bias: torch.mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
@@ -2013,7 +2013,7 @@ autograd mkldnn_convolution(self: Tensor, weight: Tensor, bias: Tensor, padding:
   result.tensors = tensors_result
  ]#
 autograd stack(tensors: TensorList, dim: int64) -> Tensor:
-  result:  
+  result: ty.dynamicCppCall("stack", tensors, dim).to(ATensor).newTensor()
   tensors: unbind(grad, dim)
 
 #[ proc u_thnn_fused_gru_cell_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor], input_gates: Tensor, hidden_gates: Tensor, hx: Tensor, input_bias: Tensor, hidden_bias: Tensor): tuple[input_gates: Tensor, hidden_gates: Tensor, hx: Tensor, input_bias: Tensor, hidden_bias: Tensor] {.inline, noinit.} =
@@ -2025,7 +2025,7 @@ autograd stack(tensors: TensorList, dim: int64) -> Tensor:
   result.hidden_bias = input_gates_result[4]
  ]#
 autograd u_thnn_fused_gru_cell(input_gates: Tensor, hidden_gates: Tensor, hx: Tensor, input_bias: Tensor, hidden_bias: Tensor, ) -> tuple[result0: Tensorresult1: Tensor]:
-  result:  
+  result: ty.dynamicCppCall("_thnn_fused_gru_cell", input_gates.tensor, hidden_gates.tensor, hx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   input_gates: torch.u_thnn_fused_gru_cell_backward(grad, fwd_result[1], input_bias.defined())
   hidden_gates: torch.u_thnn_fused_gru_cell_backward(grad, fwd_result[1], input_bias.defined())
   hx: torch.u_thnn_fused_gru_cell_backward(grad, fwd_result[1], input_bias.defined())

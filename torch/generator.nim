@@ -26,8 +26,10 @@ type
     name: string
     args: seq[ArgInfo]
     returns: seq[ArgInfo]
+    argsStr: string
     nimReturnType: string
     kind: MethodOfKind
+    expression: string
 
   MethodOfKind = enum
     Type, Tensor, Namespace
@@ -85,10 +87,10 @@ generatedProcs.add(ProcInfo(originalName: "strides", name: "strides", kind: Tens
 generatedProcs.add(ProcInfo(originalName: "type", name: "getType", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
 
 block declarations:
-  var output = newFileStream("nimtorch/declarations.nim", fmWrite)
+  var output = newFileStream("torch/declarations.nim", fmWrite)
 
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r nimtorch/generator.nim\n"
+  output.writeLine "# nim c -r torch/generator.nim\n"
 
   # convert from yaml to json to load at compile time, using python3 for now
   let
@@ -119,9 +121,9 @@ block declarations:
     var methodKind: set[MethodOfKind]
     for ofNode in node["method_of"]:
       case ofNode.getStr()
-      of "Tensor": methodKind = methodKind + {Tensor}
-      of "Type": methodKind = methodKind + {Type}
-      of "namespace": methodKind = methodKind + {Namespace}
+      of "Tensor": methodKind.incl Tensor
+      of "Type": methodKind.incl Type
+      of "namespace": methodKind.incl Namespace
       
     template validateArguments: untyped =
       let hasValidArguments = arguments.all do (x: JsonNode) -> bool:
@@ -232,31 +234,26 @@ block declarations:
       else:
         pragmasStr = "{.inline, noinit.} "
       
+      var convertStr, preCode: string
+
       try:
         if not node.hasKey("returns") or node["returns"].len == 0:
           raise newException(InvalidReturnException, "Method has no returns") # should not happen by design
           
         elif node["returns"].len == 1:
-          var
-            outputType = toNimType(node["returns"][0]["dynamic_type"].getStr())
-            toType = ".to(" & outputType & ")"
-            preCode = ""
+          procInfo.nimReturnType = toNimType(node["returns"][0]["dynamic_type"].getStr())
+          convertStr = ".to(" & procInfo.nimReturnType & ")"
 
-          if outputType == "Tensor":
-            toType = ".to(ATensor).newTensor()"
+          if procInfo.nimReturnType == "Tensor":
+            convertStr = ".to(ATensor).newTensor()"
             preCode = "" #&= "\n  result = newTensor "
 
-          output.writeLine(procInfo.kind.procFormatString % [procInfo.name, outputType, procInfo.originalName, argsStr1, argsStr2, toType, pragmasStr, preCode])
-
-          procInfo.returns.add(ArgInfo(originalName: "", name: "", nimType: outputType))
-          procInfo.nimReturnType = outputType
+          procInfo.returns.add(ArgInfo(originalName: "", name: "", nimType: procInfo.nimReturnType))
           
         elif node["returns"].len > 1: # tuple, a bit ugly tho
           var
             tupleStr1 = ""
             tupleStr2 = ""
-            convertStr = ""
-            preCode = ""
             resultStr = ""
           
           let returnsHigh = node["returns"].len - 1
@@ -292,19 +289,22 @@ block declarations:
               tupleStr2 &= ", "
 
           convertStr = ".to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple().newTensors()"
-            
-          output.writeLine(procInfo.kind.procFormatString % [procInfo.name, "tuple[" & tupleStr1 & "]", procInfo.originalName, argsStr1, argsStr2, convertStr, pragmasStr, preCode])
-
           procInfo.nimReturnType = "tuple[" & tupleStr1 & "]"
-            
+         
         else:
           raise newException(InvalidReturnException, "Not implemented returns length")
-      
+
+        case kind:
+          of Tensor: procInfo.expression = fmt"self.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
+          of Type: procInfo.expression = fmt"ty.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
+          of Namespace: procInfo.expression = fmt"dynamicCCall(""at::{procInfo.originalName}""{argsStr2}){convertStr}"
+
+        output.writeLine(procInfo.kind.procFormatString % [procInfo.name, procInfo.nimReturnType, procInfo.originalName, argsStr1, argsStr2, convertStr, pragmasStr, preCode])
+        generatedProcs.add(procInfo)
+
       except InvalidReturnException:
         echo "Skipping method with invalid results: ", name, " type: ", node["returns"][0]["dynamic_type"].getStr()
         echo getCurrentExceptionMsg()
-
-      generatedProcs.add(procInfo)
     
     assert(node.hasKey("arguments"))
     let arguments = toSeq(node["arguments"])
@@ -324,12 +324,12 @@ block declarations:
   output.close()
 
 block derivatives: # we still need to implement some of the procs in pytorch's 'tools/autograd/templates/Functions.cpp'
-  var output = newFileStream("nimtorch/derivatives.nim", fmWrite)
+  var output = newFileStream("torch/derivatives.nim", fmWrite)
 
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r nimtorch/generator.nim\n"
+  output.writeLine "# nim c -r torch/generator.nim\n"
   output.writeLine "import math"
-  output.writeLine "import ../nimtorch"
+  output.writeLine "import ../torch"
   output.writeLine "import autograd_helpers\n"
   output.writeLine "const M_PI = math.PI\n"
 
@@ -459,7 +459,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           resultText &= arg.name & ": " & arg.nimType
         resultText &= "]"
 
-    bodyText &= "  result:  \n"
+    bodyText &= fmt"  result: {info.expression}" & "\n"
 
     block generateProc:
       var nodeIndex = 0

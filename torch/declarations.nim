@@ -1,5 +1,5 @@
 # Automatically generated, to update run again the generator from the torch root path
-# nim c -r nimtorch/generator.nim
+# nim c -r torch/generator.nim
 
 proc storage_offset*(ty: TensorType; self: Tensor): int64 {.inline, noinit.} = ty.dynamicCppCall("storage_offset", self.tensor).to(int64)
 proc storage_offset*(self: Tensor): int64 {.inline, noinit.} = self.tensor.dynamicCppCall("storage_offset").to(int64)
