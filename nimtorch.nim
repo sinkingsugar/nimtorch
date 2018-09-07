@@ -7,7 +7,7 @@ type
     tensor: ATensor
 
     requires_grad*: bool
-    grad_fn: Function
+    grad_fn: BackwardFunction
     grad: Tensor
     inputs: seq[Tensor]
     
@@ -24,10 +24,7 @@ type
     FloatTensor, DoubleTensor, HalfTensor, ByteTensor,
     CharTensor, ShortTensor, IntTensor, LongTensor
 
-  Function* = ref object of RootObj
-
-method apply*(self: Function; grad: Tensor; inputs: openarray[Tensor]): seq[Tensor] {.base.} =
-  discard
+  BackwardFunction* = proc(grads: openarray[Tensor]): seq[Tensor]
 
 var undefinedTensor: ATensor
 
@@ -93,6 +90,20 @@ template `@`*[IDX](a: array[IDX, SomeInteger]): IntList =
 
 # Auto generated #
 # append all the auto generated procs
+proc newTensors(nativeTensor: ATensor): Tensor {.inline.} = nativeTensor.newTensor()
+
+proc newTensors(nativeTensors: TensorList): untyped = nativeTensors
+
+macro newTensors(nativeTensors: tuple): untyped = 
+  let T = nativeTensors.getType()
+  T.expectKind(nnkBracketExpr)
+
+  result = nnkTupleConstr.newTree()
+  for i in 1 ..< T.len:
+    let index = i - 1
+    result.add quote do:
+      newTensors(`nativeTensors`[`index`])
+
 include nimtorch/declarations
 
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
@@ -458,13 +469,17 @@ proc backward*(tensors, grads: openarray[Tensor]) =
   # Accumulate grads
   for node in sortedNodes:
     # TODO: Input mask
-    let grads = node.grad_fn.apply(node.grad, node.inputs)
+    let grads = node.grad_fn([node.grad])
     for i, input in node.inputs:
       if input.requires_grad:
         input.grad += grads[i]
 
 proc backward*(tensor: Tensor) =
   backward([tensor], [torch.ones_like(tensor)])
+
+macro function(head, body: untyped): untyped =
+  for child in body:
+    child.expectKind(nnkCommand)
 
 when isMainModule:
   # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim
@@ -649,3 +664,70 @@ when isMainModule:
   # tensor([[-0.5317, -0.4753],
   #         [-0.3930, -0.3210],
   #         [-0.7325, -0.6430]])
+
+macro autograd(head, body: untyped): untyped =
+
+  result = newStmtList()
+
+  head.expectKind(nnkInfix)
+  assert head[0] == ident"->"
+
+  head[1].expectKind(nnkObjConstr)
+  let name = nnkPostfix.newTree(ident"*", head[1][0])
+
+  var params: seq[NimNode]
+  params.add head[2]
+  
+  for i in 1 ..< head[1].len:
+    let arg = head[1][i]
+    arg.expectKind(nnkExprColonExpr)
+    params.add newIdentDefs(arg[0], arg[1], newEmptyNode())
+  
+  let
+    resultIdent = ident"result"
+    gradsIdent = ident"grads"
+    forwardBody = newStmtList()
+    backwardBody = newStmtList()
+
+  # Make `grad` available in derivative expressions, as alias for `grads[0]`
+  backwardBody.add quote do:
+    template grad: Tensor = `gradsIdent`[0]
+
+  var resultIndex = 0
+  for x in body:
+    x.expectKind({ nnkCall, nnkPar })
+    let varIdent = x[0]
+
+    case x.kind:
+      of nnkCall: discard
+      of nnkPar: discard
+      else: echo x.kind
+
+    if varIdent == ident"result":
+      let forwardExpr = newStmtList(x[1])
+      forwardBody.add quote do:
+        `resultIdent` = `forwardExpr`
+      let forwardProc = newProc(name, params, forwardBody)
+      result.add(forwardProc)
+
+    else:
+      let gradExpr = x[1]
+      backwardBody.add quote do:
+        #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
+        `resultIdent`[`resultIndex`] = `gradExpr`
+      inc resultIndex
+
+  forwardBody.add quote do:
+    let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] = `backwardBody`
+    when `resultIdent` is Tensor:
+      `resultIdent`.grad_fn = fn
+    else: {.error.}
+
+proc test_fwd(self, other: Tensor): Tensor = discard
+proc test_bwd(self: Tensor): Tensor = discard
+
+expandMacros:
+  autograd test(self: Tensor, other: Tensor, i: int) -> Tensor:
+    result: test_fwd(self, other)
+    self: grad
+    other: test_bwd(grad)

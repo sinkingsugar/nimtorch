@@ -1,4 +1,4 @@
-import os, strutils, macros, osproc, json, sequtils, streams, pegs, tables
+import os, strutils, macros, osproc, json, sequtils, streams, pegs, tables, strformat
 
 # nim naming issues:
 # if a name is a nim keyword, like "var", the name will be prefixed by "a", and so it will be "avar"
@@ -9,7 +9,7 @@ const
   ofTypeTo = "proc $1*(ty: TensorType; $4): $2 $7= $8ty.dynamicCppCall(\"$3\"$5)$6"
   ofNamespaceTo = "proc $1*(_: typedesc[torch]; $4): $2 $7= $8dynamicCCall(\"at::$3\"$5)$6"
   
-  backwardGrad = "proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 {.inline, noinit.} =$5"
+  backwardGrad = "#[ proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 {.inline, noinit.} =$5 ]#"
   backwardGrads = "proc $1_bwd*(grads: TensorList; fwd_result: $2$3): $4 {.inline, noinit.} =$5"
 
 static:
@@ -189,8 +189,8 @@ block declarations:
             preCode = ""
 
           if outputType == "Tensor":
-            toType = ".to(ATensor)"
-            preCode &= "\n  result = newTensor "
+            toType = ".to(ATensor).newTensor()"
+            preCode = "" #&= "\n  result = newTensor "
 
           output.writeLine ofTemplateTo % [validName, outputType, name, argsStr1, argsStr2, toType, pragmasStr, preCode]
 
@@ -233,22 +233,8 @@ block declarations:
             tupleStr1 &= returnName & ": " & outputType
             tupleStr2 &= toType
             
-            if i != returnsHigh:
-              tupleStr1 &= ", "
-              tupleStr2 &= ", "
-              if outputType == "Tensor":
-                resultStr &= "  result." & returnName & " = newTensor tupleRes[" & $i & "]\n"
-              else:
-                resultStr &= "  result." & returnName & " = tupleRes[" & $i & "]\n"
-            else:
-              # last of the loop! write final version
-              if outputType == "Tensor":
-                resultStr &= "  result." & returnName & " = newTensor tupleRes[" & $i & "]"
-              else:
-                resultStr &= "  result." & returnName & " = tupleRes[" & $i & "]"
-              preCode = "\n  let tupleRes = "
-              convertStr = ".to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple()\n"
-              convertStr &= resultStr
+            if i == returnsHigh:
+              convertStr = ".to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple().newTensors()\n"
             
           output.writeLine ofTemplateTo % [validName, "tuple[" & tupleStr1 & "]", name, argsStr1, argsStr2, convertStr, pragmasStr, preCode]
 
@@ -499,14 +485,33 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
       resTuple = "tuple["
       body = "\n"
       argsStr = ""
+      argsText: string
+      resultText: string
       hasError = false
+
+      head: string
+      bodyText: string
   
-    for arg in info.args:
+    for i, arg in info.args:
       argsStr &= ", " & arg.name & ": " & arg.nimType
-    
+      if i > 0: argsText &= ", "
+      argsText &= arg.name & ": " & arg.nimType
+
+    case info.returns.len:
+      of 0: discard
+      of 1: resultText = info.returns[0].nimType
+      else:
+        resultText = "tuple["
+        for i, arg in info.returns:
+          if i > 0: argsText &= ", "
+          resultText &= arg.name & ": " & arg.nimType
+        resultText &= "]"
+
+    bodyText &= "  result:  \n"
+
     block generateProc:
       var nodeIndex = 0
-      for k,v in node:
+      for k, v in node:
         let vStr = v.getStr().replace("at::", "") # also remove any at::prefix
         if k == "name" or vStr.startsWith("not_implemented"):
           continue
@@ -612,6 +617,8 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           else:
             body &= "  result." & argName[0].name & " = " & valueName & "[" & $name.index & "]\n"
 
+          bodyText &= fmt"  {argName[0].name}: {nimLikeStr}" & "\n"
+
           inc nodeIndex
       
     resTuple &= "]"
@@ -622,6 +629,8 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
 
     let procStr = backwardGrad % [info.name, info.nimReturnType, argsStr, resTuple, body]
     output.writeLine procStr
+
+    output.writeLine(fmt"autograd {info.name}({argsText}) -> {resultText}:" & "\n" & fmt"{bodyText}")
 
   output.flush()
   output.close()
