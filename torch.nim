@@ -708,11 +708,25 @@ macro autograd(head, body: untyped): untyped =
       result.add(forwardProc)
 
     else:
+      x[0].expectKind({ nnkIdent, nnkPar })
+
+      # Simply assign non-tuples
+      var resultExpr: NimNode
+      if x[0].kind == nnkIdent:
+        resultExpr = quote do: `resultIdent`[`resultIndex`] 
+        inc resultIndex
+
+      # Deconstruct result tuple
+      else:
+        resultExpr = newPar()
+        for r in x[0]:
+          resultExpr.add quote do: `resultIdent`[`resultIndex`] 
+          inc resultIndex
+
       let gradExpr = x[1]
       backwardBody.add quote do:
         #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
-        `resultIdent`[`resultIndex`] = `gradExpr`
-      inc resultIndex
+        `resultExpr` = `gradExpr`
 
   forwardBody.add quote do:
     let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] = `backwardBody`
@@ -727,4 +741,4 @@ expandMacros:
   autograd test(self: Tensor, other: Tensor, i: int) -> Tensor:
     result: test_fwd(self, other)
     self: grad
-    other: test_bwd(grad)
+    (other, lol): test_bwd(grad)
