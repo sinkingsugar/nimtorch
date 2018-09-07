@@ -7,7 +7,7 @@ import os, strutils, macros, osproc, json, sequtils, streams, pegs, tables, strf
 const
   ofTensorTo = "proc $1*(self: Tensor$4): $2 $7= $8self.tensor.dynamicCppCall(\"$3\"$5)$6"
   ofTypeTo = "proc $1*(ty: TensorType; $4): $2 $7= $8ty.dynamicCppCall(\"$3\"$5)$6"
-  ofNamespaceTo = "proc $1*(_: typedesc[torch]; $4): $2 $7= $8dynamicCCall(\"at::$3\"$5)$6"
+  ofNamespaceTo = "proc $1*($4): $2 $7= $8dynamicCCall(\"at::$3\"$5)$6"
   
   backwardGrad = "#[ proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 {.inline, noinit.} =$5 ]#"
   backwardGrads = "proc $1_bwd*(grads: TensorList; fwd_result: $2$3): $4 {.inline, noinit.} =$5"
@@ -208,7 +208,11 @@ block declarations:
           argName = arguments[i]["name"].getStr()
           originalName = argName
           defaultStr = ""
-          
+
+        # For tensor procs we inject the `self` parameter manually
+        if kind == Tensor and argName == "self":
+          continue
+
         argName.validate()
         
         fillArgumentDefaults()
@@ -256,7 +260,7 @@ block declarations:
             resultStr = ""
           
           let returnsHigh = node["returns"].len - 1
-          for i in 0..returnsHigh:
+          for i in 0 .. returnsHigh:
             var
               res = node["returns"][i]["dynamic_type"].getStr()
               returnName = node["returns"][i]["name"].getStr()
@@ -282,9 +286,12 @@ block declarations:
 
             tupleStr1 &= returnName & ": " & outputType
             tupleStr2 &= toType
-            
-            if i == returnsHigh:
-              convertStr = ".to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple().newTensors()\n"
+
+            if i != returnsHigh:
+              tupleStr1 &= ", "
+              tupleStr2 &= ", "
+
+          convertStr = ".to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple().newTensors()"
             
           output.writeLine(procInfo.kind.procFormatString % [procInfo.name, "tuple[" & tupleStr1 & "]", procInfo.originalName, argsStr1, argsStr2, convertStr, pragmasStr, preCode])
 
@@ -302,13 +309,15 @@ block declarations:
     assert(node.hasKey("arguments"))
     let arguments = toSeq(node["arguments"])
 
-    if methodKind.contains(Tensor):     
-      generateProc(Tensor, arguments)
-
+    # Always generate the type proc
     if methodKind.contains(Type):
       generateProc(Type, arguments)
-        
-    if methodKind.contains(Namespace):
+
+    # Generate only the tensor or the namespace proc.
+    # In nim the call syntax is unified
+    if methodKind.contains(Tensor):
+      generateProc(Tensor, arguments) 
+    elif methodKind.contains(Namespace):
       generateProc(Namespace, arguments)
       
   output.flush()
