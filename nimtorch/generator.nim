@@ -152,7 +152,7 @@ block declarations:
 
       if not hasValidArguments:
         echo "Skipping method with invalid argument/s: ", name, " arguments: ", arguments
-        continue
+        return
           
     template fillArgumentDefaults: untyped =
       if arguments[i].hasKey("default"):
@@ -171,7 +171,57 @@ block declarations:
           # skipping defaults, might cause integration issues tho
           discard
           
-    proc generateProc(procInfo: var ProcInfo; ofTemplateTo: string; name, validName, argsStr1, argsStr2: string) =
+    proc procFormatString(kind: MethodOfKind): string =
+      case kind:
+        of Type: return ofTypeTo
+        of Tensor: return ofTensorTo
+        of Namespace: return ofNamespaceTo
+
+    proc generateProc(kind: MethodOfKind; arguments: seq[JsonNode]) =
+
+      if kind == Tensor:
+        let hasSelf = arguments.any do (x: JsonNode) -> bool:
+          assert(x.hasKey("name") and x.hasKey("dynamic_type"))
+          return x["name"].getStr() == "self" and x["dynamic_type"].getStr() == "Tensor"
+          
+        if not hasSelf:
+          echo "Skipping method of Tensor without self Tensor: ", name, " ", arguments
+          return
+      
+        if arguments.len > 1:
+          validateArguments()
+
+      else:
+        if arguments.len > 0:
+          validateArguments()
+      
+      var validName = name
+      validName.validate()
+
+      var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: kind)
+      
+      var argsStr1 = ""
+      var argsStr2 = ""
+      for i in 0 .. arguments.high:
+        var
+          nimType = toNimType(arguments[i]["dynamic_type"].getStr())
+          argName = arguments[i]["name"].getStr()
+          originalName = argName
+          defaultStr = ""
+          
+        argName.validate()
+        
+        fillArgumentDefaults()
+        
+        var prefix = if i == 0 and kind != Tensor: "" else: ", "
+        argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
+        if nimType == "Tensor":
+          argsStr2 &= ", $1.tensor" % [argName]
+        else:
+          argsStr2 &= ", $1" % [argName]
+
+        procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
+
       var pragmasStr = ""
       if deprecated:
         pragmasStr = "{.deprecated, inline, noinit.} "
@@ -192,7 +242,7 @@ block declarations:
             toType = ".to(ATensor).newTensor()"
             preCode = "" #&= "\n  result = newTensor "
 
-          output.writeLine ofTemplateTo % [validName, outputType, name, argsStr1, argsStr2, toType, pragmasStr, preCode]
+          output.writeLine(procInfo.kind.procFormatString % [procInfo.name, outputType, procInfo.originalName, argsStr1, argsStr2, toType, pragmasStr, preCode])
 
           procInfo.returns.add(ArgInfo(originalName: "", name: "", nimType: outputType))
           procInfo.nimReturnType = outputType
@@ -236,7 +286,7 @@ block declarations:
             if i == returnsHigh:
               convertStr = ".to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple().newTensors()\n"
             
-          output.writeLine ofTemplateTo % [validName, "tuple[" & tupleStr1 & "]", name, argsStr1, argsStr2, convertStr, pragmasStr, preCode]
+          output.writeLine(procInfo.kind.procFormatString % [procInfo.name, "tuple[" & tupleStr1 & "]", procInfo.originalName, argsStr1, argsStr2, convertStr, pragmasStr, preCode])
 
           procInfo.nimReturnType = "tuple[" & tupleStr1 & "]"
             
@@ -246,127 +296,20 @@ block declarations:
       except InvalidReturnException:
         echo "Skipping method with invalid results: ", name, " type: ", node["returns"][0]["dynamic_type"].getStr()
         echo getCurrentExceptionMsg()
+
+      generatedProcs.add(procInfo)
     
     assert(node.hasKey("arguments"))
     let arguments = toSeq(node["arguments"])
 
-    if methodKind.contains(Tensor):
-      let hasSelf = arguments.any do (x: JsonNode) -> bool:
-        assert(x.hasKey("name") and x.hasKey("dynamic_type"))
-        return x["name"].getStr() == "self" and x["dynamic_type"].getStr() == "Tensor"
-        
-      if not hasSelf:
-        echo "Skipping method of Tensor without self Tensor: ", name, " ", arguments
-        continue
-      
-      if arguments.len > 1:
-        validateArguments()
-      
-      var validName = name
-      validName.validate()
-
-      var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: Tensor)
-
-      # in Tensor kind add Tensor self
-      procInfo.args.add(ArgInfo(originalName: "self", name: "self", nimType: "Tensor"))
-      
-      var argsStr1 = ""
-      var argsStr2 = ""
-      for i in 0..arguments.high:
-        var
-          nimType = toNimType(arguments[i]["dynamic_type"].getStr())
-          argName = arguments[i]["name"].getStr()
-          originalName = argName
-          defaultStr = ""
-        
-        if argName == "self":
-          continue
-        
-        argName.validate()
-        
-        fillArgumentDefaults()
-        
-        argsStr1 &= ", $1: $2$3" % [argName, nimType, defaultStr]
-        if nimType == "Tensor":
-          argsStr2 &= ", $1.tensor" % [argName]
-        else:
-          argsStr2 &= ", $1" % [argName]
-
-        procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
-      
-      generateProc(procInfo, ofTensorTo, name, validName, argsStr1, argsStr2)
-
-      generatedProcs.add(procInfo)
+    if methodKind.contains(Tensor):     
+      generateProc(Tensor, arguments)
 
     if methodKind.contains(Type):
-      if arguments.len > 0:
-        validateArguments()
-      
-      var validName = name
-      validName.validate()
-
-      var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: Type)
-      
-      var argsStr1 = ""
-      var argsStr2 = ""
-      for i in 0..arguments.high:
-        var
-          nimType = toNimType(arguments[i]["dynamic_type"].getStr())
-          argName = arguments[i]["name"].getStr()
-          originalName = argName
-          defaultStr = ""
-          
-        argName.validate()
-        
-        fillArgumentDefaults()
-        
-        var prefix = if i == 0: "" else: ", "
-        argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
-        if nimType == "Tensor":
-          argsStr2 &= ", $1.tensor" % [argName]
-        else:
-          argsStr2 &= ", $1" % [argName]
-
-        procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
-      
-      generateProc(procInfo, ofTypeTo, name, validName, argsStr1, argsStr2)
-
-      generatedProcs.add(procInfo)
+      generateProc(Type, arguments)
         
     if methodKind.contains(Namespace):
-      if arguments.len > 0:
-        validateArguments()
-      
-      var validName = name
-      validName.validate()
-
-      var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: Namespace)
-      
-      var argsStr1 = ""
-      var argsStr2 = ""
-      for i in 0..arguments.high:
-        var
-          nimType = toNimType(arguments[i]["dynamic_type"].getStr())
-          argName = arguments[i]["name"].getStr()
-          originalName = argName
-          defaultStr = ""
-          
-        argName.validate()
-        
-        fillArgumentDefaults()
-        
-        var prefix = if i == 0: "" else: ", "
-        argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
-        if nimType == "Tensor":
-          argsStr2 &= ", $1.tensor" % [argName]
-        else:
-          argsStr2 &= ", $1" % [argName]
-
-        procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
-      
-      generateProc(procInfo, ofNamespaceTo, name, validName, argsStr1, argsStr2)
-
-      generatedProcs.add(procInfo)
+      generateProc(Namespace, arguments)
       
   output.flush()
   output.close()
