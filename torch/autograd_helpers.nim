@@ -1,38 +1,38 @@
 import ../nimtorch
 import fragments/ffi/cpp as cpp
 
-proc maybe_multiply*(_: typedesc[torch]; a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
+proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
   if b.float == 1.0:
     return a
   else:
     return a * b
 
-proc mm_mat1_backward*(_: typedesc[torch]; grad, mat2: Tensor; sizes, strides: IntList; alpha: float): Tensor {.inline, noinit.} =
+proc mm_mat1_backward*(grad, mat2: Tensor; sizes, strides: IntList; alpha: float): Tensor {.inline, noinit.} =
   if strides[0] == 1 and strides[1] == sizes[0]:
     return torch.maybe_multiply(mat2.mm(grad.t()).t(), alpha)
   else:
     return torch.maybe_multiply(grad.mm(mat2.t()), alpha)
 
-proc mm_mat2_backward*(_: typedesc[torch]; grad, mat1: Tensor; sizes, strides: IntList; alpha: float): Tensor {.inline, noinit.} =
+proc mm_mat2_backward*(grad, mat1: Tensor; sizes, strides: IntList; alpha: float): Tensor {.inline, noinit.} =
   if strides[0] == 1 and strides[1] == sizes[0]:
     return torch.maybe_multiply(grad.t().mm(mat1).t(), alpha)
   else:
     return torch.maybe_multiply(mat1.t().mm(grad), alpha)
 
-proc pow_backward*(_: typedesc[torch]; grad, self: Tensor; exponent: float): Tensor {.inline, noinit.} =
+proc pow_backward*(grad, self: Tensor; exponent: float): Tensor {.inline, noinit.} =
   if exponent == 0.0:
     return torch.zeros_like(self)
   else:
     return grad * exponent * self.pow(exponent - 1)
 
-proc pow_backward_self*(_: typedesc[torch]; grad, self, exponent: Tensor): Tensor {.inline, noinit.} =
+proc pow_backward_self*(grad, self, exponent: Tensor): Tensor {.inline, noinit.} =
   var l: IntList
   return torch.where(exponent == 0.0, torch.zeros(l, grad.getType()), grad * exponent * torch.pow(self, exponent - 1))
 
-proc pow_backward_exponent*(_: typedesc[torch]; grad, self, exponent: Tensor): Tensor {.inline, noinit.} =
+proc pow_backward_exponent*(grad, self, exponent: Tensor): Tensor {.inline, noinit.} =
   return grad * torch.pow(self, exponent) * self.log()
 
-proc atan2_backward*(_: typedesc[torch]; grad, self, other: Tensor; outputMask: StdArray[bool, 2]): (Tensor, Tensor) {.inline, noinit.} =
+proc atan2_backward*(grad, self, other: Tensor; outputMask: StdArray[bool, 2]): (Tensor, Tensor) {.inline, noinit.} =
   let recip = (self * self + other * other).reciprocal()
   if output_mask[0]:
     result[0] = grad * other * recip

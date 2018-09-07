@@ -1,4 +1,4 @@
-include nimtorch/torch_cpp
+include torch/torch_cpp
 import macros, sequtils, math, queues
 
 type
@@ -15,7 +15,6 @@ type
   TensorOptions* = ATensorOptions
   TensorList* = ATensors
   IntList* = AIntList
-  torch* = distinct pointer
   
   Device* {.pure.} = enum
     CPU, CUDA
@@ -104,7 +103,7 @@ macro newTensors(nativeTensors: tuple): untyped =
     result.add quote do:
       newTensors(`nativeTensors`[`index`])
 
-include nimtorch/declarations
+include torch/declarations
 
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
 
@@ -125,57 +124,57 @@ proc toATenType(kind: TensorKind): AScalarType {.inline.} =
   of LongTensor: return ATkLong
   else: raiseAssert("Unknown type")
 
-proc device*(_: typedesc[torch]; deviceName: string): Device {.inline.} =
+proc device*(deviceName: string): Device {.inline.} =
   case deviceName
   of "cpu", "CPU": return Device.CPU
   of "cuda", "CUDA": return Device.CUDA
   else: raiseAssert("Unknown device")
 
-proc zeros*(_: typedesc[torch]; intList: IntList): Tensor =
+proc zeros*(intList: IntList): Tensor =
   var opts: TensorOptions
   opts.dtype(defaultType.toATenType()).to(void)
   return torch.zeros(intList, opts)
 
-proc zeros*(_: typedesc[torch]; intList: IntList; device: Device): Tensor =
-  var opts: TensorOptions
-  opts.dtype(defaultType.toATenType()).to(void)
-  case device
-  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
-  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return torch.zeros(intList, opts)
-
-proc zeros*(_: typedesc[torch]; intList: IntList; dtype: TensorKind): Tensor =
-  var opts: TensorOptions
-  opts.dtype(dtype.toATenType()).to(void)
-  return torch.zeros(intList, opts)
-
-proc zeros*(_: typedesc[torch]; intList: IntList; dtype: TensorKind; device: Device): Tensor =
-  var opts: TensorOptions
-  opts.dtype(dtype.toATenType()).to(void)
-  case device
-  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
-  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return torch.zeros(intList, opts)
-
-proc ones*(_: typedesc[torch]; intList: IntList): Tensor =
-  var opts: TensorOptions
-  opts.dtype(defaultType.toATenType()).to(void)
-  return torch.ones(intList, opts)
-
-proc ones*(_: typedesc[torch]; intList: IntList; device: Device): Tensor =
+proc zeros*(intList: IntList; device: Device): Tensor =
   var opts: TensorOptions
   opts.dtype(defaultType.toATenType()).to(void)
   case device
   of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
   of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.zeros(intList, opts)
+
+proc zeros*(intList: IntList; dtype: TensorKind): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  return torch.zeros(intList, opts)
+
+proc zeros*(intList: IntList; dtype: TensorKind; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.zeros(intList, opts)
+
+proc ones*(intList: IntList): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
   return torch.ones(intList, opts)
 
-proc ones*(_: typedesc[torch]; intList: IntList; dtype: TensorKind): Tensor =
+proc ones*(intList: IntList; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.ones(intList, opts)
+
+proc ones*(intList: IntList; dtype: TensorKind): Tensor =
   var opts: TensorOptions
   opts.dtype(dtype.toATenType()).to(void)
   return torch.ones(intList, opts)
 
-proc ones*(_: typedesc[torch]; intList: IntList; dtype: TensorKind; device: Device): Tensor =
+proc ones*(intList: IntList; dtype: TensorKind; device: Device): Tensor =
   var opts: TensorOptions
   opts.dtype(dtype.toATenType()).to(void)
   case device
@@ -203,7 +202,7 @@ iterator flatIter[T](s: openarray[T]): auto {.inline.} =
     else:
       yield item
 
-proc tensor*(_: typedesc[torch]; data: openarray; dtype: TensorKind; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline, noinit.} =
+proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline, noinit.} =
   # as noticed in Arraymancer as well:
   ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
@@ -229,8 +228,8 @@ proc tensor*(_: typedesc[torch]; data: openarray; dtype: TensorKind; device: Dev
   of Device.CUDA: result = newTensor ACUDA(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: result = newTensor ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc tensor*(_: typedesc[torch]; data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline, noinit.} =
-  return tensor(torch, data, defaultType, device)
+proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline, noinit.} =
+  return tensor(data, defaultType, device)
 
 proc getType*(a: Tensor): TensorType {.inline.} =
   assert(a.hasTensor)
@@ -320,7 +319,7 @@ proc `+=`*(a, b: Tensor) {.inline.} =
 proc `-=`*(a, b: Tensor) {.inline.} =
   a.tensor.toCpp += b.tensor.toCpp
 
-proc sqrt*(_: typedesc[torch]; b: SomeFloat): SomeFloat {.inline, noinit.} = math.sqrt(b)
+proc sqrt*(b: SomeFloat): SomeFloat {.inline, noinit.} = math.sqrt(b)
 
 proc ndimension*(a: Tensor): int64 {.inline, noinit.} = a.tensor.dynamicCppCall(ndimension).to(int64)
 
@@ -429,13 +428,11 @@ proc internalManualSeed(seed: int) =
   if globalContext().hasCUDA().to(bool):
     globalContext().defaultGenerator(DeviceTypeCUDA).manualSeed(seed).to(void)
 
-proc manual_seed*(_: typedesc[torch]; seed: int) = internalManualSeed(seed)
+proc manual_seed*(seed: int) = internalManualSeed(seed)
 
-proc set_num_threads(num: int) {.importcpp: "at::set_num_threads(#)", header: "ATen/ATen.h".}
+proc set_num_threads*(num: int) {.importcpp: "at::set_num_threads(#)", header: "ATen/ATen.h".}
 
-proc set_num_threads*(_: typedesc[torch]; num: int) = set_num_threads(num)
-
-proc get_num_threads*(_: typedesc[torch];): int {.importcpp: "at::get_num_threads()".}
+proc get_num_threads*(): int {.importcpp: "at::get_num_threads()".}
 
 proc backward*(tensors, grads: openarray[Tensor]) =
 
