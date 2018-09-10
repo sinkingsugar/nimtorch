@@ -606,7 +606,15 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           else:
             body &= "  result." & argName[0].name & " = " & valueName & "[" & $name.index & "]\n"
 
-          bodyText &= fmt"  {argName[0].name}: {nimLikeStr}" & "\n"
+          # if name.index == -1:
+          #   bodyText &= fmt"  {argName[0].name}: {nimLikeStr}" & "\n"
+
+          if name.index <= 0: bodyText &= "  "
+          if name.index == 0: bodyText &= "("
+          if name.index > 0: bodyText &= ", "
+          bodyText &= argName[0].name
+          if name.index == -1: bodyText &= fmt": {nimLikeStr}" & "\n"
+          if name.index == names.high: bodyText &= fmt"): {nimLikeStr}" & "\n"
 
           inc nodeIndex
       

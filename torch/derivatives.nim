@@ -171,8 +171,7 @@ autograd atan(ty: TensorType; self: Tensor) -> Tensor:
  ]#
 autograd atan2(ty: TensorType; self: Tensor, other: Tensor) -> Tensor:
   result: ty.dynamicCppCall("atan2", self.tensor, other.tensor).to(ATensor).newTensor()
-  self: atan2_backward(grad, self, other, grad_input_mask)
-  other: atan2_backward(grad, self, other, grad_input_mask)
+  (self, other): atan2_backward(grad, self, other, grad_input_mask)
 
 #[ proc baddbmm_bwd*(grad: Tensor; fwd_result: Tensor): tuple[self: Tensor, batch1: Tensor, batch2: Tensor] {.inline, noinit.} =
   let self_result = maybe_multiply(grad, beta)
@@ -282,9 +281,7 @@ autograd cross(ty: TensorType; self: Tensor, other: Tensor, dim: int64 = -1) -> 
  ]#
 autograd conv_tbc(ty: TensorType; self: Tensor, weight: Tensor, bias: Tensor, pad: int64) -> Tensor:
   result: ty.dynamicCppCall("conv_tbc", self.tensor, weight.tensor, bias.tensor, pad).to(ATensor).newTensor()
-  self: conv_tbc_backward(grad, self, weight, bias, pad)
-  weight: conv_tbc_backward(grad, self, weight, bias, pad)
-  bias: conv_tbc_backward(grad, self, weight, bias, pad)
+  (self, weight, bias): conv_tbc_backward(grad, self, weight, bias, pad)
 
 #[ proc u_ctc_loss_bwd*(grad: Tensor; fwd_result: tuple[result0: Tensor, result1: Tensor]): tuple[log_probs: Tensor] {.inline, noinit.} =
   let log_probs_result = u_ctc_loss_backward(grad, log_probs, targets, input_lengths, target_lengths, fwd_result[0], fwd_result[1], blank)
@@ -487,8 +484,7 @@ autograd ger(ty: TensorType; self: Tensor, vec2: Tensor) -> Tensor:
  ]#
 autograd grid_sampler_2d(ty: TensorType; input: Tensor, grid: Tensor, interpolation_mode: int64, padding_mode: int64) -> Tensor:
   result: ty.dynamicCppCall("grid_sampler_2d", input.tensor, grid.tensor, interpolation_mode, padding_mode).to(ATensor).newTensor()
-  input: grid_sampler_2d_backward(grad, input, grid, interpolation_mode, padding_mode)
-  grid: grid_sampler_2d_backward(grad, input, grid, interpolation_mode, padding_mode)
+  (input, grid): grid_sampler_2d_backward(grad, input, grid, interpolation_mode, padding_mode)
 
 #[ proc grid_sampler_3d_bwd*(grad: Tensor; fwd_result: Tensor): tuple[input: Tensor, grid: Tensor] {.inline, noinit.} =
   let input_result = grid_sampler_3d_backward(grad, input, grid, interpolation_mode, padding_mode)
@@ -497,8 +493,7 @@ autograd grid_sampler_2d(ty: TensorType; input: Tensor, grid: Tensor, interpolat
  ]#
 autograd grid_sampler_3d(ty: TensorType; input: Tensor, grid: Tensor, interpolation_mode: int64, padding_mode: int64) -> Tensor:
   result: ty.dynamicCppCall("grid_sampler_3d", input.tensor, grid.tensor, interpolation_mode, padding_mode).to(ATensor).newTensor()
-  input: grid_sampler_3d_backward(grad, input, grid, interpolation_mode, padding_mode)
-  grid: grid_sampler_3d_backward(grad, input, grid, interpolation_mode, padding_mode)
+  (input, grid): grid_sampler_3d_backward(grad, input, grid, interpolation_mode, padding_mode)
 
 #[ proc gt_u_bwd*(grad: Tensor; fwd_result: Tensor): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = zeros_like(self)
@@ -1343,8 +1338,7 @@ autograd log_softmax(ty: TensorType; self: Tensor, dim: int64) -> Tensor:
  ]#
 autograd prelu(ty: TensorType; self: Tensor, weight: Tensor) -> Tensor:
   result: ty.dynamicCppCall("prelu_forward", self.tensor, weight.tensor).to(ATensor).newTensor()
-  self: prelu_backward(grad, self, weight, grad_input_mask)
-  weight: prelu_backward(grad, self, weight, grad_input_mask)
+  (self, weight): prelu_backward(grad, self, weight, grad_input_mask)
 
 #[ proc rrelu_with_noise_bwd*(grad: Tensor; fwd_result: Tensor): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = rrelu_with_noise_backward(grad, self, noise, lower, upper, training)
@@ -1586,9 +1580,7 @@ autograd max_unpool3d(ty: TensorType; self: Tensor, indices: Tensor, output_size
  ]#
 autograd thnn_batch_norm(ty: TensorType; self: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, momentum: float64, eps: float64) -> tuple[output: Tensor, save_mean: Tensor, save_std: Tensor]:
   result: ty.dynamicCppCall("thnn_batch_norm_forward", self.tensor, weight.tensor, bias.tensor, running_mean.tensor, running_var.tensor, training, momentum, eps).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  self: thnn_batch_norm_backward(grad.contiguous(), self, weight, running_mean, running_var, training, eps, fwd_result.save_mean, fwd_result.save_std, grad_input_mask)
-  weight: thnn_batch_norm_backward(grad.contiguous(), self, weight, running_mean, running_var, training, eps, fwd_result.save_mean, fwd_result.save_std, grad_input_mask)
-  bias: thnn_batch_norm_backward(grad.contiguous(), self, weight, running_mean, running_var, training, eps, fwd_result.save_mean, fwd_result.save_std, grad_input_mask)
+  (self, weight, bias): thnn_batch_norm_backward(grad.contiguous(), self, weight, running_mean, running_var, training, eps, fwd_result.save_mean, fwd_result.save_std, grad_input_mask)
 
 #[ proc thnn_conv_transpose2d_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
@@ -1598,9 +1590,7 @@ autograd thnn_batch_norm(ty: TensorType; self: Tensor, weight: Tensor, bias: Ten
  ]#
 autograd thnn_conv_transpose2d(ty: TensorType; self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList) -> tuple[output: Tensor, columns: Tensor, ones: Tensor]:
   result: ty.dynamicCppCall("thnn_conv_transpose2d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding, output_padding, dilation).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  self: thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
-  weight: thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
-  bias: thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
+  (self, weight, bias): thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
 
 #[ proc thnn_conv_transpose3d_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
@@ -1610,9 +1600,7 @@ autograd thnn_conv_transpose2d(ty: TensorType; self: Tensor, weight: Tensor, ker
  ]#
 autograd thnn_conv_transpose3d(ty: TensorType; self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, output_padding: IntList, dilation: IntList) -> tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor]:
   result: ty.dynamicCppCall("thnn_conv_transpose3d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding, output_padding, dilation).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  self: thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
-  weight: thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
-  bias: thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
+  (self, weight, bias): thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
 
 #[ proc thnn_conv2d_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
@@ -1622,9 +1610,7 @@ autograd thnn_conv_transpose3d(ty: TensorType; self: Tensor, weight: Tensor, ker
  ]#
 autograd thnn_conv2d(ty: TensorType; self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList) -> tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor]:
   result: ty.dynamicCppCall("thnn_conv2d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  self: thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
-  weight: thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
-  bias: thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
+  (self, weight, bias): thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
 
 #[ proc thnn_conv_depthwise2d_bwd*(grad: Tensor; fwd_result: Tensor, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
@@ -1635,8 +1621,7 @@ autograd thnn_conv2d(ty: TensorType; self: Tensor, weight: Tensor, kernel_size: 
  ]#
 autograd thnn_conv_depthwise2d(ty: TensorType; self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList) -> Tensor:
   result: ty.dynamicCppCall("thnn_conv_depthwise2d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding, dilation).to(ATensor).newTensor()
-  self: thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
-  weight: thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
+  (self, weight): thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
   bias: grad.contiguous().view(@[grad.size(0), grad.size(1), -1]).sum(0).sum(1)
 
 #[ proc thnn_conv3d_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor], grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
@@ -1647,9 +1632,7 @@ autograd thnn_conv_depthwise2d(ty: TensorType; self: Tensor, weight: Tensor, ker
  ]#
 autograd thnn_conv3d(ty: TensorType; self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList) -> tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor]:
   result: ty.dynamicCppCall("thnn_conv3d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  self: thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
-  weight: thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
-  bias: thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
+  (self, weight, bias): thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
 
 #[ proc thnn_conv_dilated2d_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
@@ -1659,9 +1642,7 @@ autograd thnn_conv3d(ty: TensorType; self: Tensor, weight: Tensor, kernel_size: 
  ]#
 autograd thnn_conv_dilated2d(ty: TensorType; self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList) -> tuple[output: Tensor, columns: Tensor, ones: Tensor]:
   result: ty.dynamicCppCall("thnn_conv_dilated2d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding, dilation).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  self: thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
-  weight: thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
-  bias: thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
+  (self, weight, bias): thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
 
 #[ proc thnn_conv_dilated3d_bwd*(grad: Tensor; fwd_result: tuple[output: Tensor, columns: Tensor, ones: Tensor], grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
@@ -1671,9 +1652,7 @@ autograd thnn_conv_dilated2d(ty: TensorType; self: Tensor, weight: Tensor, kerne
  ]#
 autograd thnn_conv_dilated3d(ty: TensorType; self: Tensor, weight: Tensor, kernel_size: IntList, bias: Tensor, stride: IntList, padding: IntList, dilation: IntList) -> tuple[output: Tensor, columns: Tensor, ones: Tensor]:
   result: ty.dynamicCppCall("thnn_conv_dilated3d_forward", self.tensor, weight.tensor, kernel_size, bias.tensor, stride, padding, dilation).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  self: thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
-  weight: thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
-  bias: thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
+  (self, weight, bias): thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
 
 #[ proc adaptive_avg_pool2d_backward_bwd*(grad: Tensor; fwd_result: Tensor): tuple[grad_output: Tensor, self: Tensor] {.inline, noinit.} =
   let grad_output_result = adaptive_avg_pool2d(grad, @[ grad_output.size(-2), grad_output.size(-1) ])
@@ -1948,9 +1927,7 @@ autograd u_cudnn_ctc_loss(ty: TensorType; log_probs: Tensor, targets: Tensor, in
  ]#
 autograd cudnn_convolution_transpose(ty: TensorType; self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, output_padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool) -> Tensor:
   result: ty.dynamicCppCall("cudnn_convolution_transpose", self.tensor, weight.tensor, bias.tensor, padding, output_padding, stride, dilation, groups, benchmark, deterministic).to(ATensor).newTensor()
-  self: cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
-  weight: cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
-  bias: cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
+  (self, weight, bias): cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
 
 #[ proc cudnn_convolution_bwd*(grad: Tensor; fwd_result: Tensor, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
@@ -1960,9 +1937,7 @@ autograd cudnn_convolution_transpose(ty: TensorType; self: Tensor, weight: Tenso
  ]#
 autograd cudnn_convolution(ty: TensorType; self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64, benchmark: bool, deterministic: bool) -> Tensor:
   result: ty.dynamicCppCall("cudnn_convolution", self.tensor, weight.tensor, bias.tensor, padding, stride, dilation, groups, benchmark, deterministic).to(ATensor).newTensor()
-  self: cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
-  weight: cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
-  bias: cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
+  (self, weight, bias): cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
 
 #[ proc cudnn_grid_sampler_bwd*(grad: Tensor; fwd_result: Tensor): tuple[self: Tensor, grid: Tensor] {.inline, noinit.} =
   let self_result = cudnn_grid_sampler_backward(self, grid, grad)
@@ -1971,8 +1946,7 @@ autograd cudnn_convolution(ty: TensorType; self: Tensor, weight: Tensor, bias: T
  ]#
 autograd cudnn_grid_sampler(ty: TensorType; self: Tensor, grid: Tensor) -> Tensor:
   result: ty.dynamicCppCall("cudnn_grid_sampler", self.tensor, grid.tensor).to(ATensor).newTensor()
-  self: cudnn_grid_sampler_backward(self, grid, grad)
-  grid: cudnn_grid_sampler_backward(self, grid, grad)
+  (self, grid): cudnn_grid_sampler_backward(self, grid, grad)
 
 #[ proc cudnn_affine_grid_generator_bwd*(grad: Tensor; fwd_result: Tensor): tuple[theta: Tensor] {.inline, noinit.} =
   let theta_result = cudnn_affine_grid_generator_backward(grad, N, C, H, W)
@@ -1992,9 +1966,7 @@ autograd cudnn_affine_grid_generator(ty: TensorType; theta: Tensor, N: int64, C:
  ]#
 autograd cudnn_batch_norm(ty: TensorType; input: Tensor, weight: Tensor, bias: Tensor, running_mean: Tensor, running_var: Tensor, training: bool, exponential_average_factor: float64, epsilon: float64) -> tuple[result0: Tensor, result1: Tensor, result2: Tensor]:
   result: ty.dynamicCppCall("cudnn_batch_norm", input.tensor, weight.tensor, bias.tensor, running_mean.tensor, running_var.tensor, training, exponential_average_factor, epsilon).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  input:  cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, fwd_result[1], fwd_result[2], epsilon) : thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, fwd_result[1], fwd_result[2], grad_input_mask)
-  weight:  cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, fwd_result[1], fwd_result[2], epsilon) : thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, fwd_result[1], fwd_result[2], grad_input_mask)
-  bias:  cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, fwd_result[1], fwd_result[2], epsilon) : thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, fwd_result[1], fwd_result[2], grad_input_mask)
+  (input, weight, bias):  cudnn_batch_norm_backward(input, grad.contiguous(), weight, running_mean, running_var, fwd_result[1], fwd_result[2], epsilon) : thnn_batch_norm_backward(grad.contiguous(), input, weight, running_mean, running_var, training, epsilon, fwd_result[1], fwd_result[2], grad_input_mask)
 
 #[ proc mkldnn_convolution_bwd*(grad: Tensor; fwd_result: Tensor, grad_input_mask: StdArray): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline, noinit.} =
   let self_result = mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
@@ -2004,9 +1976,7 @@ autograd cudnn_batch_norm(ty: TensorType; input: Tensor, weight: Tensor, bias: T
  ]#
 autograd mkldnn_convolution(ty: TensorType; self: Tensor, weight: Tensor, bias: Tensor, padding: IntList, stride: IntList, dilation: IntList, groups: int64) -> Tensor:
   result: ty.dynamicCppCall("mkldnn_convolution", self.tensor, weight.tensor, bias.tensor, padding, stride, dilation, groups).to(ATensor).newTensor()
-  self: mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
-  weight: mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
-  bias: mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
+  (self, weight, bias): mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
 
 #[ proc stack_bwd*(grad: Tensor; fwd_result: Tensor): tuple[tensors: TensorList] {.inline, noinit.} =
   let tensors_result = unbind(grad, dim)
@@ -2026,9 +1996,5 @@ autograd stack(ty: TensorType; tensors: TensorList, dim: int64 = 0) -> Tensor:
  ]#
 autograd u_thnn_fused_gru_cell(ty: TensorType; input_gates: Tensor, hidden_gates: Tensor, hx: Tensor, input_bias: Tensor, hidden_bias: Tensor) -> tuple[result0: Tensor, result1: Tensor]:
   result: ty.dynamicCppCall("_thnn_fused_gru_cell", input_gates.tensor, hidden_gates.tensor, hx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-  input_gates: u_thnn_fused_gru_cell_backward(grad, fwd_result[1], input_bias.defined())
-  hidden_gates: u_thnn_fused_gru_cell_backward(grad, fwd_result[1], input_bias.defined())
-  hx: u_thnn_fused_gru_cell_backward(grad, fwd_result[1], input_bias.defined())
-  input_bias: u_thnn_fused_gru_cell_backward(grad, fwd_result[1], input_bias.defined())
-  hidden_bias: u_thnn_fused_gru_cell_backward(grad, fwd_result[1], input_bias.defined())
+  (input_gates, hidden_gates, hx, input_bias, hidden_bias): u_thnn_fused_gru_cell_backward(grad, fwd_result[1], input_bias.defined())
 
