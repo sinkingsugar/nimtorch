@@ -5,7 +5,7 @@ import os, strutils, macros, osproc, json, sequtils, streams, pegs, tables, strf
 # underscores are replaced with "u_", "_" = "u_" or "_u"
 
 const
-  ofTensorTo = "proc $1*(self: Tensor$4): $2 $7= $8self.tensor.dynamicCppCall(\"$3\"$5)$6"
+  ofTensorTo = "proc $1*($4): $2 $7= $8self.tensor.dynamicCppCall(\"$3\"$5)$6"
   ofTypeTo = "proc $1*(ty: TensorType; $4): $2 $7= $8ty.dynamicCppCall(\"$3\"$5)$6"
   ofNamespaceTo = "proc $1*($4): $2 $7= $8dynamicCCall(\"at::$3\"$5)$6"
   
@@ -23,6 +23,7 @@ type
 
   ProcInfo = object
     originalName: string
+    originalAlternativeName: string
     name: string
     args: seq[ArgInfo]
     returns: seq[ArgInfo]
@@ -60,15 +61,16 @@ proc toNimType(typeName: string): string =
   of "SparseTensorRef": return "ASparseTensorRef"
   else: raise newException(InvalidReturnException, "Invalid return type '" & typeName & "'")
 
-proc validate(validName: var string) =
+proc validate(name: string): string =
   const invalidNames = ["div", "var", "end", "result", "to", "from"]
-  if validName.endsWith("_"):
-    validName &= "u"
-  if validName.startsWith("_"):
-    validName = "u" & validName
-  if invalidNames.contains(validName):
-    validName = "a" & validName
-  validName = validName.replace("__", "_u_u")
+  result = name
+  if result.endsWith("_"):
+    result &= "u"
+  if result.startsWith("_"):
+    result = "u" & result
+  if invalidNames.contains(result):
+    result = "a" & result
+  result = result.replace("__", "_u_u")
   
 var generatedProcs = newSeq[ProcInfo]()
 
@@ -127,17 +129,20 @@ block declarations:
     # if node.hasKey("inplace") and node["inplace"].getBool():
     #   continue
 
-    var validName = name
+    var
+      originalAlternativeName: string
+      validName = name
 
     # NN function with no _forward/_backward suffix don't have cimpls. They call the _forward function and discard any buffer returns
     # See https://github.com/pytorch/pytorch/blob/dccd0f2de69396de99f45cf6792c684b5a095c49/aten/src/ATen/function_wrapper.py#L822
     if node.hasKey("mode") and node["mode"].getStr() == "NN":
       if validName.contains("_forward"):
-        validName = validName.replace("_forward", "")
+        originalAlternativeName = name.replace("_forward", "")
+        validName = originalAlternativeName
       elif not validName.contains("_backward"):
-        continue
+        continue # Skip alternative desclaration
 
-    validName.validate()
+    validName = validName.validate()
 
     assert(node.hasKey("method_of"))
     var methodKind: set[MethodOfKind]
@@ -147,36 +152,36 @@ block declarations:
       of "Type": methodKind.incl Type
       of "namespace": methodKind.incl Namespace
       
-    template validateArguments: untyped =
-      let hasValidArguments = arguments.all do (x: JsonNode) -> bool:
-          assert(x.hasKey("dynamic_type"))
-          let dynType = x["dynamic_type"].getStr()
-          return  dynType == "Tensor" or
-                  dynType == "BoolTensor" or
-                  dynType == "IndexTensor" or
-                  dynType == "IntegerTensor" or
-                  dynType == "TensorList" or
-                  dynType == "int64_t" or 
-                  dynType == "bool" or
-                  dynType == "real" or
-                  dynType == "double" or
-                  dynType == "Generator*" or dynType == "Generator *" or
-                  dynType == "IntList" or
-                  dynType == "accreal" or
-                  dynType == "Scalar" or
-                  dynType == "TensorOptions" or
-                  dynType == "Storage" or
-                  dynType == "ScalarType" or
-                  dynType == "std::string" or
-                  dynType == "std::array<bool,2>" or
-                  dynType == "std::array<bool,3>" or
-                  dynType == "std::array<bool,4>" or
-                  dynType == "Type" or
-                  dynType == "SparseTensorRef"
+    proc validateArguments(arguments: openarray[JsonNode]): bool =
+      result = arguments.all do (x: JsonNode) -> bool:
+        assert(x.hasKey("dynamic_type"))
+        let dynType = x["dynamic_type"].getStr()
+        return 
+          dynType == "Tensor" or
+          dynType == "BoolTensor" or
+          dynType == "IndexTensor" or
+          dynType == "IntegerTensor" or
+          dynType == "TensorList" or
+          dynType == "int64_t" or 
+          dynType == "bool" or
+          dynType == "real" or
+          dynType == "double" or
+          dynType == "Generator*" or dynType == "Generator *" or
+          dynType == "IntList" or
+          dynType == "accreal" or
+          dynType == "Scalar" or
+          dynType == "TensorOptions" or
+          dynType == "Storage" or
+          dynType == "ScalarType" or
+          dynType == "std::string" or
+          dynType == "std::array<bool,2>" or
+          dynType == "std::array<bool,3>" or
+          dynType == "std::array<bool,4>" or
+          dynType == "Type" or
+          dynType == "SparseTensorRef"
 
-      if not hasValidArguments:
+      if not result:
         echo "Skipping method with invalid argument/s: ", name, " arguments: ", arguments
-        return
           
     template fillArgumentDefaults: untyped =
       if arguments[i].hasKey("default"):
@@ -203,49 +208,56 @@ block declarations:
 
     proc generateProc(kind: MethodOfKind; arguments: seq[JsonNode]) =
 
-      if kind == Tensor:
-        let hasSelf = arguments.any do (x: JsonNode) -> bool:
-          assert(x.hasKey("name") and x.hasKey("dynamic_type"))
-          return x["name"].getStr() == "self" and x["dynamic_type"].getStr() == "Tensor"
-          
-        if not hasSelf:
-          echo "Skipping method of Tensor without self Tensor: ", name, " ", arguments
-          return
+      # Find the self-parameter
+      var
+        hasSelf = false
+        selfPosition = 0
       
-        if arguments.len > 1:
-          validateArguments()
+      for i, arg in arguments:
+        assert(arg.hasKey("name") and arg.hasKey("dynamic_type"))
+        if arg["name"].getStr() == "self" and arg["dynamic_type"].getStr() == "Tensor":
+          hasSelf = true
+          selfPosition = i
+          break
 
-      else:
-        if arguments.len > 0:
-          validateArguments()
+      # Tensor procs need a self parameter
+      if kind == Tensor and not hasSelf:
+        echo "Skipping method of Tensor without self Tensor: ", name, " ", arguments
+        return
+      
+      if not validateArguments(arguments):
+        return
 
-      var procInfo = ProcInfo(originalName: name, name: validName, args: @[], returns: @[], kind: kind)
+      var procInfo = ProcInfo(originalName: name, originalAlternativeName: originalAlternativeName, name: validName, args: @[], returns: @[], kind: kind)
       
       var argsStr1 = ""
       var argsStr2 = ""
-      for i in 0 .. arguments.high:
+      for i, arg in arguments:
         var
           nimType = toNimType(arguments[i]["dynamic_type"].getStr())
           argName = arguments[i]["name"].getStr()
           originalName = argName
           defaultStr = ""
 
-        # For tensor procs we inject the `self` parameter manually
-        if kind == Tensor and argName == "self":
-          continue
-
-        argName.validate()
+        argName = argName.validate()
         
         fillArgumentDefaults()
         
-        var prefix = if i == 0 and kind != Tensor: "" else: ", "
+        var prefix = if i == 0: "" else: ", "
         argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
-        if nimType == "Tensor":
-          argsStr2 &= ", $1.tensor" % [argName]
-        else:
-          argsStr2 &= ", $1" % [argName]
 
-        procInfo.args.add(ArgInfo(originalName: originalName, name: argName, nimType: nimType))
+        # For tensor procs we don't add `self` parameter to the native call
+        if kind != Tensor or argName != "self":
+          if nimType == "Tensor":
+            argsStr2 &= ", $1.tensor" % [argName]
+          else:
+            argsStr2 &= ", $1" % [argName]
+
+        var argInfo = ArgInfo(originalName: originalName, name: argName, nimType: nimType)
+        if kind == Tensor and argName == "self":
+          procInfo.args.insert(argInfo, 0)
+        else:  
+          procInfo.args.add(argInfo)
 
       var pragmasStr = ""
       if deprecated:
@@ -296,7 +308,7 @@ block declarations:
               outputType = res.toNimType
               toType = if outputType == "Tensor": "ATensor" else: outputType
 
-            returnName.validate()
+            returnName = returnName.validate()
 
             procInfo.returns.add(ArgInfo(originalName: originalReturnName, name: returnName, nimType: outputType))
 
@@ -397,7 +409,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   for p in generatedProcs:
     case p.kind
     of Tensor: replacements.add((peg("'.' '" & p.originalName & "' '('"), "." & p.name & "("))
-    of Namespace: replacements.add((peg("!'.' '" & p.originalName & "' '('"), "torch." & p.name & "("))
+    of Namespace: replacements.add((peg("!'.' '" & p.originalName & "' '('"), p.name & "("))
     else: discard
   
   let callPeg = peg"','? \s? \ident+"
@@ -530,17 +542,15 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           # make sure we got all procs we need nim side
           var neededProcs = nimLikeStr.findAll(namePeg)
           for neededProc in neededProcs:
-            let hasProc = generatedProcs.any do (x: ProcInfo) -> bool:
-              result = false
-              if neededProc =~ namePeg: # go thru again to filter out not matched stuff
+            if neededProc =~ namePeg: # go thru again to filter out not matched stuff
+              let hasProc = generatedProcs.any do (x: ProcInfo) -> bool:
                 # we assume Type ONLY procs are not used/needed in derivatives.. this might be wrong
-                if (x.kind == Tensor or x.kind == Namespace) and x.originalName == matches[0]:
-                  result = true
-            
-            if not hasProc:
-              echo "A needed proc was not found: ", neededProc
-              hasError = true
-              break generateProc
+                (x.kind == Tensor or x.kind == Namespace) and (x.originalName == matches[0] or x.originalAlternativeName == matches[0])
+              
+              if not hasProc:
+                echo "A needed proc was not found: ", neededProc
+                hasError = true
+                break generateProc
             
           # fix all pytorch to nim namings
           nimLikeStr = nimLikeStr.parallelReplace(replacements)
