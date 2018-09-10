@@ -248,7 +248,7 @@ block declarations:
         
         fillArgumentDefaults()
         
-        var prefix = if i == 0: "" else: ", "
+        var prefix = if i == 0: "" else: "; "
         argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
 
         # For tensor procs we don't add `self` parameter to the native call
@@ -332,7 +332,7 @@ block declarations:
 
         case kind:
           of Tensor:
-            procInfo.argsStr = "self: Tensor" & argsStr1
+            procInfo.argsStr = argsStr1
             procInfo.expression = fmt"self.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
           of Type:
             procInfo.argsStr = "ty: TensorType; " & argsStr1
