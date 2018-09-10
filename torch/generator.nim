@@ -459,173 +459,169 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
 
       return true
 
-    if candidates.len == 0:
-      echo "Ignoring not found declaration: ", name
-      continue
-    else:
-      info = candidates[0]
+    for info in candidates:
 
-    # at this point we know of which Declarations.yaml proc we are talking about
+      # at this point we know of which Declarations.yaml proc we are talking about
 
-    # build backward proc itself
-    var
-      resTuple = "tuple["
-      body = "\n"
-      argsStr = ""
-      argsText: string
-      resultText: string
-      hasError = false
+      # build backward proc itself
+      var
+        resTuple = "tuple["
+        body = "\n"
+        argsStr = ""
+        argsText: string
+        resultText: string
+        hasError = false
 
-      head: string
-      bodyText: string
-  
-    argsText = info.argsStr
-    # for i, arg in info.args:
-    #   argsStr &= ", " & arg.name & ": " & arg.nimType
-    #   if i > 0: argsText &= ", "
-    #   argsText &= arg.name & ": " & arg.nimType
+        head: string
+        bodyText: string
+    
+      argsText = info.argsStr
+      # for i, arg in info.args:
+      #   argsStr &= ", " & arg.name & ": " & arg.nimType
+      #   if i > 0: argsText &= ", "
+      #   argsText &= arg.name & ": " & arg.nimType
 
-    resultText = info.nimReturnType
-    # case info.returns.len:
-    #   of 0: discard
-    #   of 1: resultText = info.returns[0].nimType
-    #   else:
-    #     resultText = "tuple["
-    #     for i, arg in info.returns:
-    #       if i > 0: argsText &= ", "
-    #       resultText &= arg.name & ": " & arg.nimType
-    #     resultText &= "]"
+      resultText = info.nimReturnType
+      # case info.returns.len:
+      #   of 0: discard
+      #   of 1: resultText = info.returns[0].nimType
+      #   else:
+      #     resultText = "tuple["
+      #     for i, arg in info.returns:
+      #       if i > 0: argsText &= ", "
+      #       resultText &= arg.name & ": " & arg.nimType
+      #     resultText &= "]"
 
-    bodyText &= fmt"  result: {info.expression}" & "\n"
+      bodyText &= fmt"  result: {info.expression}" & "\n"
 
-    block generateProc:
-      var nodeIndex = 0
-      for k, v in node:
-        let vStr = v.getStr().replace("at::", "") # also remove any at::prefix
-        if k == "name" or vStr.startsWith("not_implemented"):
-          continue
+      block generateProc:
+        var nodeIndex = 0
+        for k, v in node:
+          let vStr = v.getStr().replace("at::", "") # also remove any at::prefix
+          if k == "name" or vStr.startsWith("not_implemented"):
+            continue
 
-        var names = newSeq[tuple[name: string; index: int]]()
+          var names = newSeq[tuple[name: string; index: int]]()
 
-        # k can be multi like: "self, weight, bias", this is likely a tuple
-        if k.contains(peg"',' \s?"):
-          var index = 0
-          for n in k.split(peg"',' \s?"):
-            names.add((n, index))
-            inc index
-        else:
-          names.add((k, -1))
+          # k can be multi like: "self, weight, bias", this is likely a tuple
+          if k.contains(peg"',' \s?"):
+            var index = 0
+            for n in k.split(peg"',' \s?"):
+              names.add((n, index))
+              inc index
+          else:
+            names.add((k, -1))
 
-        # must keep track of final calls, to recycle them (specially if final result was a tuple)
-        var
-          calls = initTable[string, string]()
-          addedInputMask = false
-          generatedTrainingAssert = false
-        
-        for name in names:
+          # must keep track of final calls, to recycle them (specially if final result was a tuple)
           var
-            argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name.name
-            prefix = if nodeIndex == 0: "" else: ", "
+            calls = initTable[string, string]()
+            addedInputMask = false
+            generatedTrainingAssert = false
           
-          if argName.len == 0:
-            echo "A needed arg was not found: ", name
-            hasError = true
-            break generateProc
-          
-          resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
-
-          var
-            nimLikeStr = vStr
-          
-          # make sure we got all procs we need nim side
-          var neededProcs = nimLikeStr.findAll(namePeg)
-          for neededProc in neededProcs:
-            if neededProc =~ namePeg: # go thru again to filter out not matched stuff
-              let hasProc = generatedProcs.any do (x: ProcInfo) -> bool:
-                # we assume Type ONLY procs are not used/needed in derivatives.. this might be wrong
-                (x.kind == Tensor or x.kind == Namespace) and (x.originalName == matches[0] or x.originalAlternativeName == matches[0])
-              
-              if not hasProc:
-                echo "A needed proc was not found: ", neededProc
-                hasError = true
-                break generateProc
+          for name in names:
+            var
+              argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name.name
+              prefix = if nodeIndex == 0: "" else: ", "
             
-          # fix all pytorch to nim namings
-          nimLikeStr = nimLikeStr.parallelReplace(replacements)
+            if argName.len == 0:
+              echo "A needed arg was not found: ", name
+              hasError = true
+              break generateProc
+            
+            resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
 
-          # fix fwd_result namings
-          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {\d}", "$1fwd_result[$2]")
-          nimLikeStr = nimLikeStr.replacef(peg"^'result' {\d}", "fwd_result[$1]")
-          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {!\ident}", "$1fwd_result$2")
-          nimLikeStr = nimLikeStr.replacef(peg"^'result' {!\ident}", "fwd_result$1")
+            var
+              nimLikeStr = vStr
+            
+            # make sure we got all procs we need nim side
+            var neededProcs = nimLikeStr.findAll(namePeg)
+            for neededProc in neededProcs:
+              if neededProc =~ namePeg: # go thru again to filter out not matched stuff
+                let hasProc = generatedProcs.any do (x: ProcInfo) -> bool:
+                  # we assume Type ONLY procs are not used/needed in derivatives.. this might be wrong
+                  (x.kind == Tensor or x.kind == Namespace) and (x.originalName == matches[0] or x.originalAlternativeName == matches[0])
+                
+                if not hasProc:
+                  echo "A needed proc was not found: ", neededProc
+                  hasError = true
+                  break generateProc
+              
+            # fix all pytorch to nim namings
+            nimLikeStr = nimLikeStr.parallelReplace(replacements)
 
-          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'output' {!\ident}", "$1fwd_result$2")
-          nimLikeStr = nimLikeStr.replacef(peg"^'output' {!\ident}", "fwd_result$1")
+            # fix fwd_result namings
+            nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {\d}", "$1fwd_result[$2]")
+            nimLikeStr = nimLikeStr.replacef(peg"^'result' {\d}", "fwd_result[$1]")
+            nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {!\ident}", "$1fwd_result$2")
+            nimLikeStr = nimLikeStr.replacef(peg"^'result' {!\ident}", "fwd_result$1")
 
-          # replace any fwd result tuple names with proper prefix if necessary
-          if info.returns.len > 1:
-            for retArg in info.returns:
-              nimLikeStr = nimLikeStr.replacef(peg("{[^_]} '" & retArg.originalName & "' {!\\ident}"), "$1fwd_result." & retArg.name & "$2")
+            nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'output' {!\ident}", "$1fwd_result$2")
+            nimLikeStr = nimLikeStr.replacef(peg"^'output' {!\ident}", "fwd_result$1")
 
-          # some gradient have grad_input_mask, find and add it
-          if not addedInputMask and nimLikeStr.contains(peg"{[^_]} 'grad_input_mask' {!\ident}"):
-            argsStr &= ", grad_input_mask: StdArray"
-            addedInputMask = true
+            # replace any fwd result tuple names with proper prefix if necessary
+            if info.returns.len > 1:
+              for retArg in info.returns:
+                nimLikeStr = nimLikeStr.replacef(peg("{[^_]} '" & retArg.originalName & "' {!\\ident}"), "$1fwd_result." & retArg.name & "$2")
 
-          # some gradients are multiple
-          if nimLikeStr.contains(peg"'grads[' \d ']'") or nimLikeStr.contains(peg"'grads'"):
-            # TODO
-            echo "Ignoring multi grad proc: ", info.name
-            hasError = true
-            break generateProc
+            # some gradient have grad_input_mask, find and add it
+            if not addedInputMask and nimLikeStr.contains(peg"{[^_]} 'grad_input_mask' {!\ident}"):
+              argsStr &= ", grad_input_mask: StdArray"
+              addedInputMask = true
 
-          # replace int lists {} to our @[]
-          nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
+            # some gradients are multiple
+            if nimLikeStr.contains(peg"'grads[' \d ']'") or nimLikeStr.contains(peg"'grads'"):
+              # TODO
+              echo "Ignoring multi grad proc: ", info.name
+              hasError = true
+              break generateProc
 
-          # sometimes we have "training ?" pattern
-          if nimLikeStr.contains(peg"^ 'training ?'"):
-            nimLikeStr = nimLikeStr.replace(peg"^ 'training ?'", "")
-            if not generatedTrainingAssert:
-              body &= "  if not training:\n    raiseAssert(\"CuDNN cannot be used to compute backward in evaluation mode\")\n"
-              generatedTrainingAssert = true
+            # replace int lists {} to our @[]
+            nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
 
-          var valueName = argName[0].name & "_result"
-          
-          # make sure we actually call only once
-          if calls.contains(nimLikeStr):
-            valueName = calls[nimLikeStr]
-          else:
-            body &= "  let " & valueName & " = " & nimLikeStr & "\n"
-          
-          calls.add(nimLikeStr, valueName)
+            # sometimes we have "training ?" pattern
+            if nimLikeStr.contains(peg"^ 'training ?'"):
+              nimLikeStr = nimLikeStr.replace(peg"^ 'training ?'", "")
+              if not generatedTrainingAssert:
+                body &= "  if not training:\n    raiseAssert(\"CuDNN cannot be used to compute backward in evaluation mode\")\n"
+                generatedTrainingAssert = true
 
-          if name.index == -1:
-            body &= "  result." & argName[0].name & " = " & valueName & "\n"
-          else:
-            body &= "  result." & argName[0].name & " = " & valueName & "[" & $name.index & "]\n"
+            var valueName = argName[0].name & "_result"
+            
+            # make sure we actually call only once
+            if calls.contains(nimLikeStr):
+              valueName = calls[nimLikeStr]
+            else:
+              body &= "  let " & valueName & " = " & nimLikeStr & "\n"
+            
+            calls.add(nimLikeStr, valueName)
 
-          # if name.index == -1:
-          #   bodyText &= fmt"  {argName[0].name}: {nimLikeStr}" & "\n"
+            if name.index == -1:
+              body &= "  result." & argName[0].name & " = " & valueName & "\n"
+            else:
+              body &= "  result." & argName[0].name & " = " & valueName & "[" & $name.index & "]\n"
 
-          if name.index <= 0: bodyText &= "  "
-          if name.index == 0: bodyText &= "("
-          if name.index > 0: bodyText &= ", "
-          bodyText &= argName[0].name
-          if name.index == -1: bodyText &= fmt": {nimLikeStr}" & "\n"
-          if name.index == names.high: bodyText &= fmt"): {nimLikeStr}" & "\n"
+            # if name.index == -1:
+            #   bodyText &= fmt"  {argName[0].name}: {nimLikeStr}" & "\n"
 
-          inc nodeIndex
-      
-    resTuple &= "]"
+            if name.index <= 0: bodyText &= "  "
+            if name.index == 0: bodyText &= "("
+            if name.index > 0: bodyText &= ", "
+            bodyText &= argName[0].name
+            if name.index == -1: bodyText &= fmt": {nimLikeStr}" & "\n"
+            if name.index == names.high: bodyText &= fmt"): {nimLikeStr}" & "\n"
 
-    if resTuple == "tuple[]" or body == "\n" or hasError:
-      echo "Ignoring derivative (not implemented or error): ", name
-      continue
+            inc nodeIndex
+        
+      resTuple &= "]"
 
-    let procStr = backwardGrad % [info.name, info.nimReturnType, argsStr, resTuple, body]
-    output.writeLine procStr
+      if resTuple == "tuple[]" or body == "\n" or hasError:
+        echo "Ignoring derivative (not implemented or error): ", name
+        continue
 
-    output.writeLine(fmt"autograd {info.name}({argsText}) -> {resultText}:" & "\n" & fmt"{bodyText}")
+      let procStr = backwardGrad % [info.name, info.nimReturnType, argsStr, resTuple, body]
+      output.writeLine procStr
+
+      output.writeLine(fmt"autograd {info.name}({argsText}) -> {resultText}:" & "\n" & fmt"{bodyText}")
 
   output.flush()
   output.close()
