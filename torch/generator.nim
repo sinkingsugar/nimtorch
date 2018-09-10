@@ -21,7 +21,7 @@ type
     name: string
     nimType: string
 
-  ProcInfo = object
+  ProcInfo = ref object
     originalName: string
     originalAlternativeName: string
     name: string
@@ -31,6 +31,8 @@ type
     nimReturnType: string
     kind: MethodOfKind
     expression: string
+    bodyText: string
+    needsForwardDeclaration: bool
 
   MethodOfKind = enum
     Type, Tensor, Namespace
@@ -433,8 +435,10 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
     assert(name != "", nameFull)
 
     var nameMatches: array[0..10, string]
-    if nameFull.match(nameArgsPeg, nameMatches):
+    if not nameFull.match(nameArgsPeg, nameMatches):
       echo "Invalid signature: " & nameFull
+      continue
+
     var args = nameMatches[1].split(peg"',' \s?")
 
     # remove *, its the delimiter for optional args...
@@ -468,29 +472,10 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
         resTuple = "tuple["
         body = "\n"
         argsStr = ""
-        argsText: string
-        resultText: string
         hasError = false
 
         head: string
         bodyText: string
-    
-      argsText = info.argsStr
-      # for i, arg in info.args:
-      #   argsStr &= ", " & arg.name & ": " & arg.nimType
-      #   if i > 0: argsText &= ", "
-      #   argsText &= arg.name & ": " & arg.nimType
-
-      resultText = info.nimReturnType
-      # case info.returns.len:
-      #   of 0: discard
-      #   of 1: resultText = info.returns[0].nimType
-      #   else:
-      #     resultText = "tuple["
-      #     for i, arg in info.returns:
-      #       if i > 0: argsText &= ", "
-      #       resultText &= arg.name & ": " & arg.nimType
-      #     resultText &= "]"
 
       bodyText &= fmt"  result: {info.expression}" & "\n"
 
@@ -537,9 +522,20 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             var neededProcs = nimLikeStr.findAll(namePeg)
             for neededProc in neededProcs:
               if neededProc =~ namePeg: # go thru again to filter out not matched stuff
-                let hasProc = generatedProcs.any do (x: ProcInfo) -> bool:
+
+                var hasProc = false
+                for knownProc in generatedProcs:
                   # we assume Type ONLY procs are not used/needed in derivatives.. this might be wrong
-                  (x.kind == Tensor or x.kind == Namespace) and (x.originalName == matches[0] or x.originalAlternativeName == matches[0])
+                  if knownProc.kind notin { Tensor, Namespace }:
+                    continue
+
+                  # The name must match the original name, or the name of it's forward-version, for NN procs
+                  if knownProc.originalName != matches[0] and knownProc.originalAlternativeName != matches[0]:
+                    continue
+
+                  # TODO: Check arguments?
+                  hasProc = true
+                  knownProc.needsForwardDeclaration = true
                 
                 if not hasProc:
                   echo "A needed proc was not found: ", neededProc
@@ -621,7 +617,30 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
       # let procStr = backwardGrad % [info.name, info.nimReturnType, argsStr, resTuple, body]
       # output.writeLine procStr
 
-      output.writeLine(fmt"autograd {info.name}({argsText}) -> {resultText}:" & "\n" & fmt"{bodyText}")
+      #output.writeLine(fmt"autograd {info.name}({info.argsStr}) -> {info.nimReturnType}:" & "\n" & fmt"{bodyText}")
+      info.bodyText = bodyText
+
+  # Generate forward declarations
+  for info in generatedProcs:
+
+    # Check if this proc was actually generated or if it's defined manually
+    if info.expression == "":
+      continue
+
+    # If there was no autograd version generated, output a normal forward proc
+    if info.bodyText == "":
+      output.writeLine(
+        fmt"proc {info.name}({info.argsStr}): {info.nimReturnType} = " & "\n" &
+        fmt"  {info.expression}" & "\n")
+
+    # Otherwise output a forward declaration, if necessary
+    elif info.needsForwardDeclaration:
+      output.writeLine(fmt"proc {info.name}({info.argsStr}): {info.nimReturnType}" & "\n")
+
+  # Generate autograd definitions
+  for info in generatedProcs:
+    if info.bodyText != "":
+      output.writeLine(fmt"autograd {info.name}({info.argsStr}) -> {info.nimReturnType}:" & "\n" & fmt"{info.bodyText}")     
 
   output.flush()
   output.close()
