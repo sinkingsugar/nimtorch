@@ -581,10 +581,10 @@ when isMainModule:
     gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
     (i_r, i_i, i_nn) = gi.chunk(3, 2)
     (h_r, h_i, h_n) = gh.chunk(3, 2)
-    resetgate = (i_r + h_r).sigmoid_u()
+    resetgate = (i_r + h_r).sigmoid()
     presigmoid = i_i + h_i
-    inputgate = torch.sigmoid_u(presigmoid)
-    newgate = (i_nn + resetgate * h_n).tanh_u()
+    inputgate = torch.sigmoid(presigmoid)
+    newgate = (i_nn + resetgate * h_n).tanh()
     hy = newgate + inputgate * (hidden - newgate)
   
   hy.print()

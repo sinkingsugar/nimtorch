@@ -1,4 +1,4 @@
-import os, strutils, macros, osproc, json, sequtils, streams, pegs, tables, strformat
+import os, strutils, macros, osproc, json, sequtils, streams, pegs, tables, strformat, re
 
 # nim naming issues:
 # if a name is a nim keyword, like "var", the name will be prefixed by "a", and so it will be "avar"
@@ -66,29 +66,32 @@ proc toNimType(typeName: string): string =
 proc validate(name: string): string =
   const invalidNames = ["div", "var", "end", "result", "to", "from"]
   result = name
-  if result.endsWith("_"):
-    result &= "u"
-  if result.startsWith("_"):
-    result = "u" & result
   if invalidNames.contains(result):
-    result = "a" & result
-  result = result.replace("__", "_u_u")
+    result = result & "_name"
+  else:
+    result = result.replacef(re"^_*(.*?)_*$", "$1")
+    if name.match(re"^__(.*)__$"): result &= "_builtin"
+    if name.match(re"^_(.*)$"): result &= "_internal"
+    if name.match(re"^(.*)_$"): result &= "_inplace"
   
 var generatedProcs = newSeq[ProcInfo]()
 
 # add some known procs we created in torch.nim, don't care about args
-generatedProcs.add(ProcInfo(originalName: "maybe_multiply", name: "maybe_multiply", kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "mm_mat1_backward", name: "mm_mat1_backward", kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "mm_mat2_backward", name: "mm_mat2_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "pow_backward", name: "pow_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "pow_backward_self", name: "pow_backward_self",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "pow_backward_exponent", name: "pow_backward_exponent",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "atan2_backward", name: "atan2_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "split_backward", name: "split_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "split_with_sizes_backward", name: "split_with_sizes_backward",kind: Namespace, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "sizes", name: "sizes", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "strides", name: "strides", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
-generatedProcs.add(ProcInfo(originalName: "type", name: "getType", kind: Tensor, args: @[], returns: @[], nimReturnType: ""))
+const knownNames = [
+  "maybe_multiply",
+  "mm_mat1_backward",
+  "mm_mat2_backward",
+  "pow_backward",
+  "pow_backward_self",
+  "pow_backward_exponent",
+  "atan2_backward",
+  "split_backward",
+  "split_with_sizes_backward",
+  "sizes",
+  "type"]
+
+for knownName in knownNames:
+  generatedProcs.add(ProcInfo(originalName: knownName, name: knownName, kind: Namespace))
 
 block declarations:
   var output = newFileStream("torch/declarations.nim", fmWrite)
