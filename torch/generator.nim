@@ -618,8 +618,8 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
         echo "Ignoring derivative (not implemented or error): ", name
         continue
 
-      let procStr = backwardGrad % [info.name, info.nimReturnType, argsStr, resTuple, body]
-      output.writeLine procStr
+      # let procStr = backwardGrad % [info.name, info.nimReturnType, argsStr, resTuple, body]
+      # output.writeLine procStr
 
       output.writeLine(fmt"autograd {info.name}({argsText}) -> {resultText}:" & "\n" & fmt"{bodyText}")
 
