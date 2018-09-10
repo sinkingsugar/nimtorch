@@ -432,40 +432,38 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
 
     assert(name != "", nameFull)
 
-    var candidates = generatedProcs.filter do (x: ProcInfo) -> bool: x.originalName == name
+    var nameMatches: array[0..10, string]
+    if nameFull.match(nameArgsPeg, nameMatches):
+      echo "Invalid signature: " & nameFull
+    var args = nameMatches[1].split(peg"',' \s?")
+
+    # remove *, its the delimiter for optional args...
+    let wildcardIndex = args.find("*")
+    if wildcardIndex != -1:
+      args.del(wildcardIndex)
+
+    var candidates = generatedProcs.filter do (x: ProcInfo) -> bool:
+      if x.originalName != name:
+        return false
+
+      if x.args.len != args.len:
+        return false
+
+      for i, arg in x.args:
+        let
+          argB = args[i].split(peg"\s+")[0].toNimType
+          argA = x.args[i].nimType
+        
+        if argA != argB:
+          return false
+
+      return true
+
     if candidates.len == 0:
       echo "Ignoring not found declaration: ", name
       continue
-    elif candidates.len == 1:
-      info = candidates[0]
     else:
-      var nameMatches: array[0..10, string]
-      if nameFull.match(nameArgsPeg, nameMatches):
-        let argsStr = nameMatches[1]
-        var args = argsStr.split(peg"',' \s?")
-
-        # remove *, its the delimiter for optional args...
-        let wildcardIndex = args.find("*")
-        if wildcardIndex != -1:
-          args.del(wildcardIndex)
-        
-        block findCandidate:
-          for candidate in candidates:
-            # echo nameFull, " | ", candidate
-            block checkArgs:
-              var hasWildcard = false
-              if candidate.args.len == args.len:
-                for i in 0..candidate.args.high:
-                  let
-                    argB = args[i].split(peg"\s+")[0].toNimType
-                    argA = candidate.args[i].nimType
-                  
-                  if argA != argB:
-                    break checkArgs
-                
-                # echo "Accepted ", nameFull
-                info = candidate
-                break findCandidate
+      info = candidates[0]
 
     # at this point we know of which Declarations.yaml proc we are talking about
 
