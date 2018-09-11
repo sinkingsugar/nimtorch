@@ -106,7 +106,7 @@ proc baddbmm_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, batch1: Tensor
   let batch2_result = batch1.transpose(1, 2).bmm(grad) * alpha
   result.batch2 = batch2_result
 
-proc bernoulli_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, p: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc bernoulli_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, p: float64, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
@@ -116,7 +116,7 @@ proc bmm_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, mat2: Tensor): tup
   let mat2_result = self.transpose(1, 2).bmm(grad)
   result.mat2 = mat2_result
 
-proc cauchy_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, median: float64, sigma: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc cauchy_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, median: float64, sigma: float64, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
@@ -206,7 +206,7 @@ proc expm1_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Ten
   let self_result = grad * (fwd_result + 1)
   result.self = self_result
 
-proc exponential_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, lambd: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc exponential_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, lambd: float64, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
@@ -250,7 +250,7 @@ proc ge_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, other: Tensor): t
   let other_result = torch.zeros_like(other)
   result.other = other_result
 
-proc geometric_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, p: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc geometric_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, p: float64, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
@@ -344,7 +344,7 @@ proc log2_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tens
   let self_result = grad / (self * 0.6931471805599453)
   result.self = self_result
 
-proc log_normal_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, mean: float64, std: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc log_normal_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, mean: float64, std: float64, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
@@ -424,25 +424,25 @@ proc neg_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Tenso
   let self_result = grad.neg()
   result.self = self_result
 
-proc normal_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, mean: float64, std: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc normal_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, mean: float64, std: float64, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
-proc normal_bwd*(grad: Tensor; fwd_result: Tensor, mean: Tensor, std: float64, generator: pointer): tuple[mean: Tensor] {.inline, noinit.} =
+proc normal_bwd*(grad: Tensor; fwd_result: Tensor, mean: Tensor, std: float64, generator: Generator): tuple[mean: Tensor] {.inline, noinit.} =
   let mean_result = torch.zeros(mean.sizes(), grad.getType())
   result.mean = mean_result
 
-proc normal_bwd*(grad: Tensor; fwd_result: Tensor, mean: float64, std: Tensor, generator: pointer): tuple[std: Tensor] {.inline, noinit.} =
+proc normal_bwd*(grad: Tensor; fwd_result: Tensor, mean: float64, std: Tensor, generator: Generator): tuple[std: Tensor] {.inline, noinit.} =
   let std_result = torch.zeros(std.sizes(), grad.getType())
   result.std = std_result
 
-proc normal_bwd*(grad: Tensor; fwd_result: Tensor, mean: Tensor, std: Tensor, generator: pointer): tuple[mean: Tensor, std: Tensor] {.inline, noinit.} =
+proc normal_bwd*(grad: Tensor; fwd_result: Tensor, mean: Tensor, std: Tensor, generator: Generator): tuple[mean: Tensor, std: Tensor] {.inline, noinit.} =
   let mean_result = torch.zeros(mean.sizes(), grad.getType())
   result.mean = mean_result
   let std_result = torch.zeros(std.sizes(), grad.getType())
   result.std = std_result
 
-proc poisson_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc poisson_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(self)
   result.self = self_result
 
@@ -462,15 +462,15 @@ proc put_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, index: Tensor, s
   let source_result = grad.take(index)
   result.source = source_result
 
-proc random_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, afrom: int64, ato: int64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc random_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, afrom: int64, ato: int64, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
-proc random_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, ato: int64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc random_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, ato: int64, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
-proc random_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc random_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
@@ -592,7 +592,7 @@ proc trunc_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Ten
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
-proc uniform_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, afrom: float64, ato: float64, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc uniform_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, afrom: float64, ato: float64, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
@@ -622,7 +622,7 @@ proc zero_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor): tuple[self: Te
   let self_result = torch.zeros_like(grad)
   result.self = self_result
 
-proc u_standard_gamma_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc u_standard_gamma_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = grad * self.u_standard_gamma_grad(fwd_result)
   result.self = self_result
 
@@ -721,11 +721,11 @@ proc prelu_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, weight: 
   result.self = self_result[0]
   result.weight = self_result[1]
 
-proc rrelu_with_noise_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, noise: Tensor, lower: float, upper: float, training: bool, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc rrelu_with_noise_forward_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, noise: Tensor, lower: float, upper: float, training: bool, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.rrelu_with_noise_backward(grad, self, noise, lower, upper, training)
   result.self = self_result
 
-proc rrelu_with_noise_forward_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, noise: Tensor, lower: float, upper: float, training: bool, generator: pointer): tuple[self: Tensor] {.inline, noinit.} =
+proc rrelu_with_noise_forward_u_bwd*(grad: Tensor; fwd_result: Tensor, self: Tensor, noise: Tensor, lower: float, upper: float, training: bool, generator: Generator): tuple[self: Tensor] {.inline, noinit.} =
   let self_result = torch.rrelu_with_noise_backward(grad, fwd_result, noise, lower, upper, training)
   result.self = self_result
 

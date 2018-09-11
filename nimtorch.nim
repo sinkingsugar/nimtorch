@@ -10,6 +10,7 @@ type
   TensorOptions* = ATensorOptions
   TensorList* = ATensors
   IntList* = AIntList
+  Generator* = ptr AGenerator
   torch* = distinct pointer
   
   Device* {.pure.} = enum
