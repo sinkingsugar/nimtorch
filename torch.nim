@@ -57,8 +57,7 @@ macro autograd(head, body: untyped): untyped =
       x.name = nnkPostfix.newTree(ident"*", name)
       forwardBody.add quote do:
         `resultIdent` = `forwardExpr`
-        let `forwardResultIdent` = `resultIdent`
-        var `gradInputMaskIdent`: seq[bool]
+        let `forwardResultIdent` = `resultIdent`      
 
       x.body = forwardBody
 
@@ -75,6 +74,10 @@ macro autograd(head, body: untyped): untyped =
 
       # Deconstruct result tuple
       else:
+        let tupleCount = x[0].len
+        backwardBody.add quote do:
+          var `gradInputMaskIdent`: StdArray[bool, `tupleCount`]
+
         resultExpr = newPar()
         for r in x[0]:
           resultExpr.add quote do: `resultIdent`[`resultIndex`] 
