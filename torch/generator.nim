@@ -476,16 +476,8 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           if k == "name" or vStr.startsWith("not_implemented"):
             continue
 
-          var names = newSeq[tuple[name: string; index: int]]()
-
           # k can be multi like: "self, weight, bias", this is likely a tuple
-          if k.contains(peg"',' \s?"):
-            var index = 0
-            for n in k.split(peg"',' \s?"):
-              names.add((n, index))
-              inc index
-          else:
-            names.add((k, -1))
+          let names = k.split(peg"',' \s?")
 
           # must keep track of final calls, to recycle them (specially if final result was a tuple)
           var
@@ -493,121 +485,87 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             addedInputMask = false
             generatedTrainingAssert = false
           
+          bodyText &= "  "
+          if names.len > 1:
+            bodyText &= fmt"({k}): "
+          else:
+            bodyText &= fmt"{k}: "
+
           for name in names:
             var
-              argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name.name
+              argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name
               prefix = if nodeIndex == 0: "" else: ", "
             
             if argName.len == 0:
               echo "A needed arg was not found: ", name
               hasError = true
               break generateProc
-            
-            resTuple &= prefix & argName[0].name & ": " & argName[0].nimType
 
-            var
-              nimLikeStr = vStr
-            
-            # make sure we got all procs we need nim side
-            var neededProcs = nimLikeStr.findAll(namePeg)
-            for neededProc in neededProcs:
-              if neededProc =~ namePeg: # go thru again to filter out not matched stuff
-
-                var hasProc = false
-                for knownProc in generatedProcs:
-                  # we assume Type ONLY procs are not used/needed in derivatives.. this might be wrong
-                  if knownProc.kind notin { Tensor, Namespace }:
-                    continue
-
-                  # The name must match the original name, or the name of it's forward-version, for NN procs
-                  if knownProc.originalName != matches[0] and knownProc.originalAlternativeName != matches[0]:
-                    continue
-
-                  # TODO: Check arguments?
-                  hasProc = true
-                  knownProc.needsForwardDeclaration = true
-                
-                if not hasProc:
-                  echo "A needed proc was not found: ", neededProc
-                  hasError = true
-                  break generateProc
+          var nimLikeStr = vStr
               
-            # fix all pytorch to nim namings
-            nimLikeStr = nimLikeStr.parallelReplace(replacements)
+          # make sure we got all procs we need nim side
+          var neededProcs = nimLikeStr.findAll(namePeg)
+          for neededProc in neededProcs:
+            if neededProc =~ namePeg: # go thru again to filter out not matched stuff
 
-            # fix fwd_result namings
-            nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {\d}", "$1fwd_result[$2]")
-            nimLikeStr = nimLikeStr.replacef(peg"^'result' {\d}", "fwd_result[$1]")
-            nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {!\ident}", "$1fwd_result$2")
-            nimLikeStr = nimLikeStr.replacef(peg"^'result' {!\ident}", "fwd_result$1")
+              var hasProc = false
+              for knownProc in generatedProcs:
+                # we assume Type ONLY procs are not used/needed in derivatives.. this might be wrong
+                if knownProc.kind notin { Tensor, Namespace }:
+                  continue
 
-            nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'output' {!\ident}", "$1fwd_result$2")
-            nimLikeStr = nimLikeStr.replacef(peg"^'output' {!\ident}", "fwd_result$1")
+                # The name must match the original name, or the name of it's forward-version, for NN procs
+                if knownProc.originalName != matches[0] and knownProc.originalAlternativeName != matches[0]:
+                  continue
 
-            # replace any fwd result tuple names with proper prefix if necessary
-            if info.returns.len > 1:
-              for retArg in info.returns:
-                nimLikeStr = nimLikeStr.replacef(peg("{[^_]} '" & retArg.originalName & "' {!\\ident}"), "$1fwd_result." & retArg.name & "$2")
-
-            # some gradient have grad_input_mask, find and add it
-            if not addedInputMask and nimLikeStr.contains(peg"{[^_]} 'grad_input_mask' {!\ident}"):
-              argsStr &= ", grad_input_mask: StdArray"
-              addedInputMask = true
-
-            # some gradients are multiple
-            if nimLikeStr.contains(peg"'grads[' \d ']'") or nimLikeStr.contains(peg"'grads'"):
-              # TODO
-              echo "Ignoring multi grad proc: ", info.name
-              hasError = true
-              break generateProc
-
-            # replace int lists {} to our @[]
-            nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
-
-            # sometimes we have "training ?" pattern
-            if nimLikeStr.contains(peg"^ 'training ?'"):
-              nimLikeStr = nimLikeStr.replace(peg"^ 'training ?'", "")
-              if not generatedTrainingAssert:
-                body &= "  if not training:\n    raiseAssert(\"CuDNN cannot be used to compute backward in evaluation mode\")\n"
-                generatedTrainingAssert = true
-
-            var valueName = argName[0].name & "_result"
+                # TODO: Check arguments?
+                hasProc = true
+                knownProc.needsForwardDeclaration = true
+              
+              if not hasProc:
+                echo "A needed proc was not found: ", neededProc
+                hasError = true
+                break generateProc
             
-            # make sure we actually call only once
-            if calls.contains(nimLikeStr):
-              valueName = calls[nimLikeStr]
-            else:
-              body &= "  let " & valueName & " = " & nimLikeStr & "\n"
-            
-            calls.add(nimLikeStr, valueName)
+          # fix all pytorch to nim namings
+          nimLikeStr = nimLikeStr.parallelReplace(replacements)
 
-            if name.index == -1:
-              body &= "  result." & argName[0].name & " = " & valueName & "\n"
-            else:
-              body &= "  result." & argName[0].name & " = " & valueName & "[" & $name.index & "]\n"
+          # fix fwd_result namings
+          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {\d}", "$1fwd_result[$2]")
+          nimLikeStr = nimLikeStr.replacef(peg"^'result' {\d}", "fwd_result[$1]")
+          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'result' {!\ident}", "$1fwd_result$2")
+          nimLikeStr = nimLikeStr.replacef(peg"^'result' {!\ident}", "fwd_result$1")
 
-            # if name.index == -1:
-            #   bodyText &= fmt"  {argName[0].name}: {nimLikeStr}" & "\n"
+          nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'output' {!\ident}", "$1fwd_result$2")
+          nimLikeStr = nimLikeStr.replacef(peg"^'output' {!\ident}", "fwd_result$1")
 
-            if name.index <= 0: bodyText &= "  "
-            if name.index == 0: bodyText &= "("
-            if name.index > 0: bodyText &= ", "
-            bodyText &= argName[0].name
-            if name.index == -1: bodyText &= fmt": firstOrSelf({nimLikeStr})" & "\n" # The expression might return a tuple, so select the first element
-            if name.index == names.high: bodyText &= fmt"): {nimLikeStr}" & "\n"
+          # replace any fwd result tuple names with proper prefix if necessary
+          if info.returns.len > 1:
+            for retArg in info.returns:
+              nimLikeStr = nimLikeStr.replacef(peg("{[^_]} '" & retArg.originalName & "' {!\\ident}"), "$1fwd_result." & retArg.name & "$2")
 
-            inc nodeIndex
-        
-      resTuple &= "]"
+          # some gradients are multiple
+          if nimLikeStr.contains(peg"'grads[' \d ']'") or nimLikeStr.contains(peg"'grads'"):
+            # TODO
+            echo "Ignoring multi grad proc: ", info.name
+            hasError = true
+            break generateProc
 
-      if resTuple == "tuple[]" or body == "\n" or hasError:
+          # replace int lists {} to our @[]
+          nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
+
+          # TODO: Properly handle "training ? A : B"
+          nimLikeStr = nimLikeStr.replacef(re"^(.*)\?(.*):(.*)$", "$2")
+
+          if names.len == 1:
+            bodyText &= fmt"firstOrSelf({nimLikeStr})" & "\n"
+          else:
+            bodyText &= fmt"{nimLikeStr}" & "\n"
+
+      if hasError:
         echo "Ignoring derivative (not implemented or error): ", name
         continue
 
-      # let procStr = backwardGrad % [info.name, info.nimReturnType, argsStr, resTuple, body]
-      # output.writeLine procStr
-
-      #output.writeLine(fmt"autograd {info.name}({info.argsStr}) -> {info.nimReturnType}:" & "\n" & fmt"{bodyText}")
       info.bodyText = bodyText
 
   # Generate forward declarations
