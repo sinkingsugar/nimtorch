@@ -1,5 +1,9 @@
 import fragments/ffi/cpp as cpp
 
+# TODO: Workaround for int instead of IntList
+proc sum(self: Tensor; dim: int): Tensor =
+  self.sum(@[dim])
+
 proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
   if b.float == 1.0:
     return a
