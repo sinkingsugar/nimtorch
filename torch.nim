@@ -164,7 +164,7 @@ macro newTensors(nativeTensors: tuple): untyped =
       newTensors(`nativeTensors`[`index`])
 
 include torch/autograd_helpers
-include torch/derivatives
+include torch/declarations
 
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
 
@@ -393,6 +393,8 @@ proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
 
 proc `[]=`*(a: Tensor; index: int; b: Tensor) {.inline.} =
   a.tensor.toCpp()[index] = b.tensor
+
+include torch/derivatives
 
 macro chunk*(a: Tensor; chunks: static[int]; dim: int): untyped =
   # dumpAstGen:
@@ -640,7 +642,7 @@ when isMainModule:
     (h_r, h_i, h_n) = gh.chunk(3, 2)
     resetgate = (i_r + h_r).sigmoid()
     presigmoid = i_i + h_i
-    inputgate = torch.sigmoid(presigmoid)
+    inputgate = presigmoid.sigmoid()
     newgate = (i_nn + resetgate * h_n).tanh()
     hy = newgate + inputgate * (hidden - newgate)
   

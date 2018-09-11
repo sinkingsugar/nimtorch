@@ -64,15 +64,20 @@ proc toNimType(typeName: string): string =
   else: raise newException(InvalidReturnException, "Invalid return type '" & typeName & "'")
 
 proc validate(name: string): string =
-  const invalidNames = ["div", "var", "end", "result", "to", "from"]
-  result = name
-  if invalidNames.contains(result):
-    result = result & "_name"
-  else:
-    result = result.replacef(re"^_*(.*?)_*$", "$1")
-    if name.match(re"^__(.*)__$"): result &= "_builtin"
-    if name.match(re"^_(.*)$"): result &= "_internal"
-    if name.match(re"^(.*)_$"): result &= "_inplace"
+  case name:
+    of "__add__": return "`+`"
+
+    else:
+      const invalidNames = ["div", "var", "end", "result", "to", "from"]
+      result = name
+      if invalidNames.contains(result):
+        result = result & "_name"
+      else:
+        result = result.replacef(re"^_*(.*?)_*$", "$1")
+        if name.match(re"^__(.*)__$"): result &= "_builtin"
+        else:
+          if name.match(re"^_(.*)$"): result &= "_internal"
+          if name.match(re"^(.*)_$"): result &= "_inplace"
   
 var generatedProcs = newSeq[ProcInfo]()
 
@@ -94,11 +99,6 @@ for knownName in knownNames:
   generatedProcs.add(ProcInfo(originalName: knownName, name: knownName, kind: Namespace))
 
 block declarations:
-  var output = newFileStream("torch/declarations.nim", fmWrite)
-
-  output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r torch/generator.nim\n"
-
   # convert from yaml to json to load at compile time, using python3 for now
   let
     declYaml = getenv("ATEN") & "/share/ATen/Declarations.yaml"
@@ -341,7 +341,7 @@ block declarations:
             procInfo.argsStr = argsStr1
             procInfo.expression = fmt"dynamicCCall(""at::{procInfo.originalName}""{argsStr2}){convertStr}"
 
-        output.writeLine(procInfo.kind.procFormatString % [procInfo.name, procInfo.nimReturnType, procInfo.originalName, argsStr1, argsStr2, convertStr, pragmasStr, preCode])
+        #output.writeLine(procInfo.kind.procFormatString % [procInfo.name, procInfo.nimReturnType, procInfo.originalName, argsStr1, argsStr2, convertStr, pragmasStr, preCode])
         generatedProcs.add(procInfo)
 
       except InvalidReturnException:
@@ -361,17 +361,8 @@ block declarations:
       generateProc(Tensor, arguments) 
     elif methodKind.contains(Namespace):
       generateProc(Namespace, arguments)
-      
-  output.flush()
-  output.close()
 
 block derivatives: # we still need to implement some of the procs in pytorch's 'tools/autograd/templates/Functions.cpp'
-  var output = newFileStream("torch/derivatives.nim", fmWrite)
-
-  output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r torch/generator.nim\n"
-  output.writeLine "import math"
-  output.writeLine "const M_PI = math.PI\n"
 
   # convert from yaml to json to load at compile time, using python3 for now
   let
@@ -620,6 +611,10 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
       info.bodyText = bodyText
 
   # Generate forward declarations
+  var output = newFileStream("torch/declarations.nim", fmWrite)
+  output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
+  output.writeLine "# nim c -r torch/generator.nim\n"
+
   for info in generatedProcs:
 
     # Check if this proc was actually generated or if it's defined manually
@@ -636,7 +631,17 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
     elif info.needsForwardDeclaration:
       output.writeLine(fmt"proc {info.name}*({info.argsStr}): {info.nimReturnType}" & "\n")
 
+  output.flush()
+  output.close()
+
   # Generate autograd definitions
+  output = newFileStream("torch/derivatives.nim", fmWrite)
+
+  output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
+  output.writeLine "# nim c -r torch/generator.nim\n"
+  output.writeLine "import math"
+  output.writeLine "const M_PI = math.PI\n"
+
   for info in generatedProcs:
     if info.bodyText != "":
       output.writeLine(
