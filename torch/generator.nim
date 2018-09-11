@@ -628,7 +628,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
         fmt"  {info.expression}" & "\n")
 
     # Otherwise output a forward declaration, if necessary
-    elif info.needsForwardDeclaration:
+    else:
       output.writeLine(fmt"proc {info.name}*({info.argsStr}): {info.nimReturnType}" & "\n")
 
   output.flush()
