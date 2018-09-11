@@ -593,7 +593,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             if name.index == 0: bodyText &= "("
             if name.index > 0: bodyText &= ", "
             bodyText &= argName[0].name
-            if name.index == -1: bodyText &= fmt": {nimLikeStr}" & "\n"
+            if name.index == -1: bodyText &= fmt": firstOrSelf({nimLikeStr})" & "\n" # The expression might return a tuple, so select the first element
             if name.index == names.high: bodyText &= fmt"): {nimLikeStr}" & "\n"
 
             inc nodeIndex

@@ -34,7 +34,9 @@ macro autograd(head, body: untyped): untyped =
   let
     name = head
     resultIdent = ident"result"
+    forwardResultIdent = ident"fwd_result"
     gradsIdent = ident"grads"
+    gradInputMaskIdent = ident"grad_input_mask"
     forwardBody = newStmtList()
     backwardBody = newStmtList()
 
@@ -55,6 +57,9 @@ macro autograd(head, body: untyped): untyped =
       x.name = nnkPostfix.newTree(ident"*", name)
       forwardBody.add quote do:
         `resultIdent` = `forwardExpr`
+        let `forwardResultIdent` = `resultIdent`
+        var `gradInputMaskIdent`: seq[bool]
+
       x.body = forwardBody
 
       result.add(x)
@@ -149,9 +154,12 @@ template `@`*[IDX](a: array[IDX, SomeInteger]): IntList =
 
 # Auto generated #
 # append all the auto generated procs
-proc newTensors(nativeTensor: ATensor): Tensor {.inline.} = nativeTensor.newTensor()
+template firstOrSelf(self: Tensor): Tensor = self
+template firstOrSelf(self: tuple): Tensor = self[0]
 
-proc newTensors(nativeTensors: TensorList): untyped = nativeTensors
+template newTensors(nativeTensor: ATensor): Tensor = nativeTensor.newTensor()
+
+template newTensors(nativeTensors: TensorList): TensorList = nativeTensors
 
 macro newTensors(nativeTensors: tuple): untyped = 
   let T = nativeTensors.getType()
