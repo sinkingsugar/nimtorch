@@ -85,8 +85,9 @@ macro autograd(head, body: untyped): untyped =
 
       let gradExpr = x[1]
       backwardBody.add quote do:
-        #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
-        `resultExpr` = `gradExpr`
+        when type(`gradExpr`) isnot TensorList:
+          #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
+          `resultExpr` = `gradExpr`
 
   forwardBody.add quote do:
     let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] = `backwardBody`
@@ -157,13 +158,9 @@ template `@`*[IDX](a: array[IDX, SomeInteger]): IntList =
 
 # Auto generated #
 # append all the auto generated procs
-template firstOrSelf(self: Tensor): Tensor = self
-template firstOrSelf(self: tuple): Tensor = self[0]
 
 template newTensors(nativeTensor: ATensor): Tensor = nativeTensor.newTensor()
-
 template newTensors(nativeTensors: TensorList): TensorList = nativeTensors
-
 macro newTensors(nativeTensors: tuple): untyped = 
   let T = nativeTensors.getType()
   T.expectKind(nnkBracketExpr)
@@ -173,6 +170,10 @@ macro newTensors(nativeTensors: tuple): untyped =
     let index = i - 1
     result.add quote do:
       newTensors(`nativeTensors`[`index`])
+
+template firstOrSelf(self: TensorList): TensorList = self.newTensors()
+template firstOrSelf(self: Tensor): Tensor = self
+template firstOrSelf(self: tuple): Tensor = self[0]
 
 include torch/declarations
 
