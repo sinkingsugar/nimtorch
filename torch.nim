@@ -27,6 +27,66 @@ type
 
 var undefinedTensor: ATensor
 
+macro autograd(head, body: untyped): untyped =
+
+  result = newStmtList()
+
+  let
+    name = head
+    resultIdent = ident"result"
+    gradsIdent = ident"grads"
+    forwardBody = newStmtList()
+    backwardBody = newStmtList()
+
+  # Make `grad` available in derivative expressions, as alias for `grads[0]`
+  backwardBody.add quote do:
+    template grad: Tensor = `gradsIdent`[0]
+
+  var resultIndex = 0
+  for x in body:
+    x.expectKind({ nnkCall, nnkPar, nnkProcDef, nnkFuncDef })
+
+    if x.kind in { nnkProcDef, nnkFuncDef }:
+      if x.name.basename != ident"forward":
+        error("Only a proc named 'forward' is allowed", x)
+
+      # TODO: Handle non-expressions
+      let forwardExpr = x.body
+      x.name = nnkPostfix.newTree(ident"*", name)
+      forwardBody.add quote do:
+        `resultIdent` = `forwardExpr`
+      x.body = forwardBody
+
+      result.add(x)
+
+    else:
+      x[0].expectKind({ nnkIdent, nnkPar })
+
+      # Simply assign non-tuples
+      var resultExpr: NimNode
+      if x[0].kind == nnkIdent:
+        resultExpr = quote do: `resultIdent`[`resultIndex`] 
+        inc resultIndex
+
+      # Deconstruct result tuple
+      else:
+        resultExpr = newPar()
+        for r in x[0]:
+          resultExpr.add quote do: `resultIdent`[`resultIndex`] 
+          inc resultIndex
+
+      let gradExpr = x[1]
+      backwardBody.add quote do:
+        #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
+        `resultExpr` = `gradExpr`
+
+  forwardBody.add quote do:
+    let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] = `backwardBody`
+    when `resultIdent` is Tensor:
+      `resultIdent`.grad_fn = fn
+    else:
+      error("Tuple returns not implemented")
+
 proc use_count*(x: Tensor): int = x.tensor.dynamicCppCall("get()->use_count").to(int)
 
 proc newTensor*(): Tensor {.inline, noinit.} =
@@ -103,8 +163,8 @@ macro newTensors(nativeTensors: tuple): untyped =
     result.add quote do:
       newTensors(`nativeTensors`[`index`])
 
-#include torch/derivatives
-include torch/declarations
+include torch/autograd_helpers
+include torch/derivatives
 
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
 
@@ -475,10 +535,6 @@ proc backward*(tensors, grads: openarray[Tensor]) =
 proc backward*(tensor: Tensor) =
   backward([tensor], [torch.ones_like(tensor)])
 
-macro function(head, body: untyped): untyped =
-  for child in body:
-    child.expectKind(nnkCommand)
-
 when isMainModule:
   # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim
   # nim cpp -d:wasm --nimcache=nimcache-wasm -o:nimcache-wasm/test.js torch.nim && node nimcache-wasm/test.js
@@ -663,76 +719,12 @@ when isMainModule:
   #         [-0.3930, -0.3210],
   #         [-0.7325, -0.6430]])
 
-macro autograd(head, body: untyped): untyped =
+# proc test_fwd(self, other: Tensor): Tensor = discard
+# proc test_bwd(self: Tensor): Tensor = discard
 
-  result = newStmtList()
-
-  let
-    name = head
-    resultIdent = ident"result"
-    gradsIdent = ident"grads"
-    forwardBody = newStmtList()
-    backwardBody = newStmtList()
-
-  # Make `grad` available in derivative expressions, as alias for `grads[0]`
-  backwardBody.add quote do:
-    template grad: Tensor = `gradsIdent`[0]
-
-  var resultIndex = 0
-  for x in body:
-    x.expectKind({ nnkCall, nnkPar, nnkProcDef, nnkFuncDef })
-
-    if x.kind in { nnkProcDef, nnkFuncDef }:
-      if x.name.basename != ident"forward":
-        error("Only a proc named 'forward' is allowed", x)
-
-      # TODO: Handle non-expressions
-      let forwardExpr = x.body
-      x.name = nnkPostfix.newTree(ident"*", name)
-      forwardBody.add quote do:
-        `resultIdent` = `forwardExpr`
-      x.body = forwardBody
-
-      result.add(x)
-
-    else:
-      x[0].expectKind({ nnkIdent, nnkPar })
-
-      # Simply assign non-tuples
-      var resultExpr: NimNode
-      if x[0].kind == nnkIdent:
-        resultExpr = quote do: `resultIdent`[`resultIndex`] 
-        inc resultIndex
-
-      # Deconstruct result tuple
-      else:
-        resultExpr = newPar()
-        for r in x[0]:
-          resultExpr.add quote do: `resultIdent`[`resultIndex`] 
-          inc resultIndex
-
-      let gradExpr = x[1]
-      backwardBody.add quote do:
-        #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
-        `resultExpr` = `gradExpr`
-
-  forwardBody.add quote do:
-    let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] = `backwardBody`
-    when `resultIdent` is Tensor:
-      `resultIdent`.grad_fn = fn
-    else: {.error.}
-
-proc test_fwd(self, other: Tensor): Tensor = discard
-proc test_bwd(self: Tensor): Tensor = discard
-
-expandMacros:
-  # autograd test(self: Tensor, other: Tensor, i: int = 1) -> Tensor:
-  #   result: test_fwd(self, other)
-  #   self: grad
-  #   (other, lol): test_bwd(grad)
-
-  autograd test:
-    proc forward(self: Tensor, other: Tensor, i: int = 1): Tensor =
-      test_fwd(self, other)
-    self: grad
-    (other, lol): test_bwd(grad)
+# expandMacros:
+#   autograd test:
+#     proc forward(self: Tensor, other: Tensor, i: int = 1): Tensor =
+#       test_fwd(self, other)
+#     self: grad
+#     (other, lol): test_bwd(grad)

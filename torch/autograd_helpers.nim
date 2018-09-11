@@ -1,4 +1,3 @@
-import ../nimtorch
 import fragments/ffi/cpp as cpp
 
 proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =

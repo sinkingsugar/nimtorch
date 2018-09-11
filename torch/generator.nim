@@ -333,7 +333,7 @@ block declarations:
         case kind:
           of Tensor:
             procInfo.argsStr = argsStr1
-            procInfo.expression = fmt"self.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
+            procInfo.expression = fmt"self.tensor.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
           of Type:
             procInfo.argsStr = "ty: TensorType; " & argsStr1
             procInfo.expression = fmt"ty.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
@@ -371,8 +371,6 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
   output.writeLine "# nim c -r torch/generator.nim\n"
   output.writeLine "import math"
-  output.writeLine "import ../torch"
-  output.writeLine "import autograd_helpers\n"
   output.writeLine "const M_PI = math.PI\n"
 
   # convert from yaml to json to load at compile time, using python3 for now
@@ -631,18 +629,18 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
     # If there was no autograd version generated, output a normal forward proc
     if info.bodyText == "":
       output.writeLine(
-        fmt"proc {info.name}({info.argsStr}): {info.nimReturnType} = " & "\n" &
+        fmt"proc {info.name}*({info.argsStr}): {info.nimReturnType} = " & "\n" &
         fmt"  {info.expression}" & "\n")
 
     # Otherwise output a forward declaration, if necessary
     elif info.needsForwardDeclaration:
-      output.writeLine(fmt"proc {info.name}({info.argsStr}): {info.nimReturnType}" & "\n")
+      output.writeLine(fmt"proc {info.name}*({info.argsStr}): {info.nimReturnType}" & "\n")
 
   # Generate autograd definitions
   for info in generatedProcs:
     if info.bodyText != "":
       output.writeLine(
-        fmt"autograd {info.name}" & "\n" &
+        fmt"autograd {info.name}:" & "\n" &
         fmt"  proc forward*({info.argsStr}): {info.nimReturnType} = " & "\n" &
         fmt"    {info.expression}" & "\n" &
         info.bodyText)
