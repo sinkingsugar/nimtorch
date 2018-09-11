@@ -480,8 +480,6 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
         head: string
         bodyText: string
 
-      bodyText &= fmt"  result: {info.expression}" & "\n"
-
       block generateProc:
         var nodeIndex = 0
         for k, v in node:
@@ -643,7 +641,11 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   # Generate autograd definitions
   for info in generatedProcs:
     if info.bodyText != "":
-      output.writeLine(fmt"autograd {info.name}({info.argsStr}) -> {info.nimReturnType}:" & "\n" & fmt"{info.bodyText}")     
+      output.writeLine(
+        fmt"autograd {info.name}" & "\n" &
+        fmt"  proc forward*({info.argsStr}): {info.nimReturnType} = " & "\n" &
+        fmt"    {info.expression}" & "\n" &
+        info.bodyText)
 
   output.flush()
   output.close()

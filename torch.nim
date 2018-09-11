@@ -103,6 +103,7 @@ macro newTensors(nativeTensors: tuple): untyped =
     result.add quote do:
       newTensors(`nativeTensors`[`index`])
 
+#include torch/derivatives
 include torch/declarations
 
 proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
@@ -666,21 +667,8 @@ macro autograd(head, body: untyped): untyped =
 
   result = newStmtList()
 
-  head.expectKind(nnkInfix)
-  assert head[0] == ident"->"
-
-  head[1].expectKind(nnkObjConstr)
-  let name = nnkPostfix.newTree(ident"*", head[1][0])
-
-  var params: seq[NimNode]
-  params.add head[2]
-  
-  for i in 1 ..< head[1].len:
-    let arg = head[1][i]
-    arg.expectKind(nnkExprColonExpr)
-    params.add newIdentDefs(arg[0], arg[1], newEmptyNode())
-  
   let
+    name = head
     resultIdent = ident"result"
     gradsIdent = ident"grads"
     forwardBody = newStmtList()
@@ -692,20 +680,20 @@ macro autograd(head, body: untyped): untyped =
 
   var resultIndex = 0
   for x in body:
-    x.expectKind({ nnkCall, nnkPar })
-    let varIdent = x[0]
+    x.expectKind({ nnkCall, nnkPar, nnkProcDef, nnkFuncDef })
 
-    case x.kind:
-      of nnkCall: discard
-      of nnkPar: discard
-      else: echo x.kind
+    if x.kind in { nnkProcDef, nnkFuncDef }:
+      if x.name.basename != ident"forward":
+        error("Only a proc named 'forward' is allowed", x)
 
-    if varIdent == ident"result":
-      let forwardExpr = newStmtList(x[1])
+      # TODO: Handle non-expressions
+      let forwardExpr = x.body
+      x.name = nnkPostfix.newTree(ident"*", name)
       forwardBody.add quote do:
         `resultIdent` = `forwardExpr`
-      let forwardProc = newProc(name, params, forwardBody)
-      result.add(forwardProc)
+      x.body = forwardBody
+
+      result.add(x)
 
     else:
       x[0].expectKind({ nnkIdent, nnkPar })
@@ -738,7 +726,13 @@ proc test_fwd(self, other: Tensor): Tensor = discard
 proc test_bwd(self: Tensor): Tensor = discard
 
 expandMacros:
-  autograd test(self: Tensor, other: Tensor, i: int) -> Tensor:
-    result: test_fwd(self, other)
+  # autograd test(self: Tensor, other: Tensor, i: int = 1) -> Tensor:
+  #   result: test_fwd(self, other)
+  #   self: grad
+  #   (other, lol): test_bwd(grad)
+
+  autograd test:
+    proc forward(self: Tensor, other: Tensor, i: int = 1): Tensor =
+      test_fwd(self, other)
     self: grad
     (other, lol): test_bwd(grad)
