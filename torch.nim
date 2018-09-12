@@ -1,5 +1,5 @@
 include torch/torch_cpp
-import macros, sequtils, math, queues
+import macros, sequtils, math, queues, sets
 
 type
   Tensor* = ref object
@@ -27,6 +27,8 @@ type
 
 var undefinedTensor: ATensor
 
+proc requires_grad(self: not Tensor): bool = false
+
 macro autograd(head, body: untyped): untyped =
 
   result = newStmtList()
@@ -39,8 +41,8 @@ macro autograd(head, body: untyped): untyped =
     gradInputMaskIdent = ident"grad_input_mask"
     forwardBody = newStmtList()
     backwardBody = newStmtList()
-    inputIdents = nnkBracket.newTree()
     resultExpressions = nnkBracket.newTree()
+    inputIdents = nnkBracket.newTree()
 
   # Make `grad` available in derivative expressions, as alias for `grads[0]`
   backwardBody.add quote do:
@@ -94,12 +96,23 @@ macro autograd(head, body: untyped): untyped =
           #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
           `resultExpr` = `gradExpr`
 
+  # Propagate whether gradient is needed or not
+  var requiresGradExpr: NimNode
+  for i, inputIdent in inputIdents:
+    if i == 0:
+      requiresGradExpr = quote do:
+        `inputIdent`.requires_grad
+    else:
+      requiresGradExpr = quote do:
+        `requiresGradExpr` or `inputIdent`.requires_grad
+
   forwardBody.add quote do:
     let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
       `resultIdent`.setLen(`resultIndex`)
       `backwardBody`
 
     when `resultIdent` is Tensor:
+      `resultIdent`.requires_grad = `requiresGradExpr`
       `resultIdent`.grad_fn = fn
       `resultIdent`.inputs = @[]
       when compiles(`resultIdent`.inputs.add(`inputIdents`)):
@@ -504,33 +517,45 @@ proc backward*(tensors, grads: openarray[Tensor]) =
   var
     remainingNodes = initQueue[Tensor]()
     sortedNodes: seq[Tensor]
+    gradFuncs: HashSet[BackwardFunction]
 
-  for i in 0 ..< tensors.len:
-    remainingNodes.enqueue(tensors[i])
-    tensors[i].grad = grads[i]
+  gradFuncs.init()
+
+  for tensor in tensors:
+    remainingNodes.enqueue(tensor)
 
   # Topologically sort the graph
   while remainingNodes.len > 0:
     let node = remainingNodes.dequeue()
 
-    # Already visited
-    # TODO: Use hashset
-    # if sortedNodes.contains(node):
-    #   continue
+    # Gradient along this path is not needed
+    if not node.requires_grad:
+      continue
 
-    # Gradient along this path is not defined or needed
-    if not node.requires_grad or node.grad_fn == nil:
+    # If the gradient is needed, initialize it
+    node.grad = torch.zeros_like(node)
+
+    # Gradient is not defined, so don't evaluate inputs
+    if node.grad_fn == nil:
+      continue
+
+    # Already executed this backward function through this node,
+    # or another output of this function
+    if gradFuncs.containsOrIncl(node.grad_fn):
       continue
 
     sortedNodes.add(node)
-    node.grad = torch.zeros_like(node)
 
     for input in node.inputs:
       remainingNodes.enqueue(input)
 
+  # Set initial gradients
+  for i, tensor in tensors:
+    tensor.grad = grads[i]
+
   # Accumulate grads
   for node in sortedNodes:
-    # TODO: Input mask
+    # TODO: handle multiple output gradients
     let grads = node.grad_fn([node.grad])
     for i, input in node.inputs:
       if input.requires_grad:
@@ -734,11 +759,12 @@ when isMainModule:
       o = ones(n)
       g = (a + b).grad_fn([o])
     
-    g = sin(a).grad_fn([o])
+    a.requires_grad = true
+    let a1 = sin(a)
+    echo a1.requires_grad
+    a1.backward()
+    print a.grad
     
-    print g[0]
-    #print g[1]
-
   # tensor([[-0.5317, -0.4753],
   #         [-0.3930, -0.3210],
   #         [-0.7325, -0.6430]])
@@ -751,4 +777,4 @@ when isMainModule:
 #     proc forward(self: Tensor, other: Tensor, i: int = 1): Tensor =
 #       test_fwd(self, other)
 #     self: grad
-#     (other, lol): test_bwd(grad)
+#     other: test_bwd(grad)
