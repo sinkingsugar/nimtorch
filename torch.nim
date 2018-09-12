@@ -39,6 +39,8 @@ macro autograd(head, body: untyped): untyped =
     gradInputMaskIdent = ident"grad_input_mask"
     forwardBody = newStmtList()
     backwardBody = newStmtList()
+    inputIdents = nnkBracket.newTree()
+    resultExpressions = nnkBracket.newTree()
 
   # Make `grad` available in derivative expressions, as alias for `grads[0]`
   backwardBody.add quote do:
@@ -70,6 +72,7 @@ macro autograd(head, body: untyped): untyped =
       var resultExpr: NimNode
       if x[0].kind == nnkIdent:
         resultExpr = quote do: `resultIdent`[`resultIndex`] 
+        inputIdents.add(x[0])
         inc resultIndex
 
       # Deconstruct result tuple
@@ -80,7 +83,9 @@ macro autograd(head, body: untyped): untyped =
 
         resultExpr = newPar()
         for r in x[0]:
-          resultExpr.add quote do: `resultIdent`[`resultIndex`] 
+          r.expectKind(nnkIdent)
+          resultExpr.add quote do: `resultIdent`[`resultIndex`]
+          inputIdents.add(r)
           inc resultIndex
 
       let gradExpr = x[1]
@@ -90,9 +95,15 @@ macro autograd(head, body: untyped): untyped =
           `resultExpr` = `gradExpr`
 
   forwardBody.add quote do:
-    let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] = `backwardBody`
+    let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
+      `resultIdent`.setLen(`resultIndex`)
+      `backwardBody`
+
     when `resultIdent` is Tensor:
       `resultIdent`.grad_fn = fn
+      `resultIdent`.inputs = @[]
+      when compiles(`resultIdent`.inputs.add(`inputIdents`)):
+        `resultIdent`.inputs.add(`inputIdents`)
     else:
       error("Tuple returns not implemented")
 
@@ -706,7 +717,27 @@ when isMainModule:
 
       hy.print()
   
-  torch.manual_seed(1)
+    echo "--------------------------"
+
+    var a = tensor([
+      [1, 2],
+      [3, 4]
+    ])
+
+    var b = tensor([
+      [5, 6],
+      [8, 7]
+    ])
+
+    var
+      n: IntList = @[2, 2]
+      o = ones(n)
+      g = (a + b).grad_fn([o])
+    
+    g = sin(a).grad_fn([o])
+    
+    print g[0]
+    #print g[1]
 
   # tensor([[-0.5317, -0.4753],
   #         [-0.3930, -0.3210],
