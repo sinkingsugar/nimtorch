@@ -325,71 +325,50 @@ proc sizes*(a: Tensor): IntList {.inline.} = a.tensor.dynamicCppCall("sizes").to
 
 proc strides*(a: Tensor): IntList = a.tensor.dynamicCppCall("strides").to(IntList)
 
-proc `-`*(a: Tensor): Tensor {.inline, noinit.} =
-  newTensor (-(a.toCpp)).to(ATensor)
+proc `-`*(a: Tensor): Tensor {.inline, noinit.} = neg(a)
 
-proc `+`*(a, b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp + b.tensor.toCpp).to(ATensor)
+proc `+`*(a, b: Tensor): Tensor {.inline, noinit.} = add(a, b)
 
-proc `<=`*(a, b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp <= b.tensor.toCpp).to(ATensor)
+proc `<=`*(a, b: Tensor): Tensor {.inline, noinit.} = le(a, b)
 
-proc `<`*(a, b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp < b.tensor.toCpp).to(ATensor)
+proc `<`*(a, b: Tensor): Tensor {.inline, noinit.} = lt(a, b)
 
-proc `>`*(a, b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp > b.tensor.toCpp).to(ATensor)
+proc `>`*(a, b: Tensor): Tensor {.inline, noinit.} = ge(a, b)
 
-proc `>=`*(a, b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp >= b.tensor.toCpp).to(ATensor)
+proc `>=`*(a, b: Tensor): Tensor {.inline, noinit.} = ge(a, b)
 
-proc `<=`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp <= b.float.toCpp).to(ATensor)
+proc `<=`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = le(a, b)
 
-proc `>=`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp >= b.float.toCpp).to(ATensor)
+proc `>=`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = ge(a, b)
 
-proc `+`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp + b.float.toCpp).to(ATensor)
+proc `+`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = add(a, b.float)
 
-proc `+`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.float.toCpp + b.tensor.toCpp).to(ATensor)
+proc `+`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} = b + a
 
-proc `*`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp * b.float.toCpp).to(ATensor)
+proc `*`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = mul(a, b.float)
 
-proc `*`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.float.toCpp * b.tensor.toCpp).to(ATensor)
+proc `*`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} = b * a
 
-proc `/`*(a, b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp / b.tensor.toCpp).to(ATensor)
+proc `/`*(a, b: Tensor): Tensor {.inline, noinit.} = div_name(a, b)
 
-proc `/`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp / b.float.toCpp).to(ATensor)
+proc `/`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = div_name(a, b.float)
 
-proc `/`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.float.toCpp / b.tensor.toCpp).to(ATensor)
+proc `/`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} = div_name(a.float, b)
 
-proc `*`*(a, b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp * b.tensor.toCpp).to(ATensor)
+proc `*`*(a, b: Tensor): Tensor {.inline, noinit.} = mul(a, b)
 
-proc `-`*(a, b: Tensor): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp - b.tensor.toCpp).to(ATensor)
+proc `-`*(a, b: Tensor): Tensor {.inline, noinit.} = sub(a, b)
 
-proc `-`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp - b.float.toCpp).to(ATensor)
+proc `-`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = sub(a, b.float)
 
-proc `==`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
-  newTensor (a.tensor.toCpp == b.float.toCpp).to(ATensor)
+proc `==`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = eq(a, b)
 
-proc `==`*(a, b: Tensor): bool {.inline.} =
-  cast[pointer](a) == cast[pointer](b)
+proc `==`*(a, b: Tensor): Tensor {.inline.} = eq(a, b)
 
-proc `+=`*(a, b: Tensor) {.inline.} =
-  a.tensor.toCpp += b.tensor.toCpp
+# TODO: Use inplace ops instead?
+proc `+=`*(a: var Tensor; b: Tensor) {.inline.} = a = a + b
 
-proc `-=`*(a, b: Tensor) {.inline.} =
-  a.tensor.toCpp += b.tensor.toCpp
+proc `-=`*(a: var Tensor; b: Tensor) {.inline.} = a = a - b
 
 proc sqrt*(b: SomeFloat): SomeFloat {.inline, noinit.} = math.sqrt(b)
 
@@ -525,8 +504,8 @@ proc backward*(tensors, grads: openarray[Tensor]) =
 
     # Already visited
     # TODO: Use hashset
-    if sortedNodes.contains(node):
-      continue
+    # if sortedNodes.contains(node):
+    #   continue
 
     # Gradient along this path is not defined or needed
     if not node.requires_grad or node.grad_fn == nil:
