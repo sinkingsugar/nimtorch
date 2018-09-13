@@ -2141,6 +2141,16 @@ autograd sum_internal:
     self.tensor.dynamicCppCall("_sum").to(ATensor).newTensor()
   self: firstOrSelf(grad.expand(self.sizes()))
 
+autograd sum_internal:
+  proc forward*(ty: TensorType; self: Tensor; dim: openarray[SomeInteger]; keepdim: bool = false): Tensor = 
+    ty.dynamicCppCall("_sum", self.tensor, dim.toAIntList, keepdim).to(ATensor).newTensor()
+  self: firstOrSelf(sum_backward(grad, self.sizes(), dim, keepdim))
+
+autograd sum_internal:
+  proc forward*(self: Tensor; dim: openarray[SomeInteger]; keepdim: bool = false): Tensor = 
+    self.tensor.dynamicCppCall("_sum", dim.toAIntList, keepdim).to(ATensor).newTensor()
+  self: firstOrSelf(sum_backward(grad, self.sizes(), dim, keepdim))
+
 autograd sqrt:
   proc forward*(ty: TensorType; self: Tensor): Tensor = 
     ty.dynamicCppCall("sqrt", self.tensor).to(ATensor).newTensor()

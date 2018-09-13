@@ -68,16 +68,37 @@ proc split_backward*(grads: TensorList; split_size, dim: int; sizes: IntList; te
   split_sizes[num_splits - 1] = split_size - (split_size * num_splits - dim_size)
   result = split_with_sizes_backward(grads, split_sizes, ndim, sizes, tensorType)
 
-proc unsqueeze_to(self: Tensor; sizes: IntList): Tensor =
+proc unsqueeze_to(self: Tensor; sizes: openarray[SomeInteger]): Tensor =
   result = self
   for dim, size in sizes:
     if size == 1:
       result = result.unsqueeze(dim.int64)
 
-proc unsqueeze_to(self: Tensor; dim: int64; sizes: IntList): Tensor =
+proc unsqueeze_to(self: Tensor; dim: int64; sizes: openarray[SomeInteger]): Tensor =
   let dim = maybe_wrap_dim(dim.int, sizes.len)
   # in NumPy it's not an error to unsqueeze a scalar, but we still need to avoided
   # unsqueezing in the backward.
   if sizes.len > 0 and sizes[dim.int] == 1:
     return self.unsqueeze(dim.int64)
   return self
+
+proc dim_list_to_bitset(dims: openarray[SomeInteger]; ndims: int64; wrap_scalar: bool = true): set[0..63] =
+  assert(ndims <= 64, "only tensors with up to 64 dims are supported")
+  for i in 0 ..< dims.len:
+    let dim = maybe_wrap_dim(dims[i].int, ndims.int)
+    assert(dim in result, "dim " & $dim & " appears multiple times in the list of dims")
+    result.incl(dim)
+
+proc sum_backward(grad: Tensor; sizes: openarray[SomeInteger]; dims: openarray[SomeInteger]; keepdim: bool): Tensor =
+  if not keepdim and sizes.len > 0:
+    if dims.len == 1:
+      return grad.unsqueeze(dims[0]).expand(sizes)
+    else:
+      let dims_to_unsqueeze = dim_list_to_bitset(dims, sizes.len)
+      result = grad
+      for i in 0 ..< sizes.len:
+        if i in dims_to_unsqueeze:
+          result = result.unsqueeze(i)
+      result = result.expand(sizes)
+  else:
+    return grad.expand(sizes)

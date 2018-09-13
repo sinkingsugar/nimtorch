@@ -1,5 +1,7 @@
 include torch/torch_cpp
-import macros, sequtils, math, queues, sets
+import macros, sequtils, math, queues, sets, strformat, options
+
+{.experimental: "implicitDeref".}
 
 type
   Tensor* = ref object
@@ -11,7 +13,7 @@ type
     grad: Tensor
     inputs: seq[Tensor]
     
-  TensorType* = AType
+  TensorType* = ptr AType
   TensorOptions* = ATensorOptions
   TensorList* = ATensors
   IntList* = seq[int]
@@ -28,6 +30,10 @@ type
 var undefinedTensor: ATensor
 
 proc requires_grad(self: not Tensor): bool = false
+
+template capture(name: untyped): untyped =
+  when name is openarray:
+    let name = @`name`
 
 macro autograd(head, body: untyped): untyped =
 
@@ -62,6 +68,12 @@ macro autograd(head, body: untyped): untyped =
       forwardBody.add quote do:
         `resultIdent` = `forwardExpr`
         let `forwardResultIdent` = `resultIdent`      
+
+      # If parameters are non-concrete, captures them as concrete types (e.g. openarray -> seq)
+      for i in 1 ..< x.params.len:
+        let paramName = x.params[i][0].basename
+        forwardBody.add quote do:
+          capture(`paramName`)
 
       x.body = forwardBody
 
@@ -120,6 +132,16 @@ macro autograd(head, body: untyped): untyped =
     else:
       error("Tuple returns not implemented")
 
+# proc test_fwd(self, other: Tensor): Tensor = discard
+# proc test_bwd(self: Tensor): Tensor = discard
+
+# expandMacros:
+#   autograd test:
+#     proc forward(self: Tensor, other: Tensor, a: openarray[int]; i: int = 1): Tensor =
+#       test_fwd(self, other)
+#     self: grad
+#     other: test_bwd(grad)
+
 proc use_count*(x: Tensor): int = x.tensor.dynamicCppCall("get()->use_count").to(int)
 
 proc newTensor*(): Tensor {.inline, noinit.} =
@@ -168,7 +190,7 @@ proc len*(v: AIntList): int {.inline.} = v.size().to(int)
 
 #proc `[]=`*(v: AIntList; index: int; value: int64) {.inline.} = v.toCpp[index] = value
 
-iterator items*(ints: AIntList): int64 {.inline.} =
+iterator items*(ints: AIntList): ilsize {.inline.} =
   for i in 0 .. ints.high:
     yield ints[i]
 
@@ -336,12 +358,14 @@ proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; du
 proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[int] = 0;): Tensor {.inline, noinit.} =
   return tensor(data, defaultType, device)
 
-proc getType*(a: Tensor): TensorType {.inline.} =
-  assert(a.hasTensor)
-  return a.tensor.dynamicCppCall("type").to(TensorType)
+proc getType*(a: Tensor): TensorType {.inline, noinit.} =
+  proc helper(a: ATensor): TensorType {.importcpp: "&(#.type())".}
+  return helper(a.tensor)
+  #return a.tensor.dynamicCppCall("type").to(TensorType)
 
 converter toTensorOptions*(tensorType: TensorType): TensorOptions =
-  result = cppinit(TensorOptions, tensorType.toCpp)
+  let temp = cppinit(TensorOptions, tensorType.toCpp)
+  return temp
 
 proc cpu*(a: Tensor): Tensor {.inline, noinit.} =
   newTensor a.tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
@@ -349,9 +373,12 @@ proc cpu*(a: Tensor): Tensor {.inline, noinit.} =
 proc cuda*(a: Tensor): Tensor {.inline, noinit.} =
   newTensor a.tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
 
-proc copy*(a: Tensor; non_blocking: bool = false): Tensor {.inline, noinit.} =
-  newTensor a.tensor.dynamicCppCall("type").dynamicCppCall("copy", a.tensor, non_blocking).to(ATensor)
+proc copy*(typ: TensorType; self: Tensor; non_blocking: bool = false): Tensor {.inline, noinit.} =
+  typ[].dynamicCppCall("copy", self.tensor, non_blocking).to(ATensor).newTensor()
 
+proc copy*(self: Tensor; non_blocking: bool = false): Tensor {.inline, noinit.} =
+  self.getType().copy(self, non_blocking)
+  
 proc is_defined*(a: Tensor): bool {.inline.} =
   a.tensor.dynamicCppCall("defined").to(bool)
 
@@ -408,9 +435,9 @@ proc `-=`*(a: var Tensor; b: Tensor) {.inline.} = a = a - b
 
 proc sqrt*(b: SomeFloat): SomeFloat {.inline, noinit.} = math.sqrt(b)
 
-proc ndimension*(a: Tensor): int64 {.inline, noinit.} = a.tensor.dynamicCppCall(ndimension).to(int64)
+proc ndimension*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(ndimension).to(int64).int
 
-proc dim*(a: Tensor): int64 {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(int64)
+proc dim*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(int64).int
 
 proc `$`*(a: Tensor): string {.inline, noinit.} = $a.tensor.dynamicCppCall(toString).to(cstring)
 
@@ -419,6 +446,159 @@ proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
 
 proc `[]=`*(a: Tensor; index: int; b: Tensor) {.inline.} =
   a.tensor.toCpp()[index] = b.tensor
+
+# proc infer_size*(shape: IntList; numel: int): IntList =
+#   result = shape
+#   var
+#     newsize = 1
+#     infer_dim = -1
+  
+#   for dim in 0 ..< shape.len:
+#     if shape[dim] == -1:
+#       if infer_dim >= 0:
+#         raise newException(ValueError, "only one dimension can be inferred")
+#       infer_dim = dim;
+#     elif shape[dim] >= 0:
+#       newsize *= shape[dim]
+#     else:
+#       raise newException(ValueError, "invalid shape dimension " & $shape[dim])
+
+#   if numel == newsize or (infer_dim >= 0 and newsize > 0 and (numel mod newsize == 0)):
+#     if infer_dim >= 0:
+#       # we have a degree of freedom here to select the dimension size; follow NumPy semantics
+#       # and just bail.
+#       assert(newsize != 0, "cannot reshape tensor of 0 elements into shape " & $shape)
+#       result[infer_dim] = numel div newsize
+    
+#   else:
+#     raise newException(ValueError, fmt"shape '{shape}' is invalid for input of size {numel}")
+
+proc contiguous2*(self: Tensor): Tensor =
+  #unpack(self, "self", 0)
+  if self.is_contiguous():
+    return self
+  return self.clone()
+
+proc infer_size(a, b: IntList): IntList =
+  let
+    dimsA = a.len
+    dimsB = b.len
+    ndim = max(dimsA, dimsB)
+
+  result.setLen(ndim)
+
+  for i in countdown(ndim - 1, 0):
+    let
+      offset = ndim - 1 - i
+      dimA = dimsA - 1 - offset
+      dimB = dimsB - 1 - offset
+      sizeA = if dimA >= 0: a[dimA] else: 1
+      sizeB = if dimB >= 0: b[dimB] else: 1
+
+    assert(sizeA == sizeB or sizeA == 1 or sizeB == 1,
+      fmt"The size of tensor a ({sizeA}) must match the size of tensor b ({sizeB}) at non-singleton dimension {i}")
+
+    # 1s map to the other size (even 0).
+    result[i] = if sizeA == 1: sizeB else: sizeA
+
+proc toType(self: Tensor; t: TensorType; non_blocking: bool = false): Tensor =
+  if self.getType() == t:
+    return self
+  return t.copy(self, non_blocking)
+
+proc toType(self: Tensor; t: AScalarType; non_blocking: bool = false): Tensor =
+  self.toType(self.getType().toScalarType(t).to(TensorType))
+
+proc integer_upcast(self: Tensor; dtype: Option[AScalarType] = AScalarType.none): Tensor =
+  let 
+    scalarType = self.getType().scalarType().to(AScalarType)
+    upcast_scalarType = if dtype.isSome: dtype.get else: (if scalarType.toCpp().isIntegralType().to(bool): ATkLong else: scalarType)
+  return self.toType(upcast_scalarType)
+
+proc sum(self: Tensor; dim: IntList; keepdim: bool; dtype: Option[AScalarType] = AScalarType.none): Tensor =
+  sum_internal(integer_upcast(self, dtype), dim, keepdim)
+
+# Sums `tensor` repeatedly to produce a tensor of shape `shape`.
+# Precondition: is_expandable_to(shape, tensor.sizes()) must be true
+proc sum_to(tensor: Tensor; shape: IntList): Tensor =
+  if shape.len == 0:
+    return tensor.sum()
+
+  result = tensor
+  while result.dim() > shape.len:
+    result = result.sum([0], false)
+
+  for i in 0 ..< result.dim():
+    if shape[i] == 1 and result.sizes[i] > 1:
+      result = result.sum([i], true)
+
+proc mm2*(self, mat2: Tensor): Tensor =
+  if self.is_sparse:
+    return mat2.getType().addmm(zeros[int]([], mat2.getType()), self, mat2, 0, 1)
+  return mm_internal(self, mat2);
+
+proc matmul2*(tensor1, tensor2: Tensor): Tensor =
+  let
+    dim_tensor1 = tensor1.dim()
+    dim_tensor2 = tensor2.dim()
+
+  if dim_tensor1 == 1 and dim_tensor2 == 1:
+    return tensor1.dot(tensor2)
+  elif dim_tensor1 == 2 and dim_tensor2 == 1:
+    return tensor1.mv(tensor2)
+  elif dim_tensor1 == 1 and dim_tensor2 == 2:
+    return tensor1.unsqueeze(0).mm(tensor2).squeeze_inplace(0)
+  elif dim_tensor1 == 2 and dim_tensor2 == 2:
+    return tensor1.mm(tensor2)
+  elif dim_tensor1 >= 3 and (dim_tensor2 == 1 or dim_tensor2 == 2):
+    # optimization: use mm instead of bmm by folding tensor1's batch into
+    # its leading matrix dimension.
+    let
+      t2 = if dim_tensor2 == 1: tensor2.unsqueeze(-1) else: tensor2
+      size1 = tensor1.sizes()
+      size2 = t2.sizes()
+    var output_size = size1
+    if dim_tensor2 > 1:
+      output_size.add(size2[dim_tensor2 - 1])
+
+    # fold the batch into the first dimension
+    let t1 = tensor1.contiguous().view([-1, size1[size1.len - 1]])
+    return unsafe_view_internal(t1.mm(t2), output_size)
+
+  elif (dim_tensor1 >= 1 and dim_tensor2 >= 1) and (dim_tensor1 >= 3 or dim_tensor2 >= 3):
+    # We are multiplying b1 x n x m1 by x2 x m2 x p (where b1 can be a list);
+    # we track m1 vs m2 separately even though they must match for nicer error messages
+    let
+      n = if dim_tensor1 > 1: tensor1.size(-2) else: 1
+      m1 = tensor1.size(-1)
+      batch_tensor1 = tensor1.sizes[0 ..< max(dim_tensor1 - 2, 0)]
+      m2 = if dim_tensor2 > 1: tensor2.size(-2) else: 1
+      p = tensor2.size(-1)
+      batch_tensor2 = tensor2.sizes[0 ..< max(dim_tensor2 - 2, 0)]
+
+    # expand the batch portion (i.e. cut off matrix dimensions and expand rest)
+    let
+      expand_batch_portion = infer_size(batch_tensor1, batch_tensor2)
+      tensor1_expand_size = expand_batch_portion & n.int & m1.int
+      tensor2_expand_size = expand_batch_portion & m2.int & p.int
+
+      expand_batch_product = expand_batch_portion.foldl(a * b)
+      tensor1_bmm_view = @[expand_batch_product, n.int, m1.int]
+      tensor2_bmm_view = @[expand_batch_product, m2.int, p.int]
+
+    # flatten expanded batches
+    let
+      tensor1_expanded = tensor1.expand(tensor1_expand_size).contiguous().view(tensor1_bmm_view)
+      tensor2_expanded = tensor2.expand(tensor2_expand_size).contiguous().view(tensor2_bmm_view)
+
+    # reshape batches back into result
+    var output_shape = expand_batch_portion;
+    if dim_tensor1 > 1: output_shape.add(n.int)
+    if dim_tensor2 > 1: output_shape.add(p.int)
+
+    return unsafe_view_internal(tensor1_expanded.bmm(tensor2_expanded), output_shape)
+
+  raise newException(ValueError, fmt"both arguments to matmul need to be at least 1D, but they are {dim_tensor1}D and {dim_tensor2}D")
 
 include torch/autograd_helpers
 include torch/derivatives
@@ -675,8 +855,8 @@ when isMainModule:
 
   # grucell
   var
-    gi = x.matmul(w_input.transpose(1, 2)) + b_input
-    gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
+    gi = x.matmul2(w_input.transpose(1, 2)) + b_input
+    gh = hidden.matmul2(w_recur.transpose(1, 2)) + b_recur
     (i_r, i_i, i_nn) = gi.chunk(3, 2)
     (h_r, h_i, h_n) = gh.chunk(3, 2)
     resetgate = (i_r + h_r).sigmoid()
@@ -780,13 +960,3 @@ when isMainModule:
   # tensor([[-0.5317, -0.4753],
   #         [-0.3930, -0.3210],
   #         [-0.7325, -0.6430]])
-
-# proc test_fwd(self, other: Tensor): Tensor = discard
-# proc test_bwd(self: Tensor): Tensor = discard
-
-# expandMacros:
-#   autograd test:
-#     proc forward(self: Tensor, other: Tensor, i: int = 1): Tensor =
-#       test_fwd(self, other)
-#     self: grad
-#     other: test_bwd(grad)

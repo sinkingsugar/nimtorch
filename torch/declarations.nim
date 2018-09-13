@@ -1011,11 +1011,9 @@ proc diag*(ty: TensorType; self: Tensor; diagonal: int64 = 0): Tensor =
 proc diag*(self: Tensor; diagonal: int64 = 0): Tensor = 
   self.tensor.dynamicCppCall("diag", diagonal).to(ATensor).newTensor()
 
-proc th_addmm*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
-  ty.dynamicCppCall("th_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+proc th_addmm*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor
 
-proc th_addmm*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
-  dynamicCCall("at::th_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+proc th_addmm*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor
 
 proc th_addmm_inplace*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
   ty.dynamicCppCall("th_addmm_", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
@@ -1055,11 +1053,9 @@ proc mv_internal*(ty: TensorType; self: Tensor; vec: Tensor): Tensor =
 proc mv_internal*(self: Tensor; vec: Tensor): Tensor = 
   self.tensor.dynamicCppCall("_mv", vec.tensor).to(ATensor).newTensor()
 
-proc mm_internal*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor = 
-  ty.dynamicCppCall("_mm", self.tensor, mat2.tensor).to(ATensor).newTensor()
+proc mm_internal*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor
 
-proc mm_internal*(self: Tensor; mat2: Tensor): Tensor = 
-  self.tensor.dynamicCppCall("_mm", mat2.tensor).to(ATensor).newTensor()
+proc mm_internal*(self: Tensor; mat2: Tensor): Tensor
 
 proc bmm*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor
 
@@ -3673,11 +3669,9 @@ proc sum*(ty: TensorType; self: Tensor; dim: openarray[SomeInteger]; dtype: ASca
 proc sum*(self: Tensor; dim: openarray[SomeInteger]; dtype: AScalarType): Tensor = 
   self.tensor.dynamicCppCall("sum", dim.toAIntList, dtype).to(ATensor).newTensor()
 
-proc sum_internal*(ty: TensorType; self: Tensor; dim: openarray[SomeInteger]; keepdim: bool = false): Tensor = 
-  ty.dynamicCppCall("_sum", self.tensor, dim.toAIntList, keepdim).to(ATensor).newTensor()
+proc sum_internal*(ty: TensorType; self: Tensor; dim: openarray[SomeInteger]; keepdim: bool = false): Tensor
 
-proc sum_internal*(self: Tensor; dim: openarray[SomeInteger]; keepdim: bool = false): Tensor = 
-  self.tensor.dynamicCppCall("_sum", dim.toAIntList, keepdim).to(ATensor).newTensor()
+proc sum_internal*(self: Tensor; dim: openarray[SomeInteger]; keepdim: bool = false): Tensor
 
 proc sqrt*(ty: TensorType; self: Tensor): Tensor
 
@@ -3975,11 +3969,9 @@ proc sub_inplace*(ty: TensorType; self: Tensor; other: float; alpha: float = 1):
 proc sub_inplace*(self: Tensor; other: float; alpha: float = 1): Tensor = 
   self.tensor.dynamicCppCall("sub_", other, alpha).to(ATensor).newTensor()
 
-proc s_native_addmm*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
-  ty.dynamicCppCall("s_native_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+proc s_native_addmm*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor
 
-proc s_native_addmm*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
-  dynamicCCall("at::s_native_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+proc s_native_addmm*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor
 
 proc s_native_addmm_inplace*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
   ty.dynamicCppCall("s_native_addmm_", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()

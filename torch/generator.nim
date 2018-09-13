@@ -92,6 +92,7 @@ const knownNames = [
   "atan2_backward",
   "split_backward",
   "split_with_sizes_backward",
+  "sum_backward",
   "unsqueeze_to",
   "sizes",
   "strides",
