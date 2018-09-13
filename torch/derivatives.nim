@@ -2055,6 +2055,46 @@ autograd softmax:
     self.tensor.dynamicCppCall("softmax", dim).to(ATensor).newTensor()
   self: firstOrSelf(softmax_backward_data(grad, fwd_result, dim, self))
 
+autograd squeeze:
+  proc forward*(ty: TensorType; self: Tensor): Tensor = 
+    ty.dynamicCppCall("squeeze", self.tensor).to(ATensor).newTensor()
+  self: firstOrSelf(unsqueeze_to(grad, self.sizes()))
+
+autograd squeeze:
+  proc forward*(self: Tensor): Tensor = 
+    self.tensor.dynamicCppCall("squeeze").to(ATensor).newTensor()
+  self: firstOrSelf(unsqueeze_to(grad, self.sizes()))
+
+autograd squeeze:
+  proc forward*(ty: TensorType; self: Tensor; dim: int64): Tensor = 
+    ty.dynamicCppCall("squeeze", self.tensor, dim).to(ATensor).newTensor()
+  self: firstOrSelf(unsqueeze_to(grad, dim, self.sizes()))
+
+autograd squeeze:
+  proc forward*(self: Tensor; dim: int64): Tensor = 
+    self.tensor.dynamicCppCall("squeeze", dim).to(ATensor).newTensor()
+  self: firstOrSelf(unsqueeze_to(grad, dim, self.sizes()))
+
+autograd squeeze_inplace:
+  proc forward*(ty: TensorType; self: Tensor): Tensor = 
+    ty.dynamicCppCall("squeeze_", self.tensor).to(ATensor).newTensor()
+  self: firstOrSelf(unsqueeze_to(grad, self.sizes()))
+
+autograd squeeze_inplace:
+  proc forward*(self: Tensor): Tensor = 
+    self.tensor.dynamicCppCall("squeeze_").to(ATensor).newTensor()
+  self: firstOrSelf(unsqueeze_to(grad, self.sizes()))
+
+autograd squeeze_inplace:
+  proc forward*(ty: TensorType; self: Tensor; dim: int64): Tensor = 
+    ty.dynamicCppCall("squeeze_", self.tensor, dim).to(ATensor).newTensor()
+  self: firstOrSelf(unsqueeze_to(grad, dim, self.sizes()))
+
+autograd squeeze_inplace:
+  proc forward*(self: Tensor; dim: int64): Tensor = 
+    self.tensor.dynamicCppCall("squeeze_", dim).to(ATensor).newTensor()
+  self: firstOrSelf(unsqueeze_to(grad, dim, self.sizes()))
+
 autograd stack:
   proc forward*(ty: TensorType; tensors: TensorList; dim: int64 = 0): Tensor = 
     ty.dynamicCppCall("stack", tensors, dim).to(ATensor).newTensor()

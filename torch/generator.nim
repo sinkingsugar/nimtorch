@@ -92,6 +92,7 @@ const knownNames = [
   "atan2_backward",
   "split_backward",
   "split_with_sizes_backward",
+  "unsqueeze_to",
   "sizes",
   "type"]
 
@@ -478,7 +479,10 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
       block generateProc:
         var nodeIndex = 0
         for k, v in node:
-          let vStr = v.getStr().replace("at::", "") # also remove any at::prefix
+          let vStr = v.getStr()
+            .replace("at::", "") # also remove any at::prefix
+            .replace(";", "") # remove semicolons from the end of some expressions
+            
           if k == "name" or vStr.startsWith("not_implemented"):
             continue
 

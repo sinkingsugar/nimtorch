@@ -3601,29 +3601,21 @@ proc split_with_sizes*(ty: TensorType; self: Tensor; split_sizes: openarray[Some
 proc split_with_sizes*(self: Tensor; split_sizes: openarray[SomeInteger]; dim: int64 = 0): TensorList = 
   self.tensor.dynamicCppCall("split_with_sizes", split_sizes.toAIntList, dim).to(TensorList)
 
-proc squeeze*(ty: TensorType; self: Tensor): Tensor = 
-  ty.dynamicCppCall("squeeze", self.tensor).to(ATensor).newTensor()
+proc squeeze*(ty: TensorType; self: Tensor): Tensor
 
-proc squeeze*(self: Tensor): Tensor = 
-  self.tensor.dynamicCppCall("squeeze").to(ATensor).newTensor()
+proc squeeze*(self: Tensor): Tensor
 
-proc squeeze*(ty: TensorType; self: Tensor; dim: int64): Tensor = 
-  ty.dynamicCppCall("squeeze", self.tensor, dim).to(ATensor).newTensor()
+proc squeeze*(ty: TensorType; self: Tensor; dim: int64): Tensor
 
-proc squeeze*(self: Tensor; dim: int64): Tensor = 
-  self.tensor.dynamicCppCall("squeeze", dim).to(ATensor).newTensor()
+proc squeeze*(self: Tensor; dim: int64): Tensor
 
-proc squeeze_inplace*(ty: TensorType; self: Tensor): Tensor = 
-  ty.dynamicCppCall("squeeze_", self.tensor).to(ATensor).newTensor()
+proc squeeze_inplace*(ty: TensorType; self: Tensor): Tensor
 
-proc squeeze_inplace*(self: Tensor): Tensor = 
-  self.tensor.dynamicCppCall("squeeze_").to(ATensor).newTensor()
+proc squeeze_inplace*(self: Tensor): Tensor
 
-proc squeeze_inplace*(ty: TensorType; self: Tensor; dim: int64): Tensor = 
-  ty.dynamicCppCall("squeeze_", self.tensor, dim).to(ATensor).newTensor()
+proc squeeze_inplace*(ty: TensorType; self: Tensor; dim: int64): Tensor
 
-proc squeeze_inplace*(self: Tensor; dim: int64): Tensor = 
-  self.tensor.dynamicCppCall("squeeze_", dim).to(ATensor).newTensor()
+proc squeeze_inplace*(self: Tensor; dim: int64): Tensor
 
 proc sspaddmm*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
   ty.dynamicCppCall("sspaddmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()

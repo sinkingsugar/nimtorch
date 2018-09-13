@@ -67,3 +67,17 @@ proc split_backward*(grads: TensorList; split_size, dim: int; sizes: IntList; te
   var split_sizes: IntList = @[num_splits, split_size]
   split_sizes[num_splits - 1] = split_size - (split_size * num_splits - dim_size)
   result = split_with_sizes_backward(grads, split_sizes, ndim, sizes, tensorType)
+
+proc unsqueeze_to(self: Tensor; sizes: IntList): Tensor =
+  result = self
+  for dim, size in sizes:
+    if size == 1:
+      result = result.unsqueeze(dim.int64)
+
+proc unsqueeze_to(self: Tensor; dim: int64; sizes: IntList): Tensor =
+  let dim = maybe_wrap_dim(dim.int, sizes.len)
+  # in NumPy it's not an error to unsqueeze a scalar, but we still need to avoided
+  # unsqueezing in the backward.
+  if sizes.len > 0 and sizes[dim.int] == 1:
+    return self.unsqueeze(dim.int64)
+  return self
