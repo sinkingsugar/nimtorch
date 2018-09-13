@@ -53,9 +53,8 @@ proc split_with_sizes_backward*(grads: TensorList; split_sizes: IntList; dim: in
     if grad.is_defined():
       allDefinedList.add(grad)
     else:
-      let
-        length = split_sizes[i]
-        grad_size = sizes 
+      let length = split_sizes[i]
+      var grad_size = sizes 
       grad_size[dim] = length
       allDefinedList.add(torch.zeros(grad_size, tensorType))
   result = torch.cat(allDefinedList, ndim)
@@ -65,6 +64,6 @@ proc split_backward*(grads: TensorList; split_size, dim: int; sizes: IntList; te
     ndim = maybe_wrap_dim(dim, sizes.len())
     dim_size = sizes[ndim]
     num_splits = grads.len()
-    split_sizes: IntList = @[num_splits, split_size]
+  var split_sizes: IntList = @[num_splits, split_size]
   split_sizes[num_splits - 1] = split_size - (split_size * num_splits - dim_size)
   result = split_with_sizes_backward(grads, split_sizes, ndim, sizes, tensorType)

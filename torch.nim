@@ -14,7 +14,7 @@ type
   TensorType* = AType
   TensorOptions* = ATensorOptions
   TensorList* = ATensors
-  IntList* = AIntList
+  IntList* = seq[int]
   
   Device* {.pure.} = enum
     CPU, CUDA
@@ -160,25 +160,34 @@ converter toTensorList*(tensors: openarray[Tensor]): TensorList =
   for tensor in tensors:
     result.add(tensor)
 
-proc high*(v: IntList): int {.inline.} = v.size().to(int) - 1
+proc high*(v: AIntList): int {.inline.} = v.size().to(int) - 1
 
-proc len*(v: IntList): int {.inline.} = v.size().to(int)
+proc len*(v: AIntList): int {.inline.} = v.size().to(int)
 
-proc `[]`*(v: IntList; index: int): int64 {.inline.} = v.toCpp[index].to(int64)
+# proc `[]`*(v: AIntList; index: int): int64 {.inline.} = v.toCpp[index].to(int64)
 
-proc `[]=`*(v: IntList; index: int; value: int64) {.inline.} = v.toCpp[index] = value
+#proc `[]=`*(v: AIntList; index: int; value: int64) {.inline.} = v.toCpp[index] = value
 
-iterator items*(ints: IntList): int64 {.inline.} =
-  for i in 0..ints.high:
+iterator items*(ints: AIntList): int64 {.inline.} =
+  for i in 0 .. ints.high:
     yield ints[i]
 
-# ArrayRef (IntList) does not store data, so we need this magic trick
-template `@`*[IDX](a: array[IDX, SomeInteger]): IntList =
-  var res {.noinit.}: array[IDX, ilsize]
-  for i in 0..a.high:
-    res[i] = a[i].ilsize
-  # cannot use cppinit for some reasons
-  dynamicCCall("at::IntList", cast[ptr ilsize](addr(res)), res.len.csize)
+proc toIntList(self: AIntList): IntList =
+  result.setLen(self.len)
+  # TODO: copymem
+  for i in 0 ..< self.len:
+    result[i] = self[i].ilsize
+
+proc toAIntList[T: SomeInteger](self: openarray[T]): AIntList =
+  when T is ilsize:
+    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(self[0])), self.len.csize)
+    return temp
+  else:
+    var converted = newSeq[ilsize](self.len)
+    for i, value in self:
+      converted[i] = value.ilsize
+    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(converted[0])), converted.len.csize)
+    return temp
 
 # Auto generated #
 # append all the auto generated procs
@@ -309,7 +318,7 @@ proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; du
     size.add(length.ilsize)
   
   # make shape out of size
-  let shape = cppinit(AIntList, cast[ptr ilsize](addr(size[0])), size.len.csize)
+  let shape = size.toAIntList()
   
   # TODO avoid some of those copies and iterations
   
@@ -343,11 +352,14 @@ proc cuda*(a: Tensor): Tensor {.inline, noinit.} =
 proc copy*(a: Tensor; non_blocking: bool = false): Tensor {.inline, noinit.} =
   newTensor a.tensor.dynamicCppCall("type").dynamicCppCall("copy", a.tensor, non_blocking).to(ATensor)
 
-proc is_defined*(a: Tensor): bool {.inline.} = a.tensor.dynamicCppCall("defined").to(bool)
+proc is_defined*(a: Tensor): bool {.inline.} =
+  a.tensor.dynamicCppCall("defined").to(bool)
 
-proc sizes*(a: Tensor): IntList {.inline.} = a.tensor.dynamicCppCall("sizes").to(IntList)
+proc sizes*(a: Tensor): IntList {.inline.} =
+  a.tensor.dynamicCppCall("sizes").to(AIntList).toIntList()
 
-proc strides*(a: Tensor): IntList = a.tensor.dynamicCppCall("strides").to(IntList)
+proc strides*(a: Tensor): IntList =
+  a.tensor.dynamicCppCall("strides").to(AIntList).toIntList()
 
 proc `-`*(a: Tensor): Tensor {.inline, noinit.} = neg(a)
 
@@ -764,7 +776,7 @@ when isMainModule:
     echo a1.requires_grad
     a1.backward()
     print a.grad
-    
+   
   # tensor([[-0.5317, -0.4753],
   #         [-0.3930, -0.3210],
   #         [-0.7325, -0.6430]])

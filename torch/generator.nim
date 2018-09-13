@@ -248,13 +248,19 @@ block declarations:
         
         fillArgumentDefaults()
         
+        var nimInputType = nimType
+        if nimInputType == "IntList":
+          nimInputType = "openarray[SomeInteger]"
+
         var prefix = if i == 0: "" else: "; "
-        argsStr1 &= prefix & "$1: $2$3" % [argName, nimType, defaultStr]
+        argsStr1 &= prefix & "$1: $2$3" % [argName, nimInputType, defaultStr]
 
         # For tensor procs we don't add `self` parameter to the native call
         if kind != Tensor or argName != "self":
           if nimType == "Tensor":
             argsStr2 &= ", $1.tensor" % [argName]
+          elif nimType == "IntList":
+            argsStr2 &= ", $1.toAIntList" % [argName]
           else:
             argsStr2 &= ", $1" % [argName]
 
