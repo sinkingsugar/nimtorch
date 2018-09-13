@@ -461,6 +461,20 @@ autograd cross:
   self: firstOrSelf(other.cross(grad, dim))
   other: firstOrSelf(grad.cross(self, dim))
 
+autograd th_addmm:
+  proc forward*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
+    ty.dynamicCppCall("th_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+  self: firstOrSelf(maybe_multiply(grad, beta))
+  mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
+  mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
+
+autograd th_addmm:
+  proc forward*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
+    dynamicCCall("at::th_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+  self: firstOrSelf(maybe_multiply(grad, beta))
+  mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
+  mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
+
 autograd addmv_internal:
   proc forward*(ty: TensorType; self: Tensor; mat: Tensor; vec: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
     ty.dynamicCppCall("_addmv", self.tensor, mat.tensor, vec.tensor, beta, alpha).to(ATensor).newTensor()
@@ -488,6 +502,18 @@ autograd addr_internal:
   self: firstOrSelf(maybe_multiply(grad, beta))
   vec1: firstOrSelf(grad.mv(vec2) * alpha)
   vec2: firstOrSelf(grad.t().mv(vec1) * alpha)
+
+autograd mm_internal:
+  proc forward*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor = 
+    ty.dynamicCppCall("_mm", self.tensor, mat2.tensor).to(ATensor).newTensor()
+  self: firstOrSelf(mm_mat1_backward(grad, mat2, self.sizes(), self.strides(), 1))
+  mat2: firstOrSelf(mm_mat2_backward(grad, self, mat2.sizes(), mat2.strides(), 1))
+
+autograd mm_internal:
+  proc forward*(self: Tensor; mat2: Tensor): Tensor = 
+    self.tensor.dynamicCppCall("_mm", mat2.tensor).to(ATensor).newTensor()
+  self: firstOrSelf(mm_mat1_backward(grad, mat2, self.sizes(), self.strides(), 1))
+  mat2: firstOrSelf(mm_mat2_backward(grad, self, mat2.sizes(), mat2.strides(), 1))
 
 autograd bmm:
   proc forward*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor = 
@@ -2318,6 +2344,20 @@ autograd sub:
   proc forward*(self: Tensor; other: float; alpha: float = 1): Tensor = 
     self.tensor.dynamicCppCall("sub", other, alpha).to(ATensor).newTensor()
   self: firstOrSelf(grad)
+
+autograd s_native_addmm:
+  proc forward*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
+    ty.dynamicCppCall("s_native_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+  self: firstOrSelf(maybe_multiply(grad, beta))
+  mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
+  mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
+
+autograd s_native_addmm:
+  proc forward*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor = 
+    dynamicCCall("at::s_native_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+  self: firstOrSelf(maybe_multiply(grad, beta))
+  mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
+  mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
 
 autograd thnn_fused_gru_cell_internal:
   proc forward*(ty: TensorType; input_gates: Tensor; hidden_gates: Tensor; hx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor] = 

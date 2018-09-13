@@ -94,6 +94,7 @@ const knownNames = [
   "split_with_sizes_backward",
   "unsqueeze_to",
   "sizes",
+  "strides",
   "type"]
 
 for knownName in knownNames:
@@ -482,7 +483,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           let vStr = v.getStr()
             .replace("at::", "") # also remove any at::prefix
             .replace(";", "") # remove semicolons from the end of some expressions
-            
+
           if k == "name" or vStr.startsWith("not_implemented"):
             continue
 
