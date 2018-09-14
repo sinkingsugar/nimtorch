@@ -38,12 +38,12 @@ autograd masked_select:
 
 autograd view:
   proc forward*(ty: TensorType; self: Tensor; size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("view", self.tensor, size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("view", self.tensor, size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.reshape(self.sizes()))
 
 autograd view:
   proc forward*(self: Tensor; size: openarray[SomeInteger]): Tensor = 
-    self.tensor.dynamicCppCall("view", size.toAIntList).to(ATensor).newTensor()
+    self.tensor.dynamicCppCall("view", size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.reshape(self.sizes()))
 
 autograd take:
@@ -999,12 +999,12 @@ autograd threshold_inplace:
 
 autograd adaptive_avg_pool2d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("adaptive_avg_pool2d_forward", self.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("adaptive_avg_pool2d_forward", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(adaptive_avg_pool2d_backward(grad, self))
 
 autograd adaptive_avg_pool2d:
   proc forward*(self: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::adaptive_avg_pool2d_forward", self.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::adaptive_avg_pool2d_forward", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(adaptive_avg_pool2d_backward(grad, self))
 
 autograd adaptive_avg_pool2d_backward:
@@ -1021,12 +1021,12 @@ autograd adaptive_avg_pool2d_backward:
 
 autograd adaptive_avg_pool3d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("adaptive_avg_pool3d_forward", self.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("adaptive_avg_pool3d_forward", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(adaptive_avg_pool3d_backward(grad, self))
 
 autograd adaptive_avg_pool3d:
   proc forward*(self: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::adaptive_avg_pool3d_forward", self.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::adaptive_avg_pool3d_forward", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(adaptive_avg_pool3d_backward(grad, self))
 
 autograd adaptive_avg_pool3d_backward:
@@ -1043,358 +1043,358 @@ autograd adaptive_avg_pool3d_backward:
 
 autograd adaptive_max_pool2d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[SomeInteger]): tuple[output: Tensor, indices: Tensor] = 
-    ty.dynamicCppCall("adaptive_max_pool2d_forward", self.tensor, output_size.toAIntList).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("adaptive_max_pool2d_forward", self.tensor, output_size.toAIntList()).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: firstOrSelf(adaptive_max_pool2d_backward(grad, self, fwd_result.indices))
 
 autograd adaptive_max_pool2d:
   proc forward*(self: Tensor; output_size: openarray[SomeInteger]): tuple[output: Tensor, indices: Tensor] = 
-    dynamicCCall("at::adaptive_max_pool2d_forward", self.tensor, output_size.toAIntList).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::adaptive_max_pool2d_forward", self.tensor, output_size.toAIntList()).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: firstOrSelf(adaptive_max_pool2d_backward(grad, self, fwd_result.indices))
 
 autograd adaptive_max_pool3d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[SomeInteger]): tuple[output: Tensor, indices: Tensor] = 
-    ty.dynamicCppCall("adaptive_max_pool3d_forward", self.tensor, output_size.toAIntList).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("adaptive_max_pool3d_forward", self.tensor, output_size.toAIntList()).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: firstOrSelf(adaptive_max_pool3d_backward(grad, self, fwd_result.indices))
 
 autograd adaptive_max_pool3d:
   proc forward*(self: Tensor; output_size: openarray[SomeInteger]): tuple[output: Tensor, indices: Tensor] = 
-    dynamicCCall("at::adaptive_max_pool3d_forward", self.tensor, output_size.toAIntList).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::adaptive_max_pool3d_forward", self.tensor, output_size.toAIntList()).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: firstOrSelf(adaptive_max_pool3d_backward(grad, self, fwd_result.indices))
 
 autograd avg_pool2d:
   proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; ceil_mode: bool; count_include_pad: bool): Tensor = 
-    ty.dynamicCppCall("avg_pool2d_forward", self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, ceil_mode, count_include_pad).to(ATensor).newTensor()
+    ty.dynamicCppCall("avg_pool2d_forward", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), ceil_mode, count_include_pad).to(ATensor).newTensor()
   self: firstOrSelf(avg_pool2d_backward(grad, self, kernel_size, stride, padding, ceil_mode, count_include_pad))
 
 autograd avg_pool2d:
   proc forward*(self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; ceil_mode: bool; count_include_pad: bool): Tensor = 
-    dynamicCCall("at::avg_pool2d_forward", self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, ceil_mode, count_include_pad).to(ATensor).newTensor()
+    dynamicCCall("at::avg_pool2d_forward", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), ceil_mode, count_include_pad).to(ATensor).newTensor()
   self: firstOrSelf(avg_pool2d_backward(grad, self, kernel_size, stride, padding, ceil_mode, count_include_pad))
 
 autograd avg_pool2d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; ceil_mode: bool; count_include_pad: bool): Tensor = 
-    ty.dynamicCppCall("avg_pool2d_backward", grad_output.tensor, self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, ceil_mode, count_include_pad).to(ATensor).newTensor()
+    ty.dynamicCppCall("avg_pool2d_backward", grad_output.tensor, self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), ceil_mode, count_include_pad).to(ATensor).newTensor()
   grad_output: firstOrSelf(avg_pool2d(grad, kernel_size, stride, padding, ceil_mode, count_include_pad))
   self: firstOrSelf(zeros_like(self))
 
 autograd avg_pool2d_backward:
   proc forward*(grad_output: Tensor; self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; ceil_mode: bool; count_include_pad: bool): Tensor = 
-    dynamicCCall("at::avg_pool2d_backward", grad_output.tensor, self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, ceil_mode, count_include_pad).to(ATensor).newTensor()
+    dynamicCCall("at::avg_pool2d_backward", grad_output.tensor, self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), ceil_mode, count_include_pad).to(ATensor).newTensor()
   grad_output: firstOrSelf(avg_pool2d(grad, kernel_size, stride, padding, ceil_mode, count_include_pad))
   self: firstOrSelf(zeros_like(self))
 
 autograd avg_pool3d:
   proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; ceil_mode: bool; count_include_pad: bool): Tensor = 
-    ty.dynamicCppCall("avg_pool3d_forward", self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, ceil_mode, count_include_pad).to(ATensor).newTensor()
+    ty.dynamicCppCall("avg_pool3d_forward", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), ceil_mode, count_include_pad).to(ATensor).newTensor()
   self: firstOrSelf(avg_pool3d_backward(grad, self, kernel_size, stride, padding, ceil_mode, count_include_pad))
 
 autograd avg_pool3d:
   proc forward*(self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; ceil_mode: bool; count_include_pad: bool): Tensor = 
-    dynamicCCall("at::avg_pool3d_forward", self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, ceil_mode, count_include_pad).to(ATensor).newTensor()
+    dynamicCCall("at::avg_pool3d_forward", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), ceil_mode, count_include_pad).to(ATensor).newTensor()
   self: firstOrSelf(avg_pool3d_backward(grad, self, kernel_size, stride, padding, ceil_mode, count_include_pad))
 
 autograd avg_pool3d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; ceil_mode: bool; count_include_pad: bool): Tensor = 
-    ty.dynamicCppCall("avg_pool3d_backward", grad_output.tensor, self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, ceil_mode, count_include_pad).to(ATensor).newTensor()
+    ty.dynamicCppCall("avg_pool3d_backward", grad_output.tensor, self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), ceil_mode, count_include_pad).to(ATensor).newTensor()
   grad_output: firstOrSelf(avg_pool3d(grad, kernel_size, stride, padding, ceil_mode, count_include_pad))
   self: firstOrSelf(zeros_like(self))
 
 autograd avg_pool3d_backward:
   proc forward*(grad_output: Tensor; self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; ceil_mode: bool; count_include_pad: bool): Tensor = 
-    dynamicCCall("at::avg_pool3d_backward", grad_output.tensor, self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, ceil_mode, count_include_pad).to(ATensor).newTensor()
+    dynamicCCall("at::avg_pool3d_backward", grad_output.tensor, self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), ceil_mode, count_include_pad).to(ATensor).newTensor()
   grad_output: firstOrSelf(avg_pool3d(grad, kernel_size, stride, padding, ceil_mode, count_include_pad))
   self: firstOrSelf(zeros_like(self))
 
 autograd fractional_max_pool2d:
   proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[SomeInteger]; output_size: openarray[SomeInteger]; random_samples: Tensor): tuple[output: Tensor, indices: Tensor] = 
-    ty.dynamicCppCall("fractional_max_pool2d_forward", self.tensor, kernel_size.toAIntList, output_size.toAIntList, random_samples.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("fractional_max_pool2d_forward", self.tensor, kernel_size.toAIntList(), output_size.toAIntList(), random_samples.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: firstOrSelf(fractional_max_pool2d_backward(grad, self, kernel_size, output_size, fwd_result.indices))
 
 autograd fractional_max_pool2d:
   proc forward*(self: Tensor; kernel_size: openarray[SomeInteger]; output_size: openarray[SomeInteger]; random_samples: Tensor): tuple[output: Tensor, indices: Tensor] = 
-    dynamicCCall("at::fractional_max_pool2d_forward", self.tensor, kernel_size.toAIntList, output_size.toAIntList, random_samples.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::fractional_max_pool2d_forward", self.tensor, kernel_size.toAIntList(), output_size.toAIntList(), random_samples.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: firstOrSelf(fractional_max_pool2d_backward(grad, self, kernel_size, output_size, fwd_result.indices))
 
 autograd max_pool2d_with_indices:
   proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]; ceil_mode: bool): tuple[output: Tensor, indices: Tensor] = 
-    ty.dynamicCppCall("max_pool2d_with_indices_forward", self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, dilation.toAIntList, ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("max_pool2d_with_indices_forward", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: firstOrSelf(max_pool2d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices))
 
 autograd max_pool2d_with_indices:
   proc forward*(self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]; ceil_mode: bool): tuple[output: Tensor, indices: Tensor] = 
-    dynamicCCall("at::max_pool2d_with_indices_forward", self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, dilation.toAIntList, ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::max_pool2d_with_indices_forward", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: firstOrSelf(max_pool2d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices))
 
 autograd max_pool3d_with_indices:
   proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]; ceil_mode: bool): tuple[output: Tensor, indices: Tensor] = 
-    ty.dynamicCppCall("max_pool3d_with_indices_forward", self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, dilation.toAIntList, ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("max_pool3d_with_indices_forward", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: firstOrSelf(max_pool3d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices))
 
 autograd max_pool3d_with_indices:
   proc forward*(self: Tensor; kernel_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]; ceil_mode: bool): tuple[output: Tensor, indices: Tensor] = 
-    dynamicCCall("at::max_pool3d_with_indices_forward", self.tensor, kernel_size.toAIntList, stride.toAIntList, padding.toAIntList, dilation.toAIntList, ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::max_pool3d_with_indices_forward", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   self: firstOrSelf(max_pool3d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices))
 
 autograd max_unpool2d:
   proc forward*(ty: TensorType; self: Tensor; indices: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("max_unpool2d_forward", self.tensor, indices.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("max_unpool2d_forward", self.tensor, indices.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(max_unpool2d_backward(grad, self, indices, output_size))
 
 autograd max_unpool2d:
   proc forward*(self: Tensor; indices: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::max_unpool2d_forward", self.tensor, indices.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::max_unpool2d_forward", self.tensor, indices.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(max_unpool2d_backward(grad, self, indices, output_size))
 
 autograd max_unpool2d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; self: Tensor; indices: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("max_unpool2d_backward", grad_output.tensor, self.tensor, indices.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("max_unpool2d_backward", grad_output.tensor, self.tensor, indices.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(max_unpool2d(grad, indices, output_size))
   self: firstOrSelf(zeros_like(self))
 
 autograd max_unpool2d_backward:
   proc forward*(grad_output: Tensor; self: Tensor; indices: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::max_unpool2d_backward", grad_output.tensor, self.tensor, indices.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::max_unpool2d_backward", grad_output.tensor, self.tensor, indices.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(max_unpool2d(grad, indices, output_size))
   self: firstOrSelf(zeros_like(self))
 
 autograd max_unpool3d:
   proc forward*(ty: TensorType; self: Tensor; indices: Tensor; output_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("max_unpool3d_forward", self.tensor, indices.tensor, output_size.toAIntList, stride.toAIntList, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("max_unpool3d_forward", self.tensor, indices.tensor, output_size.toAIntList(), stride.toAIntList(), padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(max_unpool3d_backward(grad, self, indices, output_size, stride, padding))
 
 autograd max_unpool3d:
   proc forward*(self: Tensor; indices: Tensor; output_size: openarray[SomeInteger]; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::max_unpool3d_forward", self.tensor, indices.tensor, output_size.toAIntList, stride.toAIntList, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::max_unpool3d_forward", self.tensor, indices.tensor, output_size.toAIntList(), stride.toAIntList(), padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(max_unpool3d_backward(grad, self, indices, output_size, stride, padding))
 
 autograd reflection_pad1d:
   proc forward*(ty: TensorType; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("reflection_pad1d_forward", self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("reflection_pad1d_forward", self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(reflection_pad1d_backward(grad, self, padding))
 
 autograd reflection_pad1d:
   proc forward*(self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::reflection_pad1d_forward", self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::reflection_pad1d_forward", self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(reflection_pad1d_backward(grad, self, padding))
 
 autograd reflection_pad1d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("reflection_pad1d_backward", grad_output.tensor, self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("reflection_pad1d_backward", grad_output.tensor, self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(reflection_pad1d(grad, padding))
   self: firstOrSelf(zeros_like(self))
 
 autograd reflection_pad1d_backward:
   proc forward*(grad_output: Tensor; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::reflection_pad1d_backward", grad_output.tensor, self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::reflection_pad1d_backward", grad_output.tensor, self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(reflection_pad1d(grad, padding))
   self: firstOrSelf(zeros_like(self))
 
 autograd reflection_pad2d:
   proc forward*(ty: TensorType; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("reflection_pad2d_forward", self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("reflection_pad2d_forward", self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(reflection_pad2d_backward(grad, self, padding))
 
 autograd reflection_pad2d:
   proc forward*(self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::reflection_pad2d_forward", self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::reflection_pad2d_forward", self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(reflection_pad2d_backward(grad, self, padding))
 
 autograd reflection_pad2d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("reflection_pad2d_backward", grad_output.tensor, self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("reflection_pad2d_backward", grad_output.tensor, self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(reflection_pad2d(grad, padding))
   self: firstOrSelf(zeros_like(self))
 
 autograd reflection_pad2d_backward:
   proc forward*(grad_output: Tensor; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::reflection_pad2d_backward", grad_output.tensor, self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::reflection_pad2d_backward", grad_output.tensor, self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(reflection_pad2d(grad, padding))
   self: firstOrSelf(zeros_like(self))
 
 autograd replication_pad1d:
   proc forward*(ty: TensorType; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("replication_pad1d_forward", self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("replication_pad1d_forward", self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(replication_pad1d_backward(grad, self, padding))
 
 autograd replication_pad1d:
   proc forward*(self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::replication_pad1d_forward", self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::replication_pad1d_forward", self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(replication_pad1d_backward(grad, self, padding))
 
 autograd replication_pad1d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("replication_pad1d_backward", grad_output.tensor, self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("replication_pad1d_backward", grad_output.tensor, self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(replication_pad1d(grad, padding))
   self: firstOrSelf(zeros_like(self))
 
 autograd replication_pad1d_backward:
   proc forward*(grad_output: Tensor; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::replication_pad1d_backward", grad_output.tensor, self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::replication_pad1d_backward", grad_output.tensor, self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(replication_pad1d(grad, padding))
   self: firstOrSelf(zeros_like(self))
 
 autograd replication_pad2d:
   proc forward*(ty: TensorType; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("replication_pad2d_forward", self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("replication_pad2d_forward", self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(replication_pad2d_backward(grad, self, padding))
 
 autograd replication_pad2d:
   proc forward*(self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::replication_pad2d_forward", self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::replication_pad2d_forward", self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(replication_pad2d_backward(grad, self, padding))
 
 autograd replication_pad2d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("replication_pad2d_backward", grad_output.tensor, self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("replication_pad2d_backward", grad_output.tensor, self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(replication_pad2d(grad, padding))
   self: firstOrSelf(zeros_like(self))
 
 autograd replication_pad2d_backward:
   proc forward*(grad_output: Tensor; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::replication_pad2d_backward", grad_output.tensor, self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::replication_pad2d_backward", grad_output.tensor, self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(replication_pad2d(grad, padding))
   self: firstOrSelf(zeros_like(self))
 
 autograd replication_pad3d:
   proc forward*(ty: TensorType; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("replication_pad3d_forward", self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("replication_pad3d_forward", self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(replication_pad3d_backward(grad, self, padding))
 
 autograd replication_pad3d:
   proc forward*(self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::replication_pad3d_forward", self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::replication_pad3d_forward", self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(replication_pad3d_backward(grad, self, padding))
 
 autograd replication_pad3d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("replication_pad3d_backward", grad_output.tensor, self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("replication_pad3d_backward", grad_output.tensor, self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(replication_pad3d(grad, padding))
   self: firstOrSelf(zeros_like(self))
 
 autograd replication_pad3d_backward:
   proc forward*(grad_output: Tensor; self: Tensor; padding: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::replication_pad3d_backward", grad_output.tensor, self.tensor, padding.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::replication_pad3d_backward", grad_output.tensor, self.tensor, padding.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(replication_pad3d(grad, padding))
   self: firstOrSelf(zeros_like(self))
 
 autograd upsample_linear1d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    ty.dynamicCppCall("upsample_linear1d_forward", self.tensor, output_size.toAIntList, align_corners).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_linear1d_forward", self.tensor, output_size.toAIntList(), align_corners).to(ATensor).newTensor()
   self: firstOrSelf(upsample_linear1d_backward(grad, output_size, self.sizes(), align_corners))
 
 autograd upsample_linear1d:
   proc forward*(self: Tensor; output_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    dynamicCCall("at::upsample_linear1d_forward", self.tensor, output_size.toAIntList, align_corners).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_linear1d_forward", self.tensor, output_size.toAIntList(), align_corners).to(ATensor).newTensor()
   self: firstOrSelf(upsample_linear1d_backward(grad, output_size, self.sizes(), align_corners))
 
 autograd upsample_linear1d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    ty.dynamicCppCall("upsample_linear1d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList, align_corners).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_linear1d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList(), align_corners).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_linear1d(grad, output_size, align_corners))
 
 autograd upsample_linear1d_backward:
   proc forward*(grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    dynamicCCall("at::upsample_linear1d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList, align_corners).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_linear1d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList(), align_corners).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_linear1d(grad, output_size, align_corners))
 
 autograd upsample_bilinear2d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    ty.dynamicCppCall("upsample_bilinear2d_forward", self.tensor, output_size.toAIntList, align_corners).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_bilinear2d_forward", self.tensor, output_size.toAIntList(), align_corners).to(ATensor).newTensor()
   self: firstOrSelf(upsample_bilinear2d_backward(grad, output_size, self.sizes(), align_corners))
 
 autograd upsample_bilinear2d:
   proc forward*(self: Tensor; output_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    dynamicCCall("at::upsample_bilinear2d_forward", self.tensor, output_size.toAIntList, align_corners).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_bilinear2d_forward", self.tensor, output_size.toAIntList(), align_corners).to(ATensor).newTensor()
   self: firstOrSelf(upsample_bilinear2d_backward(grad, output_size, self.sizes(), align_corners))
 
 autograd upsample_bilinear2d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    ty.dynamicCppCall("upsample_bilinear2d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList, align_corners).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_bilinear2d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList(), align_corners).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_bilinear2d(grad, output_size, align_corners))
 
 autograd upsample_bilinear2d_backward:
   proc forward*(grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    dynamicCCall("at::upsample_bilinear2d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList, align_corners).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_bilinear2d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList(), align_corners).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_bilinear2d(grad, output_size, align_corners))
 
 autograd upsample_trilinear3d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    ty.dynamicCppCall("upsample_trilinear3d_forward", self.tensor, output_size.toAIntList, align_corners).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_trilinear3d_forward", self.tensor, output_size.toAIntList(), align_corners).to(ATensor).newTensor()
   self: firstOrSelf(upsample_trilinear3d_backward(grad, output_size, self.sizes(), align_corners))
 
 autograd upsample_trilinear3d:
   proc forward*(self: Tensor; output_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    dynamicCCall("at::upsample_trilinear3d_forward", self.tensor, output_size.toAIntList, align_corners).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_trilinear3d_forward", self.tensor, output_size.toAIntList(), align_corners).to(ATensor).newTensor()
   self: firstOrSelf(upsample_trilinear3d_backward(grad, output_size, self.sizes(), align_corners))
 
 autograd upsample_trilinear3d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    ty.dynamicCppCall("upsample_trilinear3d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList, align_corners).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_trilinear3d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList(), align_corners).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_trilinear3d(grad, output_size, align_corners))
 
 autograd upsample_trilinear3d_backward:
   proc forward*(grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]; align_corners: bool): Tensor = 
-    dynamicCCall("at::upsample_trilinear3d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList, align_corners).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_trilinear3d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList(), align_corners).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_trilinear3d(grad, output_size, align_corners))
 
 autograd upsample_nearest1d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("upsample_nearest1d_forward", self.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_nearest1d_forward", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(upsample_nearest1d_backward(grad, output_size, self.sizes()))
 
 autograd upsample_nearest1d:
   proc forward*(self: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::upsample_nearest1d_forward", self.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_nearest1d_forward", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(upsample_nearest1d_backward(grad, output_size, self.sizes()))
 
 autograd upsample_nearest1d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("upsample_nearest1d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_nearest1d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_nearest1d(grad, output_size))
 
 autograd upsample_nearest1d_backward:
   proc forward*(grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::upsample_nearest1d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_nearest1d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_nearest1d(grad, output_size))
 
 autograd upsample_nearest2d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("upsample_nearest2d_forward", self.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_nearest2d_forward", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(upsample_nearest2d_backward(grad, output_size, self.sizes()))
 
 autograd upsample_nearest2d:
   proc forward*(self: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::upsample_nearest2d_forward", self.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_nearest2d_forward", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(upsample_nearest2d_backward(grad, output_size, self.sizes()))
 
 autograd upsample_nearest2d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("upsample_nearest2d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_nearest2d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_nearest2d(grad, output_size))
 
 autograd upsample_nearest2d_backward:
   proc forward*(grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::upsample_nearest2d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_nearest2d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_nearest2d(grad, output_size))
 
 autograd upsample_nearest3d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("upsample_nearest3d_forward", self.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_nearest3d_forward", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(upsample_nearest3d_backward(grad, output_size, self.sizes()))
 
 autograd upsample_nearest3d:
   proc forward*(self: Tensor; output_size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::upsample_nearest3d_forward", self.tensor, output_size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_nearest3d_forward", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(upsample_nearest3d_backward(grad, output_size, self.sizes()))
 
 autograd upsample_nearest3d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("upsample_nearest3d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("upsample_nearest3d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_nearest3d(grad, output_size))
 
 autograd upsample_nearest3d_backward:
   proc forward*(grad_output: Tensor; output_size: openarray[SomeInteger]; input_size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::upsample_nearest3d_backward", grad_output.tensor, output_size.toAIntList, input_size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::upsample_nearest3d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_nearest3d(grad, output_size))
 
 autograd sigmoid_backward_internal:
@@ -1433,84 +1433,84 @@ autograd thnn_batch_norm:
 
 autograd thnn_conv_transpose2d:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; output_padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): tuple[output: Tensor, columns: Tensor, ones: Tensor] = 
-    ty.dynamicCppCall("thnn_conv_transpose2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList, output_padding.toAIntList, dilation.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("thnn_conv_transpose2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
 
 autograd thnn_conv_transpose2d:
   proc forward*(self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; output_padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): tuple[output: Tensor, columns: Tensor, ones: Tensor] = 
-    dynamicCCall("at::thnn_conv_transpose2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList, output_padding.toAIntList, dilation.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::thnn_conv_transpose2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv_transpose2d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
 
 autograd thnn_conv_transpose3d:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; output_padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] = 
-    ty.dynamicCppCall("thnn_conv_transpose3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList, output_padding.toAIntList, dilation.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("thnn_conv_transpose3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
 
 autograd thnn_conv_transpose3d:
   proc forward*(self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; output_padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] = 
-    dynamicCCall("at::thnn_conv_transpose3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList, output_padding.toAIntList, dilation.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::thnn_conv_transpose3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv_transpose3d_backward(grad, self, weight, kernel_size, stride, padding, output_padding, dilation, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
 
 autograd thnn_conv2d:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] = 
-    ty.dynamicCppCall("thnn_conv2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("thnn_conv2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
 
 autograd thnn_conv2d:
   proc forward*(self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] = 
-    dynamicCCall("at::thnn_conv2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::thnn_conv2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv2d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
 
 autograd thnn_conv_depthwise2d:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("thnn_conv_depthwise2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList, dilation.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("thnn_conv_depthwise2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(ATensor).newTensor()
   (self, weight): thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
   bias: firstOrSelf(grad.contiguous().view(@[grad.size(0), grad.size(1), -1]).sum(0).sum(1))
 
 autograd thnn_conv_depthwise2d:
   proc forward*(self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::thnn_conv_depthwise2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList, dilation.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::thnn_conv_depthwise2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(ATensor).newTensor()
   (self, weight): thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
   bias: firstOrSelf(grad.contiguous().view(@[grad.size(0), grad.size(1), -1]).sum(0).sum(1))
 
 autograd thnn_conv3d:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] = 
-    ty.dynamicCppCall("thnn_conv3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("thnn_conv3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
 
 autograd thnn_conv3d:
   proc forward*(self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] = 
-    dynamicCCall("at::thnn_conv3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::thnn_conv3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv3d_backward(grad, self, weight, kernel_size, stride, padding, fwd_result.finput, fwd_result.fgrad_input, grad_input_mask)
 
 autograd thnn_conv_dilated2d:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): tuple[output: Tensor, columns: Tensor, ones: Tensor] = 
-    ty.dynamicCppCall("thnn_conv_dilated2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList, dilation.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("thnn_conv_dilated2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
 
 autograd thnn_conv_dilated2d:
   proc forward*(self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): tuple[output: Tensor, columns: Tensor, ones: Tensor] = 
-    dynamicCCall("at::thnn_conv_dilated2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList, dilation.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::thnn_conv_dilated2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv_dilated2d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
 
 autograd thnn_conv_dilated3d:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): tuple[output: Tensor, columns: Tensor, ones: Tensor] = 
-    ty.dynamicCppCall("thnn_conv_dilated3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList, dilation.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("thnn_conv_dilated3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
 
 autograd thnn_conv_dilated3d:
   proc forward*(self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): tuple[output: Tensor, columns: Tensor, ones: Tensor] = 
-    dynamicCCall("at::thnn_conv_dilated3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList, bias.tensor, stride.toAIntList, padding.toAIntList, dilation.toAIntList).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::thnn_conv_dilated3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
 
 autograd cudnn_ctc_loss_internal:
   proc forward*(ty: TensorType; log_probs: Tensor; targets: Tensor; input_lengths: openarray[SomeInteger]; target_lengths: openarray[SomeInteger]; blank: int64; deterministic: bool): tuple[result0: Tensor, result1: Tensor] = 
-    ty.dynamicCppCall("_cudnn_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList, target_lengths.toAIntList, blank, deterministic).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("_cudnn_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList(), target_lengths.toAIntList(), blank, deterministic).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   log_probs: firstOrSelf(fwd_result[1])
 
 autograd cudnn_ctc_loss_internal:
   proc forward*(log_probs: Tensor; targets: Tensor; input_lengths: openarray[SomeInteger]; target_lengths: openarray[SomeInteger]; blank: int64; deterministic: bool): tuple[result0: Tensor, result1: Tensor] = 
-    dynamicCCall("at::_cudnn_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList, target_lengths.toAIntList, blank, deterministic).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::_cudnn_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList(), target_lengths.toAIntList(), blank, deterministic).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   log_probs: firstOrSelf(fwd_result[1])
 
 autograd abs:
@@ -1584,6 +1584,16 @@ autograd bernoulli:
   proc forward*(self: Tensor; p: float64; generator: pointer = nil): Tensor = 
     self.tensor.dynamicCppCall("bernoulli", p, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
+
+autograd cat:
+  proc forward*(ty: TensorType; tensors: openarray[Tensor]; dim: int64 = 0): Tensor = 
+    ty.dynamicCppCall("cat", tensors.toATensors(), dim).to(ATensor).newTensor()
+  tensors: firstOrSelf(cat_tensors_backward(grad, to_args_sizes(tensors), dim))
+
+autograd cat:
+  proc forward*(tensors: openarray[Tensor]; dim: int64 = 0): Tensor = 
+    dynamicCCall("at::cat", tensors.toATensors(), dim).to(ATensor).newTensor()
+  tensors: firstOrSelf(cat_tensors_backward(grad, to_args_sizes(tensors), dim))
 
 autograd ceil:
   proc forward*(ty: TensorType; self: Tensor): Tensor = 
@@ -1667,22 +1677,22 @@ autograd cudnn_batch_norm:
 
 autograd cudnn_convolution:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; bias: Tensor; padding: openarray[SomeInteger]; stride: openarray[SomeInteger]; dilation: openarray[SomeInteger]; groups: int64; benchmark: bool; deterministic: bool): Tensor = 
-    ty.dynamicCppCall("cudnn_convolution", self.tensor, weight.tensor, bias.tensor, padding.toAIntList, stride.toAIntList, dilation.toAIntList, groups, benchmark, deterministic).to(ATensor).newTensor()
+    ty.dynamicCppCall("cudnn_convolution", self.tensor, weight.tensor, bias.tensor, padding.toAIntList(), stride.toAIntList(), dilation.toAIntList(), groups, benchmark, deterministic).to(ATensor).newTensor()
   (self, weight, bias): cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
 
 autograd cudnn_convolution:
   proc forward*(self: Tensor; weight: Tensor; bias: Tensor; padding: openarray[SomeInteger]; stride: openarray[SomeInteger]; dilation: openarray[SomeInteger]; groups: int64; benchmark: bool; deterministic: bool): Tensor = 
-    dynamicCCall("at::cudnn_convolution", self.tensor, weight.tensor, bias.tensor, padding.toAIntList, stride.toAIntList, dilation.toAIntList, groups, benchmark, deterministic).to(ATensor).newTensor()
+    dynamicCCall("at::cudnn_convolution", self.tensor, weight.tensor, bias.tensor, padding.toAIntList(), stride.toAIntList(), dilation.toAIntList(), groups, benchmark, deterministic).to(ATensor).newTensor()
   (self, weight, bias): cudnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
 
 autograd cudnn_convolution_transpose:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; bias: Tensor; padding: openarray[SomeInteger]; output_padding: openarray[SomeInteger]; stride: openarray[SomeInteger]; dilation: openarray[SomeInteger]; groups: int64; benchmark: bool; deterministic: bool): Tensor = 
-    ty.dynamicCppCall("cudnn_convolution_transpose", self.tensor, weight.tensor, bias.tensor, padding.toAIntList, output_padding.toAIntList, stride.toAIntList, dilation.toAIntList, groups, benchmark, deterministic).to(ATensor).newTensor()
+    ty.dynamicCppCall("cudnn_convolution_transpose", self.tensor, weight.tensor, bias.tensor, padding.toAIntList(), output_padding.toAIntList(), stride.toAIntList(), dilation.toAIntList(), groups, benchmark, deterministic).to(ATensor).newTensor()
   (self, weight, bias): cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
 
 autograd cudnn_convolution_transpose:
   proc forward*(self: Tensor; weight: Tensor; bias: Tensor; padding: openarray[SomeInteger]; output_padding: openarray[SomeInteger]; stride: openarray[SomeInteger]; dilation: openarray[SomeInteger]; groups: int64; benchmark: bool; deterministic: bool): Tensor = 
-    dynamicCCall("at::cudnn_convolution_transpose", self.tensor, weight.tensor, bias.tensor, padding.toAIntList, output_padding.toAIntList, stride.toAIntList, dilation.toAIntList, groups, benchmark, deterministic).to(ATensor).newTensor()
+    dynamicCCall("at::cudnn_convolution_transpose", self.tensor, weight.tensor, bias.tensor, padding.toAIntList(), output_padding.toAIntList(), stride.toAIntList(), dilation.toAIntList(), groups, benchmark, deterministic).to(ATensor).newTensor()
   (self, weight, bias): cudnn_convolution_transpose_backward(self, grad, weight, padding, output_padding, stride, dilation, groups, benchmark, deterministic, grad_input_mask)
 
 autograd cudnn_grid_sampler:
@@ -1697,12 +1707,12 @@ autograd cudnn_grid_sampler:
 
 autograd ctc_loss_internal:
   proc forward*(ty: TensorType; log_probs: Tensor; targets: Tensor; input_lengths: openarray[SomeInteger]; target_lengths: openarray[SomeInteger]; blank: int64 = 0): tuple[result0: Tensor, result1: Tensor] = 
-    ty.dynamicCppCall("_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList, target_lengths.toAIntList, blank).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    ty.dynamicCppCall("_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList(), target_lengths.toAIntList(), blank).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   log_probs: firstOrSelf(ctc_loss_backward_internal(grad, log_probs, targets, input_lengths, target_lengths, fwd_result[0], fwd_result[1], blank))
 
 autograd ctc_loss_internal:
   proc forward*(log_probs: Tensor; targets: Tensor; input_lengths: openarray[SomeInteger]; target_lengths: openarray[SomeInteger]; blank: int64 = 0): tuple[result0: Tensor, result1: Tensor] = 
-    dynamicCCall("at::_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList, target_lengths.toAIntList, blank).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+    dynamicCCall("at::_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList(), target_lengths.toAIntList(), blank).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   log_probs: firstOrSelf(ctc_loss_backward_internal(grad, log_probs, targets, input_lengths, target_lengths, fwd_result[0], fwd_result[1], blank))
 
 autograd div_name:
@@ -1937,12 +1947,12 @@ autograd mean:
 
 autograd mkldnn_convolution:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; bias: Tensor; padding: openarray[SomeInteger]; stride: openarray[SomeInteger]; dilation: openarray[SomeInteger]; groups: int64): Tensor = 
-    ty.dynamicCppCall("mkldnn_convolution", self.tensor, weight.tensor, bias.tensor, padding.toAIntList, stride.toAIntList, dilation.toAIntList, groups).to(ATensor).newTensor()
+    ty.dynamicCppCall("mkldnn_convolution", self.tensor, weight.tensor, bias.tensor, padding.toAIntList(), stride.toAIntList(), dilation.toAIntList(), groups).to(ATensor).newTensor()
   (self, weight, bias): mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
 
 autograd mkldnn_convolution:
   proc forward*(self: Tensor; weight: Tensor; bias: Tensor; padding: openarray[SomeInteger]; stride: openarray[SomeInteger]; dilation: openarray[SomeInteger]; groups: int64): Tensor = 
-    dynamicCCall("at::mkldnn_convolution", self.tensor, weight.tensor, bias.tensor, padding.toAIntList, stride.toAIntList, dilation.toAIntList, groups).to(ATensor).newTensor()
+    dynamicCCall("at::mkldnn_convolution", self.tensor, weight.tensor, bias.tensor, padding.toAIntList(), stride.toAIntList(), dilation.toAIntList(), groups).to(ATensor).newTensor()
   (self, weight, bias): mkldnn_convolution_backward(self, grad, weight, padding, stride, dilation, groups, grad_input_mask)
 
 autograd mul:
@@ -2122,13 +2132,13 @@ autograd squeeze_inplace:
   self: firstOrSelf(unsqueeze_to(grad, dim, self.sizes()))
 
 autograd stack:
-  proc forward*(ty: TensorType; tensors: TensorList; dim: int64 = 0): Tensor = 
-    ty.dynamicCppCall("stack", tensors, dim).to(ATensor).newTensor()
+  proc forward*(ty: TensorType; tensors: openarray[Tensor]; dim: int64 = 0): Tensor = 
+    ty.dynamicCppCall("stack", tensors.toATensors(), dim).to(ATensor).newTensor()
   tensors: firstOrSelf(unbind(grad, dim))
 
 autograd stack:
-  proc forward*(tensors: TensorList; dim: int64 = 0): Tensor = 
-    dynamicCCall("at::stack", tensors, dim).to(ATensor).newTensor()
+  proc forward*(tensors: openarray[Tensor]; dim: int64 = 0): Tensor = 
+    dynamicCCall("at::stack", tensors.toATensors(), dim).to(ATensor).newTensor()
   tensors: firstOrSelf(unbind(grad, dim))
 
 autograd sum_internal:
@@ -2143,12 +2153,12 @@ autograd sum_internal:
 
 autograd sum_internal:
   proc forward*(ty: TensorType; self: Tensor; dim: openarray[SomeInteger]; keepdim: bool = false): Tensor = 
-    ty.dynamicCppCall("_sum", self.tensor, dim.toAIntList, keepdim).to(ATensor).newTensor()
+    ty.dynamicCppCall("_sum", self.tensor, dim.toAIntList(), keepdim).to(ATensor).newTensor()
   self: firstOrSelf(sum_backward(grad, self.sizes(), dim, keepdim))
 
 autograd sum_internal:
   proc forward*(self: Tensor; dim: openarray[SomeInteger]; keepdim: bool = false): Tensor = 
-    self.tensor.dynamicCppCall("_sum", dim.toAIntList, keepdim).to(ATensor).newTensor()
+    self.tensor.dynamicCppCall("_sum", dim.toAIntList(), keepdim).to(ATensor).newTensor()
   self: firstOrSelf(sum_backward(grad, self.sizes(), dim, keepdim))
 
 autograd sqrt:
@@ -2213,22 +2223,22 @@ autograd transpose_inplace:
 
 autograd flip:
   proc forward*(ty: TensorType; self: Tensor; dims: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("flip", self.tensor, dims.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("flip", self.tensor, dims.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.flip(dims))
 
 autograd flip:
   proc forward*(self: Tensor; dims: openarray[SomeInteger]): Tensor = 
-    self.tensor.dynamicCppCall("flip", dims.toAIntList).to(ATensor).newTensor()
+    self.tensor.dynamicCppCall("flip", dims.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.flip(dims))
 
 autograd rot90:
   proc forward*(ty: TensorType; self: Tensor; k: int64 = 1; dims: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("rot90", self.tensor, k, dims.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("rot90", self.tensor, k, dims.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.rot90(-k, dims))
 
 autograd rot90:
   proc forward*(self: Tensor; k: int64 = 1; dims: openarray[SomeInteger]): Tensor = 
-    self.tensor.dynamicCppCall("rot90", k, dims.toAIntList).to(ATensor).newTensor()
+    self.tensor.dynamicCppCall("rot90", k, dims.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.rot90(-k, dims))
 
 autograd trunc:
@@ -2243,12 +2253,12 @@ autograd trunc:
 
 autograd unsafe_view_internal:
   proc forward*(ty: TensorType; self: Tensor; size: openarray[SomeInteger]): Tensor = 
-    ty.dynamicCppCall("_unsafe_view", self.tensor, size.toAIntList).to(ATensor).newTensor()
+    ty.dynamicCppCall("_unsafe_view", self.tensor, size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.reshape(self.sizes()))
 
 autograd unsafe_view_internal:
   proc forward*(self: Tensor; size: openarray[SomeInteger]): Tensor = 
-    dynamicCCall("at::_unsafe_view", self.tensor, size.toAIntList).to(ATensor).newTensor()
+    dynamicCCall("at::_unsafe_view", self.tensor, size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.reshape(self.sizes()))
 
 autograd unsqueeze:

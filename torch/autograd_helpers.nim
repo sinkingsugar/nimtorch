@@ -102,3 +102,29 @@ proc sum_backward(grad: Tensor; sizes: openarray[SomeInteger]; dims: openarray[S
       result = result.expand(sizes)
   else:
     return grad.expand(sizes)
+
+proc legacy_cat_wrap_dim(dim: int; tensor_sizes: seq[seq[int]]): int =
+  for sizes in tensor_sizes:
+    if sizes.len != 1 or sizes[0] != 0:
+      return maybe_wrap_dim(dim, sizes.len);
+  return dim
+
+proc cat_tensors_backward(grad: Tensor; sizes: seq[seq[int]]; dim: int64): TensorList =
+  let dim = legacy_cat_wrap_dim(dim.int, sizes)
+  result.setLen(sizes.len)
+  var accumulate = 0
+
+  for i, shape in sizes:
+    # If input was empty tensor, gradInput should be empty tensor.
+    if shape.len == 1 and shape[0] == 0:
+      result[i] = zeros([0], grad.options())
+      continue
+
+    let size = shape[dim]
+    accumulate += size
+    result[i] = grad.narrow(dim, (accumulate - size).int64, size.int64)
+
+proc to_args_sizes(tensors: openarray[Tensor]): seq[seq[int]] =
+  result.setLen(tensors.len)
+  for i, tensor in tensors:
+    result[i] = tensor.sizes()

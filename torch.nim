@@ -15,7 +15,7 @@ type
     
   TensorType* = ptr AType
   TensorOptions* = ATensorOptions
-  TensorList* = ATensors
+  TensorList* = seq[Tensor]
   IntList* = seq[int]
   
   Device* {.pure.} = enum
@@ -32,7 +32,7 @@ var undefinedTensor: ATensor
 proc requires_grad(self: not Tensor): bool = false
 
 template capture(name: untyped): untyped =
-  when name is openarray:
+  when name is openarray | varargs:
     let name = @`name`
 
 macro autograd(head, body: untyped): untyped =
@@ -156,31 +156,22 @@ proc newTensor*(a: ATensor): Tensor {.inline, noinit.} =
   result.hasTensor = true
   result.tensor = a
 
-proc high*(v: TensorList): int {.inline.} = v.size().to(int) - 1
+proc len*(v: ATensors): int {.inline.} = v.size().to(int)
 
-proc len*(v: TensorList): int {.inline.} = v.size().to(int)
+proc high*(v: ATensors): int {.inline.} = v.len - 1
 
-proc get*(v: TensorList; index: int): Tensor {.inline, noinit.} =
-  result = newTensor v.toCpp[index].to(ATensor)
+proc `[]`*(v: ATensors; index: int): ATensor {.inline, noinit.} = v.toCpp[index.csize].to(ATensor)
 
-proc `[]`*(v: TensorList; index: int): Tensor {.inline, noinit.} = v.get(index)
+proc add*(v: ATensors; value: ATensor) {.inline.} = v.push_back(value).to(void)
 
-proc `[]=`*(v: TensorList; index: int; value: Tensor) {.inline.} = v.toCpp[index] = value.tensor
-
-proc add*(v: TensorList; value: Tensor) {.inline.} = v.push_back(value.tensor).to(void)
-
-iterator items*(tensors: TensorList): Tensor {.inline.} =
-  var cppTensors = tensors
-  for x in cppItems[TensorList, Tensor](cppTensors):
-    yield x
+iterator items*(tensors: ATensors): ATensor {.inline.} =
+  for i in 0 ..< tensors.len:
+    yield tensors[i]
     
-proc `@`*[IDX](a: array[IDX, Tensor]): TensorList =
-  for tensor in a:
-    result.add(tensor)
-
-converter toTensorList*(tensors: openarray[Tensor]): TensorList =
-  for tensor in tensors:
-    result.add(tensor)
+proc toATensors*(tensors: openarray[Tensor]): ATensors =
+  result.resize(tensors.len.csize).to(void)
+  for i, tensor in tensors:
+    result[i] = tensor.tensor
 
 proc high*(v: AIntList): int {.inline.} = v.size().to(int) - 1
 
@@ -214,8 +205,13 @@ proc toAIntList[T: SomeInteger](self: openarray[T]): AIntList =
 # Auto generated #
 # append all the auto generated procs
 
-template newTensors(nativeTensor: ATensor): Tensor = nativeTensor.newTensor()
-template newTensors(nativeTensors: TensorList): TensorList = nativeTensors
+proc newTensors(nativeTensor: ATensor): Tensor {.inline.} = nativeTensor.newTensor()
+
+proc newTensors(nativeTensors: ATensors): TensorList {.inline.} =
+  result.setLen(nativeTensors.len)
+  for i in 0 ..< result.len:
+    result[i] = nativeTensors[i].newTensor()
+
 macro newTensors(nativeTensors: tuple): untyped = 
   let T = nativeTensors.getType()
   T.expectKind(nnkBracketExpr)
@@ -226,9 +222,8 @@ macro newTensors(nativeTensors: tuple): untyped =
     result.add quote do:
       newTensors(`nativeTensors`[`index`])
 
-template firstOrSelf(self: TensorList): TensorList = self.newTensors()
-template firstOrSelf(self: Tensor): Tensor = self
-template firstOrSelf(self: tuple): Tensor = self[0]
+template firstOrSelf(self: tuple): untyped = self[0]
+template firstOrSelf(self: not tuple): untyped = self
 
 include torch/declarations
 
@@ -361,7 +356,9 @@ proc tensor*(data: openarray; device: Device = Device.CPU; dummy_bugfix: static[
 proc getType*(a: Tensor): TensorType {.inline, noinit.} =
   proc helper(a: ATensor): TensorType {.importcpp: "&(#.type())".}
   return helper(a.tensor)
-  #return a.tensor.dynamicCppCall("type").to(TensorType)
+
+proc options*(a: Tensor): TensorOptions {.inline, noinit.} =
+  a.tensor.dynamicCppCall("options").to(TensorOptions)
 
 converter toTensorOptions*(tensorType: TensorType): TensorOptions =
   let temp = cppinit(TensorOptions, tensorType.toCpp)
@@ -385,7 +382,7 @@ proc is_defined*(a: Tensor): bool {.inline.} =
 proc sizes*(a: Tensor): IntList {.inline.} =
   a.tensor.dynamicCppCall("sizes").to(AIntList).toIntList()
 
-proc strides*(a: Tensor): IntList =
+proc strides*(a: Tensor): IntList {.inline.} =
   a.tensor.dynamicCppCall("strides").to(AIntList).toIntList()
 
 proc `-`*(a: Tensor): Tensor {.inline, noinit.} = neg(a)
@@ -472,6 +469,23 @@ proc `[]=`*(a: Tensor; index: int; b: Tensor) {.inline.} =
     
 #   else:
 #     raise newException(ValueError, fmt"shape '{shape}' is invalid for input of size {numel}")
+
+proc chunk2(self: Tensor; chunks, dim: int): seq[Tensor] =
+  assert(self.dim() > 0, "chunk expects at least a 1-dimensional tensor");
+  assert(chunks > 0, "chunk expects `chunks` to be greater than 0, got: " & $chunks)
+  
+  let split_size = (self.size(dim) + chunks - 1) div chunks
+
+  # We need to call split_with_sizes in the case where split_size and dimension size are 0, because
+  # a call to split would discard the number of chunks (because we can have an arbitrary number of
+  # 0-sized chunks adding up to 0).  So, call split_with_sizes with the correct number of chunks,
+  # eventually we will do this for all cases.
+  if split_size == 0 and self.size(dim) == 0:
+    var split_sizes = newSeqWith(chunks, split_size)
+    split_sizes[chunks - 1] = split_size - (split_size * chunks - self.size(dim))
+    return self.split_with_sizes(split_sizes, dim)
+  else:
+    return self.split(split_size, dim)
 
 proc contiguous2*(self: Tensor): Tensor =
   #unpack(self, "self", 0)
@@ -603,30 +617,16 @@ proc matmul2*(tensor1, tensor2: Tensor): Tensor =
 include torch/autograd_helpers
 include torch/derivatives
 
-macro chunk*(a: Tensor; chunks: static[int]; dim: int): untyped =
-  # dumpAstGen:
-  #   proc helper(a: Tensor): (Tensor, Tensor) {.gensym.} =
-  #     let tensors = a.tensor.dynamicCppCall(chunk, chunks, dim).to(TensorList)
-  #     return (tensors.get(0), tensors.get(1), tensors.get(3))
-  #   helper(a)
-
+macro chunk*(self: Tensor; chunks: static[int]; dim: int): untyped =
   var tensors = genSym()
   var tupleTree = nnkTupleConstr.newTree()
 
-  for i in 0..<chunks:
-    tupleTree.add(
-      nnkCall.newTree(
-        nnkDotExpr.newTree(
-          tensors,
-          newIdentNode("get")
-        ),
-        newLit(i)
-      )
-    )
+  for i in 0 ..< chunks:
+    tupleTree.add quote do:
+      `tensors`[`i`]
   
   result = quote do:
-    let `tensors` = `a`.tensor.dynamicCppCall("chunk", `chunks`, `dim`).to(TensorList)
-    assert(`tensors` is TensorList)
+    let `tensors` = `self`.chunk2(`chunks`, `dim`)
     `tupleTree`
 
 proc print*(a: Tensor) =
@@ -844,7 +844,7 @@ when isMainModule:
           [-0.1, -0.2, -0.3, -0.4, -0.5, -0.6],
         ]
       ])
-  
+
   z.print()
   x.print()
   echo z.size(0)

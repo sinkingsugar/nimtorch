@@ -93,7 +93,9 @@ const knownNames = [
   "split_backward",
   "split_with_sizes_backward",
   "sum_backward",
+  "cat_tensors_backward",
   "unsqueeze_to",
+  "to_args_sizes",
   "sizes",
   "strides",
   "type"]
@@ -254,6 +256,8 @@ block declarations:
         var nimInputType = nimType
         if nimInputType == "IntList":
           nimInputType = "openarray[SomeInteger]"
+        elif nimInputType == "TensorList":
+          nimInputType = "openarray[Tensor]"
 
         var prefix = if i == 0: "" else: "; "
         argsStr1 &= prefix & "$1: $2$3" % [argName, nimInputType, defaultStr]
@@ -263,7 +267,9 @@ block declarations:
           if nimType == "Tensor":
             argsStr2 &= ", $1.tensor" % [argName]
           elif nimType == "IntList":
-            argsStr2 &= ", $1.toAIntList" % [argName]
+            argsStr2 &= ", $1.toAIntList()" % [argName]
+          elif nimType == "TensorList":
+            argsStr2 &= ", $1.toATensors()" % [argName]
           else:
             argsStr2 &= ", $1" % [argName]
 
@@ -291,7 +297,8 @@ block declarations:
 
           if procInfo.nimReturnType == "Tensor":
             convertStr = ".to(ATensor).newTensor()"
-            preCode = "" #&= "\n  result = newTensor "
+          elif procInfo.nimReturnType == "TensorList":
+            convertStr = ".to(ATensors).newTensors()"
 
           procInfo.returns.add(ArgInfo(originalName: "", name: "", nimType: procInfo.nimReturnType))
           
@@ -320,7 +327,12 @@ block declarations:
             var
               originalReturnName = returnName
               outputType = res.toNimType
-              toType = if outputType == "Tensor": "ATensor" else: outputType
+              toType = outputType
+              
+            if outputType == "Tensor":
+              toType = "ATensor"
+            elif outputType == "TensorList":
+              toType = "ATensors"
 
             returnName = returnName.validate()
 
