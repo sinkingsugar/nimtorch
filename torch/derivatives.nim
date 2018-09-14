@@ -46,6 +46,16 @@ autograd view:
     self.tensor.dynamicCppCall("view", size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.reshape(self.sizes()))
 
+autograd index_select:
+  proc forward*(ty: TensorType; self: Tensor; dim: int64; index: Tensor): Tensor = 
+    ty.dynamicCppCall("index_select", self.tensor, dim, index.tensor).to(ATensor).newTensor()
+  self: firstOrSelf(zeros(self.sizes(), grad.getType()).index_add_inplace(dim, index, grad))
+
+autograd index_select:
+  proc forward*(self: Tensor; dim: int64; index: Tensor): Tensor = 
+    self.tensor.dynamicCppCall("index_select", dim, index.tensor).to(ATensor).newTensor()
+  self: firstOrSelf(zeros(self.sizes(), grad.getType()).index_add_inplace(dim, index, grad))
+
 autograd take:
   proc forward*(ty: TensorType; self: Tensor; index: Tensor): Tensor = 
     ty.dynamicCppCall("take", self.tensor, index.tensor).to(ATensor).newTensor()
@@ -135,6 +145,16 @@ autograd scatter_add_inplace:
     self.tensor.dynamicCppCall("scatter_add_", dim, index.tensor, src.tensor).to(ATensor).newTensor()
   self: firstOrSelf(grad)
   src: firstOrSelf(grad.gather(dim, index))
+
+autograd gather:
+  proc forward*(ty: TensorType; self: Tensor; dim: int64; index: Tensor): Tensor = 
+    ty.dynamicCppCall("gather", self.tensor, dim, index.tensor).to(ATensor).newTensor()
+  self: firstOrSelf(zeros(self.sizes(), grad.getType()).scatter_add_inplace(dim, index, grad))
+
+autograd gather:
+  proc forward*(self: Tensor; dim: int64; index: Tensor): Tensor = 
+    self.tensor.dynamicCppCall("gather", dim, index.tensor).to(ATensor).newTensor()
+  self: firstOrSelf(zeros(self.sizes(), grad.getType()).scatter_add_inplace(dim, index, grad))
 
 autograd lt_inplace:
   proc forward*(ty: TensorType; self: Tensor; other: float): Tensor = 
@@ -622,6 +642,38 @@ autograd uniform_inplace:
   proc forward*(self: Tensor; from_name: float64 = 0; to_name: float64 = 1; generator: pointer = nil): Tensor = 
     self.tensor.dynamicCppCall("uniform_", from_name, to_name, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
+
+autograd normal:
+  proc forward*(ty: TensorType; mean: Tensor; std: float64 = 1; generator: pointer = nil): Tensor = 
+    ty.dynamicCppCall("normal", mean.tensor, std, generator).to(ATensor).newTensor()
+  mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
+
+autograd normal:
+  proc forward*(mean: Tensor; std: float64 = 1; generator: pointer = nil): Tensor = 
+    dynamicCCall("at::normal", mean.tensor, std, generator).to(ATensor).newTensor()
+  mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
+
+autograd normal:
+  proc forward*(ty: TensorType; mean: float64; std: Tensor; generator: pointer = nil): Tensor = 
+    ty.dynamicCppCall("normal", mean, std.tensor, generator).to(ATensor).newTensor()
+  std: firstOrSelf(zeros(std.sizes(), grad.getType()))
+
+autograd normal:
+  proc forward*(mean: float64; std: Tensor; generator: pointer = nil): Tensor = 
+    dynamicCCall("at::normal", mean, std.tensor, generator).to(ATensor).newTensor()
+  std: firstOrSelf(zeros(std.sizes(), grad.getType()))
+
+autograd normal:
+  proc forward*(ty: TensorType; mean: Tensor; std: Tensor; generator: pointer = nil): Tensor = 
+    ty.dynamicCppCall("normal", mean.tensor, std.tensor, generator).to(ATensor).newTensor()
+  mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
+  std: firstOrSelf(zeros(std.sizes(), grad.getType()))
+
+autograd normal:
+  proc forward*(mean: Tensor; std: Tensor; generator: pointer = nil): Tensor = 
+    dynamicCCall("at::normal", mean.tensor, std.tensor, generator).to(ATensor).newTensor()
+  mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
+  std: firstOrSelf(zeros(std.sizes(), grad.getType()))
 
 autograd normal_inplace:
   proc forward*(ty: TensorType; self: Tensor; mean: float64 = 0; std: float64 = 1; generator: pointer = nil): Tensor = 
@@ -1513,6 +1565,16 @@ autograd cudnn_ctc_loss_internal:
     dynamicCCall("at::_cudnn_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList(), target_lengths.toAIntList(), blank, deterministic).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   log_probs: firstOrSelf(fwd_result[1])
 
+autograd cudnn_rnn_internal:
+  proc forward*(ty: TensorType; input: Tensor; weight: openarray[Tensor]; weight_stride0: int64; weight_buf: Tensor; hx: Tensor; cx: Tensor; mode: int64; hidden_size: int64; num_layers: int64; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[SomeInteger]; dropout_state: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] = 
+    ty.dynamicCppCall("_cudnn_rnn", input.tensor, weight.toATensors(), weight_stride0, weight_buf.tensor, hx.tensor, cx.tensor, mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes.toAIntList(), dropout_state.tensor).to(StdTuple5[ATensor, ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+  (input, hx, cx, weight):  fwd_result[3].clone() 
+
+autograd cudnn_rnn_internal:
+  proc forward*(input: Tensor; weight: openarray[Tensor]; weight_stride0: int64; weight_buf: Tensor; hx: Tensor; cx: Tensor; mode: int64; hidden_size: int64; num_layers: int64; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[SomeInteger]; dropout_state: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] = 
+    dynamicCCall("at::_cudnn_rnn", input.tensor, weight.toATensors(), weight_stride0, weight_buf.tensor, hx.tensor, cx.tensor, mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes.toAIntList(), dropout_state.tensor).to(StdTuple5[ATensor, ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+  (input, hx, cx, weight):  fwd_result[3].clone() 
+
 autograd abs:
   proc forward*(ty: TensorType; self: Tensor): Tensor = 
     ty.dynamicCppCall("abs", self.tensor).to(ATensor).newTensor()
@@ -1809,6 +1871,16 @@ autograd expm1:
     self.tensor.dynamicCppCall("expm1").to(ATensor).newTensor()
   self: firstOrSelf(grad * (fwd_result + 1))
 
+autograd expand:
+  proc forward*(ty: TensorType; self: Tensor; size: openarray[SomeInteger]; implicit: bool = false): Tensor = 
+    ty.dynamicCppCall("expand", self.tensor, size.toAIntList(), implicit).to(ATensor).newTensor()
+  self: firstOrSelf(sum_to(grad, self.sizes()))
+
+autograd expand:
+  proc forward*(self: Tensor; size: openarray[SomeInteger]; implicit: bool = false): Tensor = 
+    self.tensor.dynamicCppCall("expand", size.toAIntList(), implicit).to(ATensor).newTensor()
+  self: firstOrSelf(sum_to(grad, self.sizes()))
+
 autograd fill_inplace:
   proc forward*(ty: TensorType; self: Tensor; value: float): Tensor = 
     ty.dynamicCppCall("fill_", self.tensor, value).to(ATensor).newTensor()
@@ -2090,6 +2162,26 @@ autograd softmax:
   proc forward*(self: Tensor; dim: int64): Tensor = 
     self.tensor.dynamicCppCall("softmax", dim).to(ATensor).newTensor()
   self: firstOrSelf(softmax_backward_data(grad, fwd_result, dim, self))
+
+autograd split:
+  proc forward*(ty: TensorType; self: Tensor; split_size: int64; dim: int64 = 0): TensorList = 
+    ty.dynamicCppCall("split", self.tensor, split_size, dim).to(ATensors).newTensors()
+  self: firstOrSelf(split_backward(grads, split_size, dim, self.sizes(), self.getType()))
+
+autograd split:
+  proc forward*(self: Tensor; split_size: int64; dim: int64 = 0): TensorList = 
+    self.tensor.dynamicCppCall("split", split_size, dim).to(ATensors).newTensors()
+  self: firstOrSelf(split_backward(grads, split_size, dim, self.sizes(), self.getType()))
+
+autograd split_with_sizes:
+  proc forward*(ty: TensorType; self: Tensor; split_sizes: openarray[SomeInteger]; dim: int64 = 0): TensorList = 
+    ty.dynamicCppCall("split_with_sizes", self.tensor, split_sizes.toAIntList(), dim).to(ATensors).newTensors()
+  self: firstOrSelf(split_with_sizes_backward(grads, split_sizes, dim, self.sizes(), self.getType()))
+
+autograd split_with_sizes:
+  proc forward*(self: Tensor; split_sizes: openarray[SomeInteger]; dim: int64 = 0): TensorList = 
+    self.tensor.dynamicCppCall("split_with_sizes", split_sizes.toAIntList(), dim).to(ATensors).newTensors()
+  self: firstOrSelf(split_with_sizes_backward(grads, split_sizes, dim, self.sizes(), self.getType()))
 
 autograd squeeze:
   proc forward*(ty: TensorType; self: Tensor): Tensor = 
@@ -2378,6 +2470,16 @@ autograd s_native_addmm:
   self: firstOrSelf(maybe_multiply(grad, beta))
   mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
   mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
+
+autograd thnn_fused_lstm_cell_internal:
+  proc forward*(ty: TensorType; input_gates: Tensor; hidden_gates: Tensor; cx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor] = 
+    ty.dynamicCppCall("_thnn_fused_lstm_cell", input_gates.tensor, hidden_gates.tensor, cx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+  (input_gates, hidden_gates, cx, input_bias, hidden_bias): thnn_fused_lstm_cell_backward_internal(grads[0], grads[1], cx, fwd_result[1], fwd_result[2], input_bias.defined())
+
+autograd thnn_fused_lstm_cell_internal:
+  proc forward*(input_gates: Tensor; hidden_gates: Tensor; cx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor] = 
+    dynamicCCall("at::_thnn_fused_lstm_cell", input_gates.tensor, hidden_gates.tensor, cx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+  (input_gates, hidden_gates, cx, input_bias, hidden_bias): thnn_fused_lstm_cell_backward_internal(grads[0], grads[1], cx, fwd_result[1], fwd_result[2], input_bias.defined())
 
 autograd thnn_fused_gru_cell_internal:
   proc forward*(ty: TensorType; input_gates: Tensor; hidden_gates: Tensor; hx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor] = 

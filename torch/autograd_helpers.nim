@@ -1,4 +1,5 @@
 import fragments/ffi/cpp as cpp
+import sequtils
 
 # TODO: Workaround for int instead of IntList
 proc sum(self: Tensor; dim: int): Tensor =
@@ -42,10 +43,10 @@ proc atan2_backward*(grad, self, other: Tensor; outputMask: StdArray[bool, 2]): 
   if output_mask[1]:
     result[1] = grad * -self * recip
 
-proc maybe_wrap_dim(dim, size: int): int {.inline.} =
+proc maybe_wrap_dim(dim, size: int64): int {.inline.} =
   return dynamicCCall("at::maybe_wrap_dim", dim, size).to(int)
 
-proc split_with_sizes_backward*(grads: TensorList; split_sizes: IntList; dim: int; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
+proc split_with_sizes_backward*(grads: openarray[Tensor]; split_sizes: openarray[SomeInteger]; dim: int64; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
   let ndim = maybe_wrap_dim(dim, sizes.len())
   var allDefinedList: TensorList
   for i in 0..grads.high:
@@ -55,17 +56,17 @@ proc split_with_sizes_backward*(grads: TensorList; split_sizes: IntList; dim: in
     else:
       let length = split_sizes[i]
       var grad_size = sizes 
-      grad_size[dim] = length
+      grad_size[dim.int] = length.int
       allDefinedList.add(torch.zeros(grad_size, tensorType))
   result = torch.cat(allDefinedList, ndim)
 
-proc split_backward*(grads: TensorList; split_size, dim: int; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
+proc split_backward*(grads: openarray[Tensor]; split_size, dim: int64; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
   let
     ndim = maybe_wrap_dim(dim, sizes.len())
     dim_size = sizes[ndim]
-    num_splits = grads.len()
-  var split_sizes: IntList = @[num_splits, split_size]
-  split_sizes[num_splits - 1] = split_size - (split_size * num_splits - dim_size)
+    num_splits = grads.len
+  var split_sizes = newSeqWith(num_splits, split_size.int)
+  split_sizes[num_splits - 1] = split_size.int - (split_size.int * num_splits - dim_size)
   result = split_with_sizes_backward(grads, split_sizes, ndim, sizes, tensorType)
 
 proc unsqueeze_to(self: Tensor; sizes: openarray[SomeInteger]): Tensor =

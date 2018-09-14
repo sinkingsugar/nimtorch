@@ -9,9 +9,10 @@ type
     tensor: ATensor
 
     requires_grad*: bool
+    grad*: Tensor
     grad_fn: BackwardFunction
-    grad: Tensor
     inputs: seq[Tensor]
+    outputs: seq[Tensor]
     
   TensorType* = ptr AType
   TensorOptions* = ATensorOptions
@@ -107,6 +108,9 @@ macro autograd(head, body: untyped): untyped =
         when type(`gradExpr`) isnot TensorList:
           #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
           `resultExpr` = `gradExpr`
+        else:
+          `resultIdent`.add(`gradExpr`)
+
 
   # Propagate whether gradient is needed or not
   var requiresGradExpr: NimNode
@@ -123,14 +127,37 @@ macro autograd(head, body: untyped): untyped =
       `resultIdent`.setLen(`resultIndex`)
       `backwardBody`
 
+    let inputs = @`inputIdents`
+
     when `resultIdent` is Tensor:
       `resultIdent`.requires_grad = `requiresGradExpr`
       `resultIdent`.grad_fn = fn
-      `resultIdent`.inputs = @[]
-      when compiles(`resultIdent`.inputs.add(`inputIdents`)):
-        `resultIdent`.inputs.add(`inputIdents`)
+      `resultIdent`.outputs = @[`resultIdent`]
+      when compiles(`resultIdent`.inputs.add(inputs)):
+        `resultIdent`.inputs.add(inputs)
     else:
-      error("Tuple returns not implemented")
+      when `resultIdent` is tuple:
+        var outputs: seq[Tensor]
+        for k, f in `resultIdent`.fieldPairs:
+          when f is Tensor:
+            outputs.add(f)
+
+        for k, f in `resultIdent`.fieldPairs:
+          when f is Tensor:
+            f.requires_grad = `requiresGradExpr`
+            f.grad_fn = fn
+            f.outputs = outputs
+            when compiles(f.inputs.add(inputs)):
+              f.inputs.add(inputs)
+      elif `resultIdent` is seq:
+        for i in 0 ..< `resultIdent`.len:
+          let r = `resultIdent`[i]
+          when r is Tensor:
+            r.requires_grad = `requiresGradExpr`
+            r.grad_fn = fn
+            r.outputs = `resultIdent`
+            when compiles(r.inputs.add(inputs)):
+              r.inputs.add(inputs)
 
 # proc test_fwd(self, other: Tensor): Tensor = discard
 # proc test_bwd(self: Tensor): Tensor = discard
@@ -748,13 +775,17 @@ proc backward*(tensors, grads: openarray[Tensor]) =
   # Accumulate grads
   for node in sortedNodes:
     # TODO: handle multiple output gradients
-    let grads = node.grad_fn([node.grad])
+    var grad_outputs: seq[Tensor]
+    for output in node.outputs:
+      grad_outputs.add(output.grad)
+
+    let grads_inputs = node.grad_fn(grad_outputs)
     for i, input in node.inputs:
       if input.requires_grad:
-        input.grad += grads[i]
+        input.grad += grads_inputs[i]
 
-proc backward*(tensor: Tensor) =
-  backward([tensor], [torch.ones_like(tensor)])
+proc backward*(tensor: Tensor; grad: Tensor = ones_like(tensor)) =
+  backward([tensor], [grad])
 
 when isMainModule:
   # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim
@@ -867,6 +898,16 @@ when isMainModule:
     newgate = (i_nn + resetgate * h_n).tanh()
     hy = newgate + inputgate * (hidden - newgate)
   
+  echo hy.requires_grad
+  hy.backward()
+  print hy.grad
+  echo hy.inputs
+  print newgate.grad
+  print resetgate.grad
+  print x.grad
+
+  if true: quit 0
+
   hy.print()
 
   var hycopy = hy.copy()

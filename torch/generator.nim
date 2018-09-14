@@ -103,6 +103,7 @@ const knownNames = [
   "sum_backward",
   "cat_tensors_backward",
   "unsqueeze_to",
+  "sum_to",
   "to_args_sizes",
   "sizes",
   "strides",
@@ -571,17 +572,12 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'output' {!\ident}", "$1fwd_result$2")
           nimLikeStr = nimLikeStr.replacef(peg"^'output' {!\ident}", "fwd_result$1")
 
+          nimLikeStr = nimLikeStr.replace(".type()", ".getType()")
+
           # replace any fwd result tuple names with proper prefix if necessary
           if info.returns.len > 1:
             for retArg in info.returns:
               nimLikeStr = nimLikeStr.replacef(peg("{[^_]} '" & retArg.originalName & "' {!\\ident}"), "$1fwd_result." & retArg.name & "$2")
-
-          # some gradients are multiple
-          if nimLikeStr.contains(peg"'grads[' \d ']'") or nimLikeStr.contains(peg"'grads'"):
-            # TODO
-            echo "Ignoring multi grad proc: ", info.name
-            hasError = true
-            break generateProc
 
           # replace int lists {} to our @[]
           nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
