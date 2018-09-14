@@ -85,12 +85,6 @@ proc nonzero*(ty: TensorType; self: Tensor): Tensor =
 proc nonzero*(self: Tensor): Tensor = 
   self.tensor.dynamicCppCall("nonzero").to(ATensor).newTensor()
 
-proc contiguous*(ty: TensorType; self: Tensor): Tensor = 
-  ty.dynamicCppCall("contiguous", self.tensor).to(ATensor).newTensor()
-
-proc contiguous*(self: Tensor): Tensor = 
-  self.tensor.dynamicCppCall("contiguous").to(ATensor).newTensor()
-
 proc th_clone*(ty: TensorType; self: Tensor): Tensor = 
   ty.dynamicCppCall("th_clone", self.tensor).to(ATensor).newTensor()
 
@@ -2249,12 +2243,6 @@ proc ceil_inplace*(ty: TensorType; self: Tensor): Tensor =
 proc ceil_inplace*(self: Tensor): Tensor = 
   self.tensor.dynamicCppCall("ceil_").to(ATensor).newTensor()
 
-proc chunk*(ty: TensorType; self: Tensor; chunks: int64; dim: int64 = 0): TensorList = 
-  ty.dynamicCppCall("chunk", self.tensor, chunks, dim).to(ATensors).newTensors()
-
-proc chunk*(self: Tensor; chunks: int64; dim: int64 = 0): TensorList = 
-  self.tensor.dynamicCppCall("chunk", chunks, dim).to(ATensors).newTensors()
-
 proc clamp*(ty: TensorType; self: Tensor; min: float; max: float): Tensor = 
   ty.dynamicCppCall("clamp", self.tensor, min, max).to(ATensor).newTensor()
 
@@ -3073,12 +3061,6 @@ proc margin_ranking_loss*(ty: TensorType; input1: Tensor; input2: Tensor; target
 proc margin_ranking_loss*(input1: Tensor; input2: Tensor; target: Tensor; margin: float64; reduction: int64): Tensor = 
   dynamicCCall("at::margin_ranking_loss", input1.tensor, input2.tensor, target.tensor, margin, reduction).to(ATensor).newTensor()
 
-proc matmul*(ty: TensorType; self: Tensor; other: Tensor): Tensor = 
-  ty.dynamicCppCall("matmul", self.tensor, other.tensor).to(ATensor).newTensor()
-
-proc matmul*(self: Tensor; other: Tensor): Tensor = 
-  self.tensor.dynamicCppCall("matmul", other.tensor).to(ATensor).newTensor()
-
 proc matrix_rank*(ty: TensorType; self: Tensor; tol: float64; symmetric: bool = false): Tensor = 
   ty.dynamicCppCall("matrix_rank", self.tensor, tol, symmetric).to(ATensor).newTensor()
 
@@ -3194,12 +3176,6 @@ proc mkldnn_convolution_backward*(ty: TensorType; self: Tensor; grad_output: Ten
 
 proc mkldnn_convolution_backward*(self: Tensor; grad_output: Tensor; weight: Tensor; padding: openarray[SomeInteger]; stride: openarray[SomeInteger]; dilation: openarray[SomeInteger]; groups: int64; output_mask: StdArray[bool, 3]): tuple[result0: Tensor, result1: Tensor, result2: Tensor] = 
   dynamicCCall("at::mkldnn_convolution_backward", self.tensor, grad_output.tensor, weight.tensor, padding.toAIntList(), stride.toAIntList(), dilation.toAIntList(), groups, output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-
-proc mm*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor = 
-  ty.dynamicCppCall("mm", self.tensor, mat2.tensor).to(ATensor).newTensor()
-
-proc mm*(self: Tensor; mat2: Tensor): Tensor = 
-  self.tensor.dynamicCppCall("mm", mat2.tensor).to(ATensor).newTensor()
 
 proc mode*(ty: TensorType; self: Tensor; dim: int64 = -1; keepdim: bool = false): tuple[result0: Tensor, result1: Tensor] = 
   ty.dynamicCppCall("mode", self.tensor, dim, keepdim).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()

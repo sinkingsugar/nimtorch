@@ -81,6 +81,14 @@ proc validate(name: string): string =
   
 var generatedProcs = newSeq[ProcInfo]()
 
+# Functions that are implemented manually to enable autograd
+const customNames = [
+  "matmul",
+  "mm",
+  "contiguous",
+  "chunk"
+]
+
 # add some known procs we created in torch.nim, don't care about args
 const knownNames = [
   "maybe_multiply",
@@ -601,6 +609,10 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
 
     # Check if this proc was actually generated or if it's defined manually
     if info.expression == "":
+      continue
+
+    # Skip manually implemented procs
+    if info.originalName in customNames:
       continue
 
     # If there was no autograd version generated, output a normal forward proc

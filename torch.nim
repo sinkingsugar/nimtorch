@@ -470,7 +470,7 @@ proc `[]=`*(a: Tensor; index: int; b: Tensor) {.inline.} =
 #   else:
 #     raise newException(ValueError, fmt"shape '{shape}' is invalid for input of size {numel}")
 
-proc chunk2(self: Tensor; chunks, dim: int): seq[Tensor] =
+proc chunk(self: Tensor; chunks, dim: int64): seq[Tensor] =
   assert(self.dim() > 0, "chunk expects at least a 1-dimensional tensor");
   assert(chunks > 0, "chunk expects `chunks` to be greater than 0, got: " & $chunks)
   
@@ -481,13 +481,13 @@ proc chunk2(self: Tensor; chunks, dim: int): seq[Tensor] =
   # 0-sized chunks adding up to 0).  So, call split_with_sizes with the correct number of chunks,
   # eventually we will do this for all cases.
   if split_size == 0 and self.size(dim) == 0:
-    var split_sizes = newSeqWith(chunks, split_size)
-    split_sizes[chunks - 1] = split_size - (split_size * chunks - self.size(dim))
+    var split_sizes = newSeqWith(chunks.int, split_size)
+    split_sizes[chunks.int - 1] = split_size - (split_size * chunks - self.size(dim))
     return self.split_with_sizes(split_sizes, dim)
   else:
     return self.split(split_size, dim)
 
-proc contiguous2*(self: Tensor): Tensor =
+proc contiguous*(self: Tensor): Tensor =
   #unpack(self, "self", 0)
   if self.is_contiguous():
     return self
@@ -546,12 +546,12 @@ proc sum_to(tensor: Tensor; shape: IntList): Tensor =
     if shape[i] == 1 and result.sizes[i] > 1:
       result = result.sum([i], true)
 
-proc mm2*(self, mat2: Tensor): Tensor =
+proc mm*(self, mat2: Tensor): Tensor =
   if self.is_sparse:
     return mat2.getType().addmm(zeros[int]([], mat2.getType()), self, mat2, 0, 1)
   return mm_internal(self, mat2);
 
-proc matmul2*(tensor1, tensor2: Tensor): Tensor =
+proc matmul*(tensor1, tensor2: Tensor): Tensor =
   let
     dim_tensor1 = tensor1.dim()
     dim_tensor2 = tensor2.dim()
@@ -626,7 +626,7 @@ macro chunk*(self: Tensor; chunks: static[int]; dim: int): untyped =
       `tensors`[`i`]
   
   result = quote do:
-    let `tensors` = `self`.chunk2(`chunks`, `dim`)
+    let `tensors` = `self`.chunk(`chunks`, `dim`.int64)
     `tupleTree`
 
 proc print*(a: Tensor) =
@@ -853,10 +853,12 @@ when isMainModule:
 
   let zmul = z * 3
 
+  x.requires_grad = true
+
   # grucell
   var
-    gi = x.matmul2(w_input.transpose(1, 2)) + b_input
-    gh = hidden.matmul2(w_recur.transpose(1, 2)) + b_recur
+    gi = x.matmul(w_input.transpose(1, 2)) + b_input
+    gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
     (i_r, i_i, i_nn) = gi.chunk(3, 2)
     (h_r, h_i, h_n) = gh.chunk(3, 2)
     resetgate = (i_r + h_r).sigmoid()
