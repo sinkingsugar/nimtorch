@@ -7,21 +7,21 @@ import math
 {.experimental: "callOperator".}
 
 type
-  Module = object of RootObj
+  Module = ref object of RootObj
     forward: proc(input: varargs[Tensor]): Tensor
 
-  LinearModule = object of Module
+  LinearModule = ref object of Module
     in_features: int
     out_features: int
-    weight: Tensor
-    bias: Tensor
+    weight*: Tensor
+    bias*: Tensor
 
-  BilinearModule = object of LinearModule
+  BilinearModule = ref object of LinearModule
     in2_features: int
 
 proc `()`*(m: Module; input: varargs[Tensor]): Tensor {.inline.} = m.forward(input)
 
-proc reset_parameters*(m: var LinearModule) =
+proc reset_parameters*(m: LinearModule) =
   m.weight = init.kaiming_uniform(m.weight, a = math.sqrt(5.float))
   
   if not m.bias.isNil:
@@ -32,6 +32,7 @@ proc reset_parameters*(m: var LinearModule) =
 
 proc Linear*(in_features, out_features: int; bias: bool = true): LinearModule =
   var m: LinearModule
+  new m
   
   m.in_features = in_features
   m.out_features = out_features
@@ -41,6 +42,8 @@ proc Linear*(in_features, out_features: int; bias: bool = true): LinearModule =
     m.bias = torch.zeros(@[out_features])
   
   m.forward = proc (input: varargs[Tensor]): Tensor =
+    assert(not m.bias.isNil)
+    assert(not m.weight.isNil)
     let step1 = input[0].matmul(m.weight.t())
     if not m.bias.isNil:
       return step1 + m.bias
@@ -51,7 +54,7 @@ proc Linear*(in_features, out_features: int; bias: bool = true): LinearModule =
   
   return m
 
-proc reset_parameters*(m: var BilinearModule) =
+proc reset_parameters*(m: BilinearModule) =
   let bound = 1 / math.sqrt(m.weight.size(1).float)
   
   m.weight = init.uniform(m.weight, -bound, bound)
@@ -61,6 +64,7 @@ proc reset_parameters*(m: var BilinearModule) =
 
 proc Bilinear*(in1_features, in2_features, out_features: int; bias: bool = true): BilinearModule =
   var m: BilinearModule
+  new m
   
   m.in_features = in1_features
   m.in2_features = in2_features
