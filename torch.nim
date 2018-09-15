@@ -52,11 +52,8 @@ macro autograd(head, body: untyped): untyped =
     resultExpressions = nnkBracket.newTree()
     inputIdents = nnkBracket.newTree()
 
-  let s = $name
-
   # Make `grad` available in derivative expressions, as alias for `grads[0]`
   backwardBody.add quote do:
-    echo `s`
     template grad: Tensor = `gradsIdent`[0]
 
   var resultIndex = 0
