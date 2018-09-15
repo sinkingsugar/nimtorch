@@ -14,6 +14,7 @@ type
       grad_fn: BackwardFunction
       inputs*: seq[Tensor]
       outputs*: seq[Tensor]
+      nodeId: int
     
   Generator* = ptr AGenerator
   TensorType* = ptr AType
@@ -30,7 +31,9 @@ type
 
   BackwardFunction* = proc(grads: openarray[Tensor]): seq[Tensor]
 
-var undefinedTensor: ATensor
+var
+  undefinedTensor: ATensor
+  nextNodeId: int
 
 proc requires_grad(self: not Tensor): bool = false
 
@@ -126,6 +129,9 @@ macro autograd(head, body: untyped): untyped =
 
   forwardBody.add quote do:
     when not defined inference:
+      let nodeId = nextNodeId
+      inc nextNodeId
+
       let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
         `resultIdent`.setLen(`resultIndex`)
         `backwardBody`
@@ -136,6 +142,7 @@ macro autograd(head, body: untyped): untyped =
         `resultIdent`.requires_grad = `requiresGradExpr`
         `resultIdent`.grad_fn = fn
         `resultIdent`.outputs = @[`resultIdent`]
+        `resultIdent`.nodeId = nodeId
         when compiles(`resultIdent`.inputs.add(inputs)):
           `resultIdent`.inputs.add(inputs)
       else:
@@ -150,6 +157,7 @@ macro autograd(head, body: untyped): untyped =
               f.requires_grad = `requiresGradExpr`
               f.grad_fn = fn
               f.outputs = outputs
+              f.nodeId = nodeId
               when compiles(f.inputs.add(inputs)):
                 f.inputs.add(inputs)
         elif `resultIdent` is seq:
@@ -159,6 +167,7 @@ macro autograd(head, body: untyped): untyped =
               r.requires_grad = `requiresGradExpr`
               r.grad_fn = fn
               r.outputs = `resultIdent`
+              r.nodeId = nodeId
               when compiles(r.inputs.add(inputs)):
                 r.inputs.add(inputs)
 
@@ -744,7 +753,8 @@ proc backward*(tensors, grads: openarray[Tensor]) =
   else:
     var
       sortedNodes: seq[Tensor]
-      gradFuncs: HashSet[BackwardFunction]
+      #gradFuncs: HashSet[BackwardFunction] # TODO: Investigate badno clang code-gen
+      gradFuncs: HashSet[int]
 
     gradFuncs.init()
 
@@ -762,7 +772,8 @@ proc backward*(tensors, grads: openarray[Tensor]) =
 
       # Already executed this backward function through this node,
       # or another output of this function
-      if gradFuncs.containsOrIncl(node.grad_fn):
+      #if gradFuncs.containsOrIncl(node.grad_fn):
+      if gradFuncs.containsOrIncl(node.nodeId):
         return
 
       for input in node.inputs:
