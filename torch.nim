@@ -8,11 +8,12 @@ type
     hasTensor: bool
     tensor: ATensor
 
-    requires_grad*: bool
-    grad*: Tensor
-    grad_fn: BackwardFunction
-    inputs*: seq[Tensor]
-    outputs*: seq[Tensor]
+    when not defined inference:
+      requires_grad*: bool
+      grad*: Tensor
+      grad_fn: BackwardFunction
+      inputs*: seq[Tensor]
+      outputs*: seq[Tensor]
     
   Generator* = ptr AGenerator
   TensorType* = ptr AType
@@ -124,41 +125,42 @@ macro autograd(head, body: untyped): untyped =
         `requiresGradExpr` or `inputIdent`.requires_grad
 
   forwardBody.add quote do:
-    let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
-      `resultIdent`.setLen(`resultIndex`)
-      `backwardBody`
+    when not defined inference:
+      let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
+        `resultIdent`.setLen(`resultIndex`)
+        `backwardBody`
 
-    let inputs = @`inputIdents`
+      let inputs = @`inputIdents`
 
-    when `resultIdent` is Tensor:
-      `resultIdent`.requires_grad = `requiresGradExpr`
-      `resultIdent`.grad_fn = fn
-      `resultIdent`.outputs = @[`resultIdent`]
-      when compiles(`resultIdent`.inputs.add(inputs)):
-        `resultIdent`.inputs.add(inputs)
-    else:
-      when `resultIdent` is tuple:
-        var outputs: seq[Tensor]
-        for k, f in `resultIdent`.fieldPairs:
-          when f is Tensor:
-            outputs.add(f)
+      when `resultIdent` is Tensor:
+        `resultIdent`.requires_grad = `requiresGradExpr`
+        `resultIdent`.grad_fn = fn
+        `resultIdent`.outputs = @[`resultIdent`]
+        when compiles(`resultIdent`.inputs.add(inputs)):
+          `resultIdent`.inputs.add(inputs)
+      else:
+        when `resultIdent` is tuple:
+          var outputs: seq[Tensor]
+          for k, f in `resultIdent`.fieldPairs:
+            when f is Tensor:
+              outputs.add(f)
 
-        for k, f in `resultIdent`.fieldPairs:
-          when f is Tensor:
-            f.requires_grad = `requiresGradExpr`
-            f.grad_fn = fn
-            f.outputs = outputs
-            when compiles(f.inputs.add(inputs)):
-              f.inputs.add(inputs)
-      elif `resultIdent` is seq:
-        for i in 0 ..< `resultIdent`.len:
-          let r = `resultIdent`[i]
-          when r is Tensor:
-            r.requires_grad = `requiresGradExpr`
-            r.grad_fn = fn
-            r.outputs = `resultIdent`
-            when compiles(r.inputs.add(inputs)):
-              r.inputs.add(inputs)
+          for k, f in `resultIdent`.fieldPairs:
+            when f is Tensor:
+              f.requires_grad = `requiresGradExpr`
+              f.grad_fn = fn
+              f.outputs = outputs
+              when compiles(f.inputs.add(inputs)):
+                f.inputs.add(inputs)
+        elif `resultIdent` is seq:
+          for i in 0 ..< `resultIdent`.len:
+            let r = `resultIdent`[i]
+            when r is Tensor:
+              r.requires_grad = `requiresGradExpr`
+              r.grad_fn = fn
+              r.outputs = `resultIdent`
+              when compiles(r.inputs.add(inputs)):
+                r.inputs.add(inputs)
 
 # proc test_fwd(self, other: Tensor): Tensor = discard
 # proc test_bwd(self: Tensor): Tensor = discard
@@ -736,53 +738,57 @@ iterator reverse*[T](a: openarray[T]): T =
 
 proc backward*(tensors, grads: openarray[Tensor]) =
 
-  var
-    sortedNodes: seq[Tensor]
-    gradFuncs: HashSet[BackwardFunction]
+  when defined inference:
+    raiseAssert("Backward pass is not supported in inference mode")
+  
+  else:
+    var
+      sortedNodes: seq[Tensor]
+      gradFuncs: HashSet[BackwardFunction]
 
-  gradFuncs.init()
+    gradFuncs.init()
 
-  proc visit(node: Tensor) =
-    # Gradient along this path is not needed
-    if not node.requires_grad:
-      return
+    proc visit(node: Tensor) =
+      # Gradient along this path is not needed
+      if not node.requires_grad:
+        return
 
-    # If the gradient is needed, initialize it
-    node.grad = torch.zeros_like(node)
+      # If the gradient is needed, initialize it
+      node.grad = torch.zeros_like(node)
 
-    # Gradient is not defined, so don't evaluate inputs
-    if node.grad_fn == nil:
-      return
+      # Gradient is not defined, so don't evaluate inputs
+      if node.grad_fn == nil:
+        return
 
-    # Already executed this backward function through this node,
-    # or another output of this function
-    if gradFuncs.containsOrIncl(node.grad_fn):
-      return
+      # Already executed this backward function through this node,
+      # or another output of this function
+      if gradFuncs.containsOrIncl(node.grad_fn):
+        return
 
-    for input in node.inputs:
-      visit(input)
+      for input in node.inputs:
+        visit(input)
 
-    sortedNodes.add(node)
+      sortedNodes.add(node)
 
-  # Topologically sort the graph
-  for node in tensors:
-    visit(node)
+    # Topologically sort the graph
+    for node in tensors:
+      visit(node)
 
-  # Set initial gradients
-  for i, tensor in tensors:
-    tensor.grad = grads[i]
+    # Set initial gradients
+    for i, tensor in tensors:
+      tensor.grad = grads[i]
 
-  # Accumulate grads
-  for node in sortedNodes.reverse:
-    # TODO: handle multiple output gradients
-    var grad_outputs: seq[Tensor]
-    for output in node.outputs:
-      grad_outputs.add(output.grad)
+    # Accumulate grads
+    for node in sortedNodes.reverse:
+      # TODO: handle multiple output gradients
+      var grad_outputs: seq[Tensor]
+      for output in node.outputs:
+        grad_outputs.add(output.grad)
 
-    let grads_inputs = node.grad_fn(grad_outputs)
-    for i, input in node.inputs:
-      if input.requires_grad:
-        input.grad += grads_inputs[i]
+      let grads_inputs = node.grad_fn(grad_outputs)
+      for i, input in node.inputs:
+        if input.requires_grad:
+          input.grad += grads_inputs[i]
 
 proc backward*(tensor: Tensor; grad: Tensor = ones_like(tensor)) =
   backward([tensor], [grad])
@@ -965,29 +971,29 @@ when isMainModule:
 
       hy.print()
   
-    echo "--------------------------"
-
-    var a = tensor([
-      [1, 2],
-      [3, 4]
-    ])
-
-    var b = tensor([
-      [5, 6],
-      [8, 7]
-    ])
-
-    var
-      n: IntList = @[2, 2]
-      o = ones(n)
-      g = (a + b).grad_fn([o])
-    
-    a.requires_grad = true
-    let a1 = sin(a)
-    echo a1.requires_grad
-    a1.backward()
-    print a.grad
-   
   # tensor([[-0.5317, -0.4753],
   #         [-0.3930, -0.3210],
   #         [-0.7325, -0.6430]])
+
+    when not defined inference:
+
+      var a = tensor([
+        [1, 2],
+        [3, 4]
+      ])
+
+      var b = tensor([
+        [5, 6],
+        [8, 7]
+      ])
+
+      var
+        n: IntList = @[2, 2]
+        o = ones(n)
+        g = (a + b).grad_fn([o])
+      
+      a.requires_grad = true
+      let a1 = sin(a)
+      echo a1.requires_grad
+      a1.backward()
+      print a.grad
