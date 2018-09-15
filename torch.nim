@@ -220,14 +220,15 @@ proc toIntList(self: AIntList): IntList =
     result[i] = self[i].int
 
 proc toAIntList[T: SomeInteger](self: openarray[T]): AIntList =
+  let size: csize = self.len
   when T is ilsize:
-    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(self[0])), self.len.csize)
+    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(self)), size)
     return temp
   else:
-    var converted = newSeq[ilsize](self.len)
+    var converted = newSeq[ilsize](size)
     for i, value in self:
       converted[i] = value.ilsize
-    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(converted[0])), converted.len.csize)
+    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(converted)), size)
     return temp
 
 # Auto generated #
