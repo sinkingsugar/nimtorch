@@ -11,8 +11,8 @@ type
     requires_grad*: bool
     grad*: Tensor
     grad_fn: BackwardFunction
-    inputs: seq[Tensor]
-    outputs: seq[Tensor]
+    inputs*: seq[Tensor]
+    outputs*: seq[Tensor]
     
   TensorType* = ptr AType
   TensorOptions* = ATensorOptions
@@ -51,8 +51,11 @@ macro autograd(head, body: untyped): untyped =
     resultExpressions = nnkBracket.newTree()
     inputIdents = nnkBracket.newTree()
 
+  let s = $name
+
   # Make `grad` available in derivative expressions, as alias for `grads[0]`
   backwardBody.add quote do:
+    echo `s`
     template grad: Tensor = `gradsIdent`[0]
 
   var resultIndex = 0
@@ -404,7 +407,7 @@ proc copy*(self: Tensor; non_blocking: bool = false): Tensor {.inline, noinit.} 
   self.getType().copy(self, non_blocking)
   
 proc is_defined*(a: Tensor): bool {.inline.} =
-  a.tensor.dynamicCppCall("defined").to(bool)
+  not a.isNil and a.tensor.dynamicCppCall("defined").to(bool)
 
 proc sizes*(a: Tensor): IntList {.inline.} =
   a.tensor.dynamicCppCall("sizes").to(AIntList).toIntList()
@@ -731,49 +734,50 @@ proc set_num_threads*(num: int) {.importcpp: "at::set_num_threads(#)", header: "
 
 proc get_num_threads*(): int {.importcpp: "at::get_num_threads()".}
 
+iterator reverse*[T](a: openarray[T]): T =
+  for i in countdown(a.high, 0):
+    yield a[i]
+
 proc backward*(tensors, grads: openarray[Tensor]) =
 
   var
-    remainingNodes = initQueue[Tensor]()
     sortedNodes: seq[Tensor]
     gradFuncs: HashSet[BackwardFunction]
 
   gradFuncs.init()
 
-  for tensor in tensors:
-    remainingNodes.enqueue(tensor)
-
-  # Topologically sort the graph
-  while remainingNodes.len > 0:
-    let node = remainingNodes.dequeue()
-
+  proc visit(node: Tensor) =
     # Gradient along this path is not needed
     if not node.requires_grad:
-      continue
+      return
 
     # If the gradient is needed, initialize it
     node.grad = torch.zeros_like(node)
 
     # Gradient is not defined, so don't evaluate inputs
     if node.grad_fn == nil:
-      continue
+      return
 
     # Already executed this backward function through this node,
     # or another output of this function
     if gradFuncs.containsOrIncl(node.grad_fn):
-      continue
+      return
+
+    for input in node.inputs:
+      visit(input)
 
     sortedNodes.add(node)
 
-    for input in node.inputs:
-      remainingNodes.enqueue(input)
+  # Topologically sort the graph
+  for node in tensors:
+    visit(node)
 
   # Set initial gradients
   for i, tensor in tensors:
     tensor.grad = grads[i]
 
   # Accumulate grads
-  for node in sortedNodes:
+  for node in sortedNodes.reverse:
     # TODO: handle multiple output gradients
     var grad_outputs: seq[Tensor]
     for output in node.outputs:
@@ -884,8 +888,6 @@ when isMainModule:
 
   let zmul = z * 3
 
-  x.requires_grad = true
-
   # grucell
   var
     gi = x.matmul(w_input.transpose(1, 2)) + b_input
@@ -898,16 +900,6 @@ when isMainModule:
     newgate = (i_nn + resetgate * h_n).tanh()
     hy = newgate + inputgate * (hidden - newgate)
   
-  echo hy.requires_grad
-  hy.backward()
-  print hy.grad
-  echo hy.inputs
-  print newgate.grad
-  print resetgate.grad
-  print x.grad
-
-  if true: quit 0
-
   hy.print()
 
   var hycopy = hy.copy()
