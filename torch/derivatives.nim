@@ -604,124 +604,124 @@ autograd addcdiv:
   tensor2: firstOrSelf(-grad * value * tensor1 / (tensor2 * tensor2))
 
 autograd random_inplace:
-  proc forward*(ty: TensorType; self: Tensor; from_name: int64; to_name: int64; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; from_name: int64; to_name: int64; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("random_", self.tensor, from_name, to_name, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd random_inplace:
-  proc forward*(self: Tensor; from_name: int64; to_name: int64; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; from_name: int64; to_name: int64; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("random_", from_name, to_name, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd random_inplace:
-  proc forward*(ty: TensorType; self: Tensor; to_name: int64; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; to_name: int64; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("random_", self.tensor, to_name, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd random_inplace:
-  proc forward*(self: Tensor; to_name: int64; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; to_name: int64; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("random_", to_name, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd random_inplace:
-  proc forward*(ty: TensorType; self: Tensor; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("random_", self.tensor, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd random_inplace:
-  proc forward*(self: Tensor; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("random_", generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd uniform_inplace:
-  proc forward*(ty: TensorType; self: Tensor; from_name: float64 = 0; to_name: float64 = 1; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; from_name: float64 = 0; to_name: float64 = 1; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("uniform_", self.tensor, from_name, to_name, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd uniform_inplace:
-  proc forward*(self: Tensor; from_name: float64 = 0; to_name: float64 = 1; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; from_name: float64 = 0; to_name: float64 = 1; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("uniform_", from_name, to_name, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd normal:
-  proc forward*(ty: TensorType; mean: Tensor; std: float64 = 1; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; mean: Tensor; std: float64 = 1; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("normal", mean.tensor, std, generator).to(ATensor).newTensor()
   mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
 
 autograd normal:
-  proc forward*(mean: Tensor; std: float64 = 1; generator: pointer = nil): Tensor = 
+  proc forward*(mean: Tensor; std: float64 = 1; generator: Generator = nil): Tensor = 
     dynamicCCall("at::normal", mean.tensor, std, generator).to(ATensor).newTensor()
   mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
 
 autograd normal:
-  proc forward*(ty: TensorType; mean: float64; std: Tensor; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; mean: float64; std: Tensor; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("normal", mean, std.tensor, generator).to(ATensor).newTensor()
   std: firstOrSelf(zeros(std.sizes(), grad.getType()))
 
 autograd normal:
-  proc forward*(mean: float64; std: Tensor; generator: pointer = nil): Tensor = 
+  proc forward*(mean: float64; std: Tensor; generator: Generator = nil): Tensor = 
     dynamicCCall("at::normal", mean, std.tensor, generator).to(ATensor).newTensor()
   std: firstOrSelf(zeros(std.sizes(), grad.getType()))
 
 autograd normal:
-  proc forward*(ty: TensorType; mean: Tensor; std: Tensor; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; mean: Tensor; std: Tensor; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("normal", mean.tensor, std.tensor, generator).to(ATensor).newTensor()
   mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
   std: firstOrSelf(zeros(std.sizes(), grad.getType()))
 
 autograd normal:
-  proc forward*(mean: Tensor; std: Tensor; generator: pointer = nil): Tensor = 
+  proc forward*(mean: Tensor; std: Tensor; generator: Generator = nil): Tensor = 
     dynamicCCall("at::normal", mean.tensor, std.tensor, generator).to(ATensor).newTensor()
   mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
   std: firstOrSelf(zeros(std.sizes(), grad.getType()))
 
 autograd normal_inplace:
-  proc forward*(ty: TensorType; self: Tensor; mean: float64 = 0; std: float64 = 1; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; mean: float64 = 0; std: float64 = 1; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("normal_", self.tensor, mean, std, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd normal_inplace:
-  proc forward*(self: Tensor; mean: float64 = 0; std: float64 = 1; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; mean: float64 = 0; std: float64 = 1; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("normal_", mean, std, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd cauchy_inplace:
-  proc forward*(ty: TensorType; self: Tensor; median: float64 = 0; sigma: float64 = 1; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; median: float64 = 0; sigma: float64 = 1; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("cauchy_", self.tensor, median, sigma, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd cauchy_inplace:
-  proc forward*(self: Tensor; median: float64 = 0; sigma: float64 = 1; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; median: float64 = 0; sigma: float64 = 1; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("cauchy_", median, sigma, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd log_normal_inplace:
-  proc forward*(ty: TensorType; self: Tensor; mean: float64 = 1; std: float64 = 2; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; mean: float64 = 1; std: float64 = 2; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("log_normal_", self.tensor, mean, std, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd log_normal_inplace:
-  proc forward*(self: Tensor; mean: float64 = 1; std: float64 = 2; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; mean: float64 = 1; std: float64 = 2; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("log_normal_", mean, std, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd exponential_inplace:
-  proc forward*(ty: TensorType; self: Tensor; lambd: float64 = 1; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; lambd: float64 = 1; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("exponential_", self.tensor, lambd, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd exponential_inplace:
-  proc forward*(self: Tensor; lambd: float64 = 1; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; lambd: float64 = 1; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("exponential_", lambd, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd geometric_inplace:
-  proc forward*(ty: TensorType; self: Tensor; p: float64; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; p: float64; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("geometric_", self.tensor, p, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd geometric_inplace:
-  proc forward*(self: Tensor; p: float64; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; p: float64; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("geometric_", p, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
@@ -954,12 +954,12 @@ autograd prelu:
   (self, weight): prelu_backward(grad, self, weight, grad_input_mask)
 
 autograd rrelu_with_noise:
-  proc forward*(ty: TensorType; self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: pointer): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: Generator): Tensor = 
     ty.dynamicCppCall("rrelu_with_noise_forward", self.tensor, noise.tensor, lower, upper, training, generator).to(ATensor).newTensor()
   self: firstOrSelf(rrelu_with_noise_backward(grad, self, noise, lower, upper, training))
 
 autograd rrelu_with_noise:
-  proc forward*(self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: pointer): Tensor = 
+  proc forward*(self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: Generator): Tensor = 
     dynamicCCall("at::rrelu_with_noise_forward", self.tensor, noise.tensor, lower, upper, training, generator).to(ATensor).newTensor()
   self: firstOrSelf(rrelu_with_noise_backward(grad, self, noise, lower, upper, training))
 
@@ -976,12 +976,12 @@ autograd rrelu_with_noise_backward:
   self: firstOrSelf(zeros_like(grad))
 
 autograd rrelu_with_noise_inplace:
-  proc forward*(ty: TensorType; self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: pointer): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: Generator): Tensor = 
     ty.dynamicCppCall("rrelu_with_noise_forward_", self.tensor, noise.tensor, lower, upper, training, generator).to(ATensor).newTensor()
   self: firstOrSelf(rrelu_with_noise_backward(grad, fwd_result, noise, lower, upper, training))
 
 autograd rrelu_with_noise_inplace:
-  proc forward*(self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: pointer): Tensor = 
+  proc forward*(self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: Generator): Tensor = 
     dynamicCCall("at::rrelu_with_noise_forward_", self.tensor, noise.tensor, lower, upper, training, generator).to(ATensor).newTensor()
   self: firstOrSelf(rrelu_with_noise_backward(grad, fwd_result, noise, lower, upper, training))
 
@@ -1638,12 +1638,12 @@ autograd atan:
   self: firstOrSelf(grad / (self * self + 1))
 
 autograd bernoulli:
-  proc forward*(ty: TensorType; self: Tensor; p: float64; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; p: float64; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("bernoulli", self.tensor, p, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
 autograd bernoulli:
-  proc forward*(self: Tensor; p: float64; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; p: float64; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("bernoulli", p, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
@@ -2386,22 +2386,22 @@ autograd s_where_internal:
   other: firstOrSelf(where(condition, zeros_like(grad), grad))
 
 autograd standard_gamma_internal:
-  proc forward*(ty: TensorType; self: Tensor; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("_standard_gamma", self.tensor, generator).to(ATensor).newTensor()
   self: firstOrSelf(grad * self.standard_gamma_grad_internal(fwd_result))
 
 autograd standard_gamma_internal:
-  proc forward*(self: Tensor; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; generator: Generator = nil): Tensor = 
     self.tensor.dynamicCppCall("_standard_gamma", generator).to(ATensor).newTensor()
   self: firstOrSelf(grad * self.standard_gamma_grad_internal(fwd_result))
 
 autograd poisson:
-  proc forward*(ty: TensorType; self: Tensor; generator: pointer = nil): Tensor = 
+  proc forward*(ty: TensorType; self: Tensor; generator: Generator = nil): Tensor = 
     ty.dynamicCppCall("poisson", self.tensor, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(self))
 
 autograd poisson:
-  proc forward*(self: Tensor; generator: pointer = nil): Tensor = 
+  proc forward*(self: Tensor; generator: Generator = nil): Tensor = 
     dynamicCCall("at::poisson", self.tensor, generator).to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(self))
 

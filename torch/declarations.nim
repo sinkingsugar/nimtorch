@@ -1199,70 +1199,70 @@ proc btrisolve*(ty: TensorType; self: Tensor; LU_data: Tensor; LU_pivots: Tensor
 proc btrisolve*(self: Tensor; LU_data: Tensor; LU_pivots: Tensor): Tensor = 
   self.tensor.dynamicCppCall("btrisolve", LU_data.tensor, LU_pivots.tensor).to(ATensor).newTensor()
 
-proc random_inplace*(ty: TensorType; self: Tensor; from_name: int64; to_name: int64; generator: pointer = nil): Tensor
+proc random_inplace*(ty: TensorType; self: Tensor; from_name: int64; to_name: int64; generator: Generator = nil): Tensor
 
-proc random_inplace*(self: Tensor; from_name: int64; to_name: int64; generator: pointer = nil): Tensor
+proc random_inplace*(self: Tensor; from_name: int64; to_name: int64; generator: Generator = nil): Tensor
 
-proc random_inplace*(ty: TensorType; self: Tensor; to_name: int64; generator: pointer = nil): Tensor
+proc random_inplace*(ty: TensorType; self: Tensor; to_name: int64; generator: Generator = nil): Tensor
 
-proc random_inplace*(self: Tensor; to_name: int64; generator: pointer = nil): Tensor
+proc random_inplace*(self: Tensor; to_name: int64; generator: Generator = nil): Tensor
 
-proc random_inplace*(ty: TensorType; self: Tensor; generator: pointer = nil): Tensor
+proc random_inplace*(ty: TensorType; self: Tensor; generator: Generator = nil): Tensor
 
-proc random_inplace*(self: Tensor; generator: pointer = nil): Tensor
+proc random_inplace*(self: Tensor; generator: Generator = nil): Tensor
 
-proc multinomial*(ty: TensorType; self: Tensor; num_samples: int64; replacement: bool = false; generator: pointer = nil): Tensor = 
+proc multinomial*(ty: TensorType; self: Tensor; num_samples: int64; replacement: bool = false; generator: Generator = nil): Tensor = 
   ty.dynamicCppCall("multinomial", self.tensor, num_samples, replacement, generator).to(ATensor).newTensor()
 
-proc multinomial*(self: Tensor; num_samples: int64; replacement: bool = false; generator: pointer = nil): Tensor = 
+proc multinomial*(self: Tensor; num_samples: int64; replacement: bool = false; generator: Generator = nil): Tensor = 
   self.tensor.dynamicCppCall("multinomial", num_samples, replacement, generator).to(ATensor).newTensor()
 
-proc uniform_inplace*(ty: TensorType; self: Tensor; from_name: float64 = 0; to_name: float64 = 1; generator: pointer = nil): Tensor
+proc uniform_inplace*(ty: TensorType; self: Tensor; from_name: float64 = 0; to_name: float64 = 1; generator: Generator = nil): Tensor
 
-proc uniform_inplace*(self: Tensor; from_name: float64 = 0; to_name: float64 = 1; generator: pointer = nil): Tensor
+proc uniform_inplace*(self: Tensor; from_name: float64 = 0; to_name: float64 = 1; generator: Generator = nil): Tensor
 
-proc normal*(ty: TensorType; mean: Tensor; std: float64 = 1; generator: pointer = nil): Tensor
+proc normal*(ty: TensorType; mean: Tensor; std: float64 = 1; generator: Generator = nil): Tensor
 
-proc normal*(mean: Tensor; std: float64 = 1; generator: pointer = nil): Tensor
+proc normal*(mean: Tensor; std: float64 = 1; generator: Generator = nil): Tensor
 
-proc normal*(ty: TensorType; mean: float64; std: Tensor; generator: pointer = nil): Tensor
+proc normal*(ty: TensorType; mean: float64; std: Tensor; generator: Generator = nil): Tensor
 
-proc normal*(mean: float64; std: Tensor; generator: pointer = nil): Tensor
+proc normal*(mean: float64; std: Tensor; generator: Generator = nil): Tensor
 
-proc normal*(ty: TensorType; mean: Tensor; std: Tensor; generator: pointer = nil): Tensor
+proc normal*(ty: TensorType; mean: Tensor; std: Tensor; generator: Generator = nil): Tensor
 
-proc normal*(mean: Tensor; std: Tensor; generator: pointer = nil): Tensor
+proc normal*(mean: Tensor; std: Tensor; generator: Generator = nil): Tensor
 
-proc normal_inplace*(ty: TensorType; self: Tensor; mean: float64 = 0; std: float64 = 1; generator: pointer = nil): Tensor
+proc normal_inplace*(ty: TensorType; self: Tensor; mean: float64 = 0; std: float64 = 1; generator: Generator = nil): Tensor
 
-proc normal_inplace*(self: Tensor; mean: float64 = 0; std: float64 = 1; generator: pointer = nil): Tensor
+proc normal_inplace*(self: Tensor; mean: float64 = 0; std: float64 = 1; generator: Generator = nil): Tensor
 
-proc cauchy_inplace*(ty: TensorType; self: Tensor; median: float64 = 0; sigma: float64 = 1; generator: pointer = nil): Tensor
+proc cauchy_inplace*(ty: TensorType; self: Tensor; median: float64 = 0; sigma: float64 = 1; generator: Generator = nil): Tensor
 
-proc cauchy_inplace*(self: Tensor; median: float64 = 0; sigma: float64 = 1; generator: pointer = nil): Tensor
+proc cauchy_inplace*(self: Tensor; median: float64 = 0; sigma: float64 = 1; generator: Generator = nil): Tensor
 
-proc log_normal_inplace*(ty: TensorType; self: Tensor; mean: float64 = 1; std: float64 = 2; generator: pointer = nil): Tensor
+proc log_normal_inplace*(ty: TensorType; self: Tensor; mean: float64 = 1; std: float64 = 2; generator: Generator = nil): Tensor
 
-proc log_normal_inplace*(self: Tensor; mean: float64 = 1; std: float64 = 2; generator: pointer = nil): Tensor
+proc log_normal_inplace*(self: Tensor; mean: float64 = 1; std: float64 = 2; generator: Generator = nil): Tensor
 
-proc exponential_inplace*(ty: TensorType; self: Tensor; lambd: float64 = 1; generator: pointer = nil): Tensor
+proc exponential_inplace*(ty: TensorType; self: Tensor; lambd: float64 = 1; generator: Generator = nil): Tensor
 
-proc exponential_inplace*(self: Tensor; lambd: float64 = 1; generator: pointer = nil): Tensor
+proc exponential_inplace*(self: Tensor; lambd: float64 = 1; generator: Generator = nil): Tensor
 
-proc geometric_inplace*(ty: TensorType; self: Tensor; p: float64; generator: pointer = nil): Tensor
+proc geometric_inplace*(ty: TensorType; self: Tensor; p: float64; generator: Generator = nil): Tensor
 
-proc geometric_inplace*(self: Tensor; p: float64; generator: pointer = nil): Tensor
+proc geometric_inplace*(self: Tensor; p: float64; generator: Generator = nil): Tensor
 
-proc bernoulli_internal_inplace*(ty: TensorType; self: Tensor; p: float64; generator: pointer = nil): Tensor = 
+proc bernoulli_internal_inplace*(ty: TensorType; self: Tensor; p: float64; generator: Generator = nil): Tensor = 
   ty.dynamicCppCall("_bernoulli_", self.tensor, p, generator).to(ATensor).newTensor()
 
-proc bernoulli_internal_inplace*(self: Tensor; p: float64; generator: pointer = nil): Tensor = 
+proc bernoulli_internal_inplace*(self: Tensor; p: float64; generator: Generator = nil): Tensor = 
   self.tensor.dynamicCppCall("_bernoulli_", p, generator).to(ATensor).newTensor()
 
-proc th_bernoulli_internal*(ty: TensorType; self: Tensor; generator: pointer = nil): Tensor = 
+proc th_bernoulli_internal*(ty: TensorType; self: Tensor; generator: Generator = nil): Tensor = 
   ty.dynamicCppCall("_th_bernoulli", self.tensor, generator).to(ATensor).newTensor()
 
-proc th_bernoulli_internal*(self: Tensor; generator: pointer = nil): Tensor = 
+proc th_bernoulli_internal*(self: Tensor; generator: Generator = nil): Tensor = 
   self.tensor.dynamicCppCall("_th_bernoulli", generator).to(ATensor).newTensor()
 
 proc dirichlet_grad_internal*(ty: TensorType; x: Tensor; alpha: Tensor; total: Tensor): Tensor = 
@@ -1467,17 +1467,17 @@ proc prelu_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: 
 proc prelu_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; output_mask: StdArray[bool, 2]): tuple[self: Tensor, weight: Tensor] = 
   dynamicCCall("at::prelu_backward", grad_output.tensor, self.tensor, weight.tensor, output_mask).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
 
-proc rrelu_with_noise*(ty: TensorType; self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: pointer): Tensor
+proc rrelu_with_noise*(ty: TensorType; self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: Generator): Tensor
 
-proc rrelu_with_noise*(self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: pointer): Tensor
+proc rrelu_with_noise*(self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: Generator): Tensor
 
 proc rrelu_with_noise_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; noise: Tensor; lower: float; upper: float; training: bool): Tensor
 
 proc rrelu_with_noise_backward*(grad_output: Tensor; self: Tensor; noise: Tensor; lower: float; upper: float; training: bool): Tensor
 
-proc rrelu_with_noise_inplace*(ty: TensorType; self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: pointer): Tensor
+proc rrelu_with_noise_inplace*(ty: TensorType; self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: Generator): Tensor
 
-proc rrelu_with_noise_inplace*(self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: pointer): Tensor
+proc rrelu_with_noise_inplace*(self: Tensor; noise: Tensor; lower: float; upper: float; training: bool; generator: Generator): Tensor
 
 proc softplus*(ty: TensorType; self: Tensor; beta: float; threshold: float): Tensor
 
@@ -1871,10 +1871,10 @@ proc cudnn_init_dropout_state_internal*(ty: TensorType; self_ty: TensorType; dro
 proc cudnn_init_dropout_state_internal*(self_ty: TensorType; dropout: float64; train: bool; dropout_seed: int64): Tensor = 
   dynamicCCall("at::_cudnn_init_dropout_state", self_ty, dropout, train, dropout_seed).to(ATensor).newTensor()
 
-proc fused_dropout_internal*(ty: TensorType; self: Tensor; p: float64; generator: pointer = nil): tuple[result0: Tensor, result1: Tensor] = 
+proc fused_dropout_internal*(ty: TensorType; self: Tensor; p: float64; generator: Generator = nil): tuple[result0: Tensor, result1: Tensor] = 
   ty.dynamicCppCall("_fused_dropout", self.tensor, p, generator).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
 
-proc fused_dropout_internal*(self: Tensor; p: float64; generator: pointer = nil): tuple[result0: Tensor, result1: Tensor] = 
+proc fused_dropout_internal*(self: Tensor; p: float64; generator: Generator = nil): tuple[result0: Tensor, result1: Tensor] = 
   self.tensor.dynamicCppCall("_fused_dropout", p, generator).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
 
 proc masked_scale_internal*(ty: TensorType; self: Tensor; mask: Tensor; scale: float64): Tensor = 
@@ -2153,15 +2153,15 @@ proc batch_norm*(ty: TensorType; input: Tensor; weight: Tensor; bias: Tensor; ru
 proc batch_norm*(input: Tensor; weight: Tensor; bias: Tensor; running_mean: Tensor; running_var: Tensor; training: bool; momentum: float64; eps: float64; cudnn_enabled: bool): Tensor = 
   dynamicCCall("at::batch_norm", input.tensor, weight.tensor, bias.tensor, running_mean.tensor, running_var.tensor, training, momentum, eps, cudnn_enabled).to(ATensor).newTensor()
 
-proc bernoulli*(ty: TensorType; self: Tensor; p: Tensor; generator: pointer = nil): Tensor = 
+proc bernoulli*(ty: TensorType; self: Tensor; p: Tensor; generator: Generator = nil): Tensor = 
   ty.dynamicCppCall("bernoulli", self.tensor, p.tensor, generator).to(ATensor).newTensor()
 
-proc bernoulli*(self: Tensor; p: Tensor; generator: pointer = nil): Tensor = 
+proc bernoulli*(self: Tensor; p: Tensor; generator: Generator = nil): Tensor = 
   self.tensor.dynamicCppCall("bernoulli", p.tensor, generator).to(ATensor).newTensor()
 
-proc bernoulli*(ty: TensorType; self: Tensor; p: float64; generator: pointer = nil): Tensor
+proc bernoulli*(ty: TensorType; self: Tensor; p: float64; generator: Generator = nil): Tensor
 
-proc bernoulli*(self: Tensor; p: float64; generator: pointer = nil): Tensor
+proc bernoulli*(self: Tensor; p: float64; generator: Generator = nil): Tensor
 
 proc bernoulli*(ty: TensorType; self: Tensor): Tensor = 
   ty.dynamicCppCall("bernoulli", self.tensor).to(ATensor).newTensor()
@@ -2169,16 +2169,16 @@ proc bernoulli*(ty: TensorType; self: Tensor): Tensor =
 proc bernoulli*(self: Tensor): Tensor = 
   self.tensor.dynamicCppCall("bernoulli").to(ATensor).newTensor()
 
-proc bernoulli_inplace*(ty: TensorType; self: Tensor; p: Tensor; generator: pointer = nil): Tensor = 
+proc bernoulli_inplace*(ty: TensorType; self: Tensor; p: Tensor; generator: Generator = nil): Tensor = 
   ty.dynamicCppCall("bernoulli_", self.tensor, p.tensor, generator).to(ATensor).newTensor()
 
-proc bernoulli_inplace*(self: Tensor; p: Tensor; generator: pointer = nil): Tensor = 
+proc bernoulli_inplace*(self: Tensor; p: Tensor; generator: Generator = nil): Tensor = 
   self.tensor.dynamicCppCall("bernoulli_", p.tensor, generator).to(ATensor).newTensor()
 
-proc bernoulli_inplace*(ty: TensorType; self: Tensor; p: float64; generator: pointer = nil): Tensor = 
+proc bernoulli_inplace*(ty: TensorType; self: Tensor; p: float64; generator: Generator = nil): Tensor = 
   ty.dynamicCppCall("bernoulli_", self.tensor, p, generator).to(ATensor).newTensor()
 
-proc bernoulli_inplace*(self: Tensor; p: float64; generator: pointer = nil): Tensor = 
+proc bernoulli_inplace*(self: Tensor; p: float64; generator: Generator = nil): Tensor = 
   self.tensor.dynamicCppCall("bernoulli_", p, generator).to(ATensor).newTensor()
 
 proc bernoulli_inplace*(ty: TensorType; self: Tensor): Tensor = 
@@ -3259,10 +3259,10 @@ proc rand*(ty: TensorType; size: openarray[SomeInteger]; options: TensorOptions)
 proc rand*(size: openarray[SomeInteger]; options: TensorOptions): Tensor = 
   dynamicCCall("at::rand", size.toAIntList(), options).to(ATensor).newTensor()
 
-proc rand*(ty: TensorType; size: openarray[SomeInteger]; generator: pointer; options: TensorOptions): Tensor = 
+proc rand*(ty: TensorType; size: openarray[SomeInteger]; generator: Generator; options: TensorOptions): Tensor = 
   ty.dynamicCppCall("rand", size.toAIntList(), generator, options).to(ATensor).newTensor()
 
-proc rand*(size: openarray[SomeInteger]; generator: pointer; options: TensorOptions): Tensor = 
+proc rand*(size: openarray[SomeInteger]; generator: Generator; options: TensorOptions): Tensor = 
   dynamicCCall("at::rand", size.toAIntList(), generator, options).to(ATensor).newTensor()
 
 proc rand_like*(ty: TensorType; self: Tensor): Tensor = 
@@ -3283,10 +3283,10 @@ proc randint*(ty: TensorType; high: int64; size: openarray[SomeInteger]; options
 proc randint*(high: int64; size: openarray[SomeInteger]; options: TensorOptions): Tensor = 
   dynamicCCall("at::randint", high, size.toAIntList(), options).to(ATensor).newTensor()
 
-proc randint*(ty: TensorType; high: int64; size: openarray[SomeInteger]; generator: pointer; options: TensorOptions): Tensor = 
+proc randint*(ty: TensorType; high: int64; size: openarray[SomeInteger]; generator: Generator; options: TensorOptions): Tensor = 
   ty.dynamicCppCall("randint", high, size.toAIntList(), generator, options).to(ATensor).newTensor()
 
-proc randint*(high: int64; size: openarray[SomeInteger]; generator: pointer; options: TensorOptions): Tensor = 
+proc randint*(high: int64; size: openarray[SomeInteger]; generator: Generator; options: TensorOptions): Tensor = 
   dynamicCCall("at::randint", high, size.toAIntList(), generator, options).to(ATensor).newTensor()
 
 proc randint*(ty: TensorType; low: int64; high: int64; size: openarray[SomeInteger]; options: TensorOptions): Tensor = 
@@ -3295,10 +3295,10 @@ proc randint*(ty: TensorType; low: int64; high: int64; size: openarray[SomeInteg
 proc randint*(low: int64; high: int64; size: openarray[SomeInteger]; options: TensorOptions): Tensor = 
   dynamicCCall("at::randint", low, high, size.toAIntList(), options).to(ATensor).newTensor()
 
-proc randint*(ty: TensorType; low: int64; high: int64; size: openarray[SomeInteger]; generator: pointer; options: TensorOptions): Tensor = 
+proc randint*(ty: TensorType; low: int64; high: int64; size: openarray[SomeInteger]; generator: Generator; options: TensorOptions): Tensor = 
   ty.dynamicCppCall("randint", low, high, size.toAIntList(), generator, options).to(ATensor).newTensor()
 
-proc randint*(low: int64; high: int64; size: openarray[SomeInteger]; generator: pointer; options: TensorOptions): Tensor = 
+proc randint*(low: int64; high: int64; size: openarray[SomeInteger]; generator: Generator; options: TensorOptions): Tensor = 
   dynamicCCall("at::randint", low, high, size.toAIntList(), generator, options).to(ATensor).newTensor()
 
 proc randint_like*(ty: TensorType; self: Tensor; high: int64): Tensor = 
@@ -3331,10 +3331,10 @@ proc randn*(ty: TensorType; size: openarray[SomeInteger]; options: TensorOptions
 proc randn*(size: openarray[SomeInteger]; options: TensorOptions): Tensor = 
   dynamicCCall("at::randn", size.toAIntList(), options).to(ATensor).newTensor()
 
-proc randn*(ty: TensorType; size: openarray[SomeInteger]; generator: pointer; options: TensorOptions): Tensor = 
+proc randn*(ty: TensorType; size: openarray[SomeInteger]; generator: Generator; options: TensorOptions): Tensor = 
   ty.dynamicCppCall("randn", size.toAIntList(), generator, options).to(ATensor).newTensor()
 
-proc randn*(size: openarray[SomeInteger]; generator: pointer; options: TensorOptions): Tensor = 
+proc randn*(size: openarray[SomeInteger]; generator: Generator; options: TensorOptions): Tensor = 
   dynamicCCall("at::randn", size.toAIntList(), generator, options).to(ATensor).newTensor()
 
 proc randn_like*(ty: TensorType; self: Tensor): Tensor = 
@@ -3355,10 +3355,10 @@ proc randperm*(ty: TensorType; n: int64; options: TensorOptions): Tensor =
 proc randperm*(n: int64; options: TensorOptions): Tensor = 
   dynamicCCall("at::randperm", n, options).to(ATensor).newTensor()
 
-proc randperm*(ty: TensorType; n: int64; generator: pointer; options: TensorOptions): Tensor = 
+proc randperm*(ty: TensorType; n: int64; generator: Generator; options: TensorOptions): Tensor = 
   ty.dynamicCppCall("randperm", n, generator, options).to(ATensor).newTensor()
 
-proc randperm*(n: int64; generator: pointer; options: TensorOptions): Tensor = 
+proc randperm*(n: int64; generator: Generator; options: TensorOptions): Tensor = 
   dynamicCCall("at::randperm", n, generator, options).to(ATensor).newTensor()
 
 proc range*(ty: TensorType; start: float; end_name: float; options: TensorOptions): Tensor = 
@@ -3411,16 +3411,16 @@ proc round_inplace*(ty: TensorType; self: Tensor): Tensor =
 proc round_inplace*(self: Tensor): Tensor = 
   self.tensor.dynamicCppCall("round_").to(ATensor).newTensor()
 
-proc rrelu*(ty: TensorType; self: Tensor; lower: float; upper: float; training: bool = false; generator: pointer = nil): Tensor = 
+proc rrelu*(ty: TensorType; self: Tensor; lower: float; upper: float; training: bool = false; generator: Generator = nil): Tensor = 
   ty.dynamicCppCall("rrelu", self.tensor, lower, upper, training, generator).to(ATensor).newTensor()
 
-proc rrelu*(self: Tensor; lower: float; upper: float; training: bool = false; generator: pointer = nil): Tensor = 
+proc rrelu*(self: Tensor; lower: float; upper: float; training: bool = false; generator: Generator = nil): Tensor = 
   dynamicCCall("at::rrelu", self.tensor, lower, upper, training, generator).to(ATensor).newTensor()
 
-proc rrelu_inplace*(ty: TensorType; self: Tensor; lower: float; upper: float; training: bool = false; generator: pointer = nil): Tensor = 
+proc rrelu_inplace*(ty: TensorType; self: Tensor; lower: float; upper: float; training: bool = false; generator: Generator = nil): Tensor = 
   ty.dynamicCppCall("rrelu_", self.tensor, lower, upper, training, generator).to(ATensor).newTensor()
 
-proc rrelu_inplace*(self: Tensor; lower: float; upper: float; training: bool = false; generator: pointer = nil): Tensor = 
+proc rrelu_inplace*(self: Tensor; lower: float; upper: float; training: bool = false; generator: Generator = nil): Tensor = 
   dynamicCCall("at::rrelu_", self.tensor, lower, upper, training, generator).to(ATensor).newTensor()
 
 proc relu*(ty: TensorType; self: Tensor): Tensor
@@ -3837,13 +3837,13 @@ proc standard_gamma_grad_internal*(ty: TensorType; self: Tensor; output: Tensor)
 proc standard_gamma_grad_internal*(self: Tensor; output: Tensor): Tensor = 
   self.tensor.dynamicCppCall("_standard_gamma_grad", output.tensor).to(ATensor).newTensor()
 
-proc standard_gamma_internal*(ty: TensorType; self: Tensor; generator: pointer = nil): Tensor
+proc standard_gamma_internal*(ty: TensorType; self: Tensor; generator: Generator = nil): Tensor
 
-proc standard_gamma_internal*(self: Tensor; generator: pointer = nil): Tensor
+proc standard_gamma_internal*(self: Tensor; generator: Generator = nil): Tensor
 
-proc poisson*(ty: TensorType; self: Tensor; generator: pointer = nil): Tensor
+proc poisson*(ty: TensorType; self: Tensor; generator: Generator = nil): Tensor
 
-proc poisson*(self: Tensor; generator: pointer = nil): Tensor
+proc poisson*(self: Tensor; generator: Generator = nil): Tensor
 
 proc native_norm*(ty: TensorType; self: Tensor; p: float = 2): Tensor = 
   ty.dynamicCppCall("native_norm", self.tensor, p).to(ATensor).newTensor()
