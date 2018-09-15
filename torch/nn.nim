@@ -1,6 +1,6 @@
 # extremely wip , dont use
 
-import ../nimtorch
+import ../torch
 import nn/init
 import math
 
