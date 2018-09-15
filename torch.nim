@@ -220,7 +220,7 @@ proc toIntList(self: AIntList): IntList =
   result.setLen(self.len)
   # TODO: copymem
   for i in 0 ..< self.len:
-    result[i] = self[i].ilsize
+    result[i] = self[i].int
 
 proc toAIntList[T: SomeInteger](self: openarray[T]): AIntList =
   when T is ilsize:
