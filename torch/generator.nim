@@ -49,7 +49,7 @@ proc toNimType(typeName: string): string =
   of "bool": return "bool"
   of "real", "accreal": return "float"
   of "double": return "float64"
-  of "Generator*", "Generator *", "Generator": return "pointer"
+  of "Generator*", "Generator *", "Generator": return "Generator"
   of "IntList": return "IntList"
   of "void": return "void"
   of "void*": return "pointer"
