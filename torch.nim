@@ -220,15 +220,14 @@ proc toIntList(self: AIntList): IntList =
     result[i] = self[i].int
 
 proc toAIntList[T: SomeInteger](self: openarray[T]): AIntList =
-  let size: csize = self.len
   when T is ilsize:
-    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(self)), size)
+    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(self[0])), self.len.csize)
     return temp
   else:
-    var converted = newSeq[ilsize](size)
+    var converted = newSeq[ilsize](self.len)
     for i, value in self:
       converted[i] = value.ilsize
-    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(converted)), size)
+    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(converted[0])), self.len.csize)
     return temp
 
 # Auto generated #
@@ -281,57 +280,57 @@ proc device*(deviceName: string): Device {.inline.} =
   of "cuda", "CUDA": return Device.CUDA
   else: raiseAssert("Unknown device")
 
-proc zeros*(intList: IntList): Tensor =
+proc zeros*[T: SomeInteger](size: varargs[T]): Tensor =
   var opts: TensorOptions
   opts.dtype(defaultType.toATenType()).to(void)
-  return torch.zeros(intList, opts)
+  return torch.zeros(size, opts)
 
-proc zeros*(intList: IntList; device: Device): Tensor =
-  var opts: TensorOptions
-  opts.dtype(defaultType.toATenType()).to(void)
-  case device
-  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
-  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return torch.zeros(intList, opts)
-
-proc zeros*(intList: IntList; dtype: TensorKind): Tensor =
-  var opts: TensorOptions
-  opts.dtype(dtype.toATenType()).to(void)
-  return torch.zeros(intList, opts)
-
-proc zeros*(intList: IntList; dtype: TensorKind; device: Device): Tensor =
-  var opts: TensorOptions
-  opts.dtype(dtype.toATenType()).to(void)
-  case device
-  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
-  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return torch.zeros(intList, opts)
-
-proc ones*(intList: IntList): Tensor =
-  var opts: TensorOptions
-  opts.dtype(defaultType.toATenType()).to(void)
-  return torch.ones(intList, opts)
-
-proc ones*(intList: IntList; device: Device): Tensor =
+proc zeros*(size: openarray[SomeInteger]; device: Device): Tensor =
   var opts: TensorOptions
   opts.dtype(defaultType.toATenType()).to(void)
   case device
   of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
   of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return torch.ones(intList, opts)
+  return torch.zeros(size, opts)
 
-proc ones*(intList: IntList; dtype: TensorKind): Tensor =
+proc zeros*(size: openarray[SomeInteger]; dtype: TensorKind): Tensor =
   var opts: TensorOptions
   opts.dtype(dtype.toATenType()).to(void)
-  return torch.ones(intList, opts)
+  return torch.zeros(size, opts)
 
-proc ones*(intList: IntList; dtype: TensorKind; device: Device): Tensor =
+proc zeros*(size: openarray[SomeInteger]; dtype: TensorKind; device: Device): Tensor =
   var opts: TensorOptions
   opts.dtype(dtype.toATenType()).to(void)
   case device
   of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
   of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return torch.ones(intList, opts)
+  return torch.zeros(size, opts)
+
+proc ones*[T: SomeInteger](size: varargs[T]): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  return torch.ones(size, opts)
+
+proc ones*(size: openarray[SomeInteger]; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(defaultType.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.ones(size, opts)
+
+proc ones*(size: openarray[SomeInteger]; dtype: TensorKind): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  return torch.ones(size, opts)
+
+proc ones*(size: openarray[SomeInteger]; dtype: TensorKind; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  case device
+  of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return torch.ones(size, opts)
 
 iterator lenIter[T](s: openarray[T]): int {.inline.} =
   ## Inline iterator on any-depth seq or array
