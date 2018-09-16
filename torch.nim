@@ -1,5 +1,5 @@
 include torch/torch_cpp
-import macros, sequtils, math, queues, sets, strformat, options
+import macros, sequtils, math, sets, strformat, options
 
 {.experimental: "implicitDeref".}
 
