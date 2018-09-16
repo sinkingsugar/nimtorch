@@ -129,57 +129,48 @@ macro autograd(head, body: untyped): untyped =
 
   forwardBody.add quote do:
     when not defined inference:
-      let nodeId = nextNodeId
-      inc nextNodeId
+      if `requiresGradExpr`:
+        let nodeId = nextNodeId
+        inc nextNodeId
 
-      let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
-        `resultIdent`.setLen(`resultIndex`)
-        `backwardBody`
+        let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
+          `resultIdent`.setLen(`resultIndex`)
+          `backwardBody`
 
-      let inputs = @`inputIdents`
+        let inputs = @`inputIdents`
 
-      when `resultIdent` is Tensor:
-        `resultIdent`.requires_grad = `requiresGradExpr`
-        `resultIdent`.grad_fn = fn
-        `resultIdent`.outputs = @[`resultIdent`]
-        `resultIdent`.nodeId = nodeId
-        when compiles(`resultIdent`.inputs.add(inputs)):
-          `resultIdent`.inputs.add(inputs)
-      else:
-        when `resultIdent` is tuple:
-          var outputs: seq[Tensor]
-          for k, f in `resultIdent`.fieldPairs:
-            when f is Tensor:
-              outputs.add(f)
+        when `resultIdent` is Tensor:
+          `resultIdent`.requires_grad = true
+          `resultIdent`.grad_fn = fn
+          `resultIdent`.outputs = @[`resultIdent`]
+          `resultIdent`.nodeId = nodeId
+          when compiles(`resultIdent`.inputs.add(inputs)):
+            `resultIdent`.inputs.add(inputs)
+        else:
+          when `resultIdent` is tuple:
+            var outputs: seq[Tensor]
+            for k, f in `resultIdent`.fieldPairs:
+              when f is Tensor:
+                outputs.add(f)
 
-          for k, f in `resultIdent`.fieldPairs:
-            when f is Tensor:
-              f.requires_grad = `requiresGradExpr`
-              f.grad_fn = fn
-              f.outputs = outputs
-              f.nodeId = nodeId
-              when compiles(f.inputs.add(inputs)):
-                f.inputs.add(inputs)
-        elif `resultIdent` is seq:
-          for i in 0 ..< `resultIdent`.len:
-            let r = `resultIdent`[i]
-            when r is Tensor:
-              r.requires_grad = `requiresGradExpr`
-              r.grad_fn = fn
-              r.outputs = `resultIdent`
-              r.nodeId = nodeId
-              when compiles(r.inputs.add(inputs)):
-                r.inputs.add(inputs)
-
-# proc test_fwd(self, other: Tensor): Tensor = discard
-# proc test_bwd(self: Tensor): Tensor = discard
-
-# expandMacros:
-#   autograd test:
-#     proc forward(self: Tensor, other: Tensor, a: openarray[int]; i: int = 1): Tensor =
-#       test_fwd(self, other)
-#     self: grad
-#     other: test_bwd(grad)
+            for k, f in `resultIdent`.fieldPairs:
+              when f is Tensor:
+                f.requires_grad = true
+                f.grad_fn = fn
+                f.outputs = outputs
+                f.nodeId = nodeId
+                when compiles(f.inputs.add(inputs)):
+                  f.inputs.add(inputs)
+          elif `resultIdent` is seq:
+            for i in 0 ..< `resultIdent`.len:
+              let r = `resultIdent`[i]
+              when r is Tensor:
+                r.requires_grad = true
+                r.grad_fn = fn
+                r.outputs = `resultIdent`
+                r.nodeId = nodeId
+                when compiles(r.inputs.add(inputs)):
+                  r.inputs.add(inputs)
 
 proc use_count*(x: Tensor): int = x.tensor.dynamicCppCall("get()->use_count").to(int)
 
@@ -216,10 +207,6 @@ proc high*(v: AIntList): int {.inline.} = v.size().to(int) - 1
 
 proc len*(v: AIntList): int {.inline.} = v.size().to(int)
 
-# proc `[]`*(v: AIntList; index: int): int64 {.inline.} = v.toCpp[index].to(int64)
-
-#proc `[]=`*(v: AIntList; index: int; value: int64) {.inline.} = v.toCpp[index] = value
-
 iterator items*(ints: AIntList): ilsize {.inline.} =
   for i in 0 .. ints.high:
     yield ints[i]
@@ -240,9 +227,6 @@ proc toAIntList[T: SomeInteger](self: openarray[T]): AIntList =
       converted[i] = value.ilsize
     let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(converted[0])), self.len.csize)
     return temp
-
-# Auto generated #
-# append all the auto generated procs
 
 proc newTensors(nativeTensor: ATensor): Tensor {.inline.} = nativeTensor.newTensor()
 
@@ -482,32 +466,6 @@ proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
 
 proc `[]=`*(a: Tensor; index: int; b: Tensor) {.inline.} =
   a.tensor.toCpp()[index] = b.tensor
-
-# proc infer_size*(shape: IntList; numel: int): IntList =
-#   result = shape
-#   var
-#     newsize = 1
-#     infer_dim = -1
-  
-#   for dim in 0 ..< shape.len:
-#     if shape[dim] == -1:
-#       if infer_dim >= 0:
-#         raise newException(ValueError, "only one dimension can be inferred")
-#       infer_dim = dim;
-#     elif shape[dim] >= 0:
-#       newsize *= shape[dim]
-#     else:
-#       raise newException(ValueError, "invalid shape dimension " & $shape[dim])
-
-#   if numel == newsize or (infer_dim >= 0 and newsize > 0 and (numel mod newsize == 0)):
-#     if infer_dim >= 0:
-#       # we have a degree of freedom here to select the dimension size; follow NumPy semantics
-#       # and just bail.
-#       assert(newsize != 0, "cannot reshape tensor of 0 elements into shape " & $shape)
-#       result[infer_dim] = numel div newsize
-    
-#   else:
-#     raise newException(ValueError, fmt"shape '{shape}' is invalid for input of size {numel}")
 
 proc chunk(self: Tensor; chunks, dim: int64): seq[Tensor] =
   assert(self.dim() > 0, "chunk expects at least a 1-dimensional tensor");
@@ -986,25 +944,19 @@ when isMainModule:
   #         [-0.3930, -0.3210],
   #         [-0.7325, -0.6430]])
 
-    when not defined inference:
+  when not defined inference:
+    var a = tensor([
+      [1, 2],
+      [3, 4]
+    ])
 
-      var a = tensor([
-        [1, 2],
-        [3, 4]
-      ])
-
-      var b = tensor([
-        [5, 6],
-        [8, 7]
-      ])
-
-      var
-        n: IntList = @[2, 2]
-        o = ones(n)
-        g = (a + b).grad_fn([o])
-      
-      a.requires_grad = true
-      let a1 = sin(a)
-      echo a1.requires_grad
-      a1.backward()
-      print a.grad
+    var b = tensor([
+      [5, 6],
+      [8, 7]
+    ])
+  
+    a.requires_grad = true
+    let a1 = sin(a)
+    echo a1.requires_grad
+    a1.backward()
+    print a.grad
