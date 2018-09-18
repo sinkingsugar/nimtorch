@@ -12,10 +12,12 @@ type
       requires_grad*: bool
       grad*: Tensor
       grad_fn: BackwardFunction
-      inputs*: seq[Tensor]
-      outputs*: seq[Tensor]
-      nodeId: int
     
+  BackwardFunction* = ref object
+    inputs*: seq[Tensor]
+    outputs*: seq[Tensor]
+    apply*: BackwardFunctionCall
+
   Generator* = ptr AGenerator
   TensorType* = ptr AType
   TensorOptions* = ATensorOptions
@@ -29,11 +31,9 @@ type
     FloatTensor, DoubleTensor, HalfTensor, ByteTensor,
     CharTensor, ShortTensor, IntTensor, LongTensor
 
-  BackwardFunction* = proc(grads: openarray[Tensor]): seq[Tensor]
+  BackwardFunctionCall* = proc(grads: openarray[Tensor]): seq[Tensor]
 
-var
-  undefinedTensor: ATensor
-  nextNodeId: int
+var undefinedTensor: ATensor
 
 proc requires_grad(self: not Tensor): bool = false
 
@@ -59,7 +59,7 @@ macro autograd(head, body: untyped): untyped =
   # Make `grad` available in derivative expressions, as alias for `grads[0]`
   backwardBody.add quote do:
     template grad: Tensor = `gradsIdent`[0]
-
+    
   var resultIndex = 0
   for x in body:
     x.expectKind({ nnkCall, nnkPar, nnkProcDef, nnkFuncDef })
@@ -130,47 +130,38 @@ macro autograd(head, body: untyped): untyped =
   forwardBody.add quote do:
     when not defined inference:
       if `requiresGradExpr`:
-        let nodeId = nextNodeId
-        inc nextNodeId
 
-        let fn = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
+        let grad_fn = new BackwardFunction
+        grad_fn.apply = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
           `resultIdent`.setLen(`resultIndex`)
           `backwardBody`
 
-        let inputs = @`inputIdents`
+        when compiles(grad_fn.inputs.add(`inputIdents`)):
+          grad_fn.inputs.add(`inputIdents`)
 
         when `resultIdent` is Tensor:
+          grad_fn.outputs = @[`resultIdent`]
           `resultIdent`.requires_grad = true
-          `resultIdent`.grad_fn = fn
-          `resultIdent`.outputs = @[`resultIdent`]
-          `resultIdent`.nodeId = nodeId
-          when compiles(`resultIdent`.inputs.add(inputs)):
-            `resultIdent`.inputs.add(inputs)
+          `resultIdent`.grad_fn = grad_fn
+
         else:
           when `resultIdent` is tuple:
-            var outputs: seq[Tensor]
             for k, f in `resultIdent`.fieldPairs:
               when f is Tensor:
-                outputs.add(f)
+                grad_fn.outputs.add(f)
 
             for k, f in `resultIdent`.fieldPairs:
               when f is Tensor:
                 f.requires_grad = true
-                f.grad_fn = fn
-                f.outputs = outputs
-                f.nodeId = nodeId
-                when compiles(f.inputs.add(inputs)):
-                  f.inputs.add(inputs)
+                f.grad_fn = grad_fn
+
           elif `resultIdent` is seq:
+            grad_fn.outputs = `resultIdent`
             for i in 0 ..< `resultIdent`.len:
               let r = `resultIdent`[i]
               when r is Tensor:
                 r.requires_grad = true
-                r.grad_fn = fn
-                r.outputs = `resultIdent`
-                r.nodeId = nodeId
-                when compiles(r.inputs.add(inputs)):
-                  r.inputs.add(inputs)
+                r.grad_fn = grad_fn
 
 proc use_count*(x: Tensor): int = x.tensor.dynamicCppCall("get()->use_count").to(int)
 
@@ -711,8 +702,7 @@ proc backward*(tensors, grads: openarray[Tensor]) =
   else:
     var
       sortedNodes: seq[Tensor]
-      #gradFuncs: HashSet[BackwardFunction] # TODO: Investigate badno clang code-gen
-      gradFuncs: HashSet[int]
+      gradFuncs: HashSet[pointer]
 
     gradFuncs.init()
 
@@ -730,11 +720,10 @@ proc backward*(tensors, grads: openarray[Tensor]) =
 
       # Already executed this backward function through this node,
       # or another output of this function
-      #if gradFuncs.containsOrIncl(node.grad_fn):
-      if gradFuncs.containsOrIncl(node.nodeId):
+      if gradFuncs.containsOrIncl(cast[pointer](node.grad_fn)):
         return
 
-      for input in node.inputs:
+      for input in node.grad_fn.inputs:
         visit(input)
 
       sortedNodes.add(node)
@@ -751,11 +740,11 @@ proc backward*(tensors, grads: openarray[Tensor]) =
     for node in sortedNodes.reverse:
       # TODO: handle multiple output gradients
       var grad_outputs: seq[Tensor]
-      for output in node.outputs:
+      for output in node.grad_fn.outputs:
         grad_outputs.add(output.grad)
 
-      let grads_inputs = node.grad_fn(grad_outputs)
-      for i, input in node.inputs:
+      let grads_inputs = node.grad_fn.apply(grad_outputs)
+      for i, input in node.grad_fn.inputs:
         if input.requires_grad:
           input.grad += grads_inputs[i]
 
