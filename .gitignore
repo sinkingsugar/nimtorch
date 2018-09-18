@@ -3,5 +3,5 @@ artifacts
 a.out
 torch/generator
 test
-nimtorch/generator
-nimtorch/test_derivatives
+torch/generator
+torch/test_derivatives
