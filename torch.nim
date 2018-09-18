@@ -129,7 +129,7 @@ macro autograd(head, body: untyped): untyped =
 
   forwardBody.add quote do:
     when not defined inference:
-      if `requiresGradExpr`:
+      #if `requiresGradExpr`:
 
         let grad_fn = new BackwardFunction
         grad_fn.apply = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
@@ -545,6 +545,10 @@ proc manual_seed*(seed: int) = internalManualSeed(seed)
 proc set_num_threads*(num: int) {.importcpp: "at::set_num_threads(#)", header: "ATen/ATen.h".}
 
 proc get_num_threads*(): int {.importcpp: "at::get_num_threads()".}
+
+proc detach*(self: Tensor) =
+  self.grad_fn = nil
+  self.requires_grad = false
 
 iterator reverse*[T](a: openarray[T]): T =
   for i in countdown(a.high, 0):
