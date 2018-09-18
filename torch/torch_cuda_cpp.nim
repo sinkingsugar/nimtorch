@@ -21,7 +21,13 @@ type cudaStream_t {.importc: "cudaStream_t".} = object
 proc cudaDeviceSynchronize*() {.importc, dynlib: "libcudart.so".}
 proc cudaStreamSynchronize*(stream: cudaStream_t) {.importc, dynlib: "libcudart.so".}
 
-{.passC: "-I$CUDA_INCLUDE -I$ATEN/include/TH".}
+
+proc currentMemoryAllocated*(device: cint): uint64 {.importc: "THCCachingAllocator_currentMemoryAllocated", header: "THCCachingAllocator.h".}
+proc maxMemoryAllocated*(device: cint): uint64 {.importc: "THCCachingAllocator_maxMemoryAllocated", header: "THCCachingAllocator.h".}
+proc currentMemoryCached*(device: cint): uint64 {.importc: "THCCachingAllocator_currentMemoryCached", header: "THCCachingAllocator.h".}
+proc maxMemoryCached*(device: cint): uint64 {.importc: "THCCachingAllocator_maxMemoryCached", header: "THCCachingAllocator.h".}
+
+{.passC: "-I$CUDA_INCLUDE -I$ATEN/include/TH -I$ATEN/include/THC".}
 
 static:
   doAssert(getenv("CUDA_INCLUDE") != "", "Please add $CUDA_INCLUDE variable specifying cuda include folder to the environment")
