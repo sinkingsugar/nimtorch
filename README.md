@@ -75,7 +75,7 @@ Make sure you have a recent Nim version and Nimble in your path
 *finally*
 
 1. set `$ATEN` environment variable to point to ATen's folder (see instructions below)
-2. (optional) run self test `nim cpp -r nimtorch.nim`
+2. (optional) run self test `nim cpp -r torch.nim`
 
 ## ATen build instructions
 

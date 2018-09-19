@@ -24,11 +24,11 @@ test:nimtorch:native:
     - docker cp docker_aten_native-temp:/root/pytorch/aten/built/output output
     - export ATEN=`pwd`/output
     - nim cpp -r -o:test torch/generator.nim
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test torch
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test torch/nn.nim
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test torch/nn/init.nim
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test torch/nn/functional.nim
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test tests/test_autograd.nim    
+    - nim cpp -r -o:test torch
+    - nim cpp -r -o:test torch/nn.nim
+    - nim cpp -r -o:test torch/nn/init.nim
+    - nim cpp -r -o:test torch/nn/functional.nim
+    - nim cpp -r -o:test tests/test_autograd.nim    
   after_script:
     - docker stop docker_aten_native-temp
     - docker rm docker_aten_native-temp
