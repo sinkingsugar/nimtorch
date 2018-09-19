@@ -19,7 +19,7 @@ build:aten:wasm:
 test:nimtorch:native:
   stage: test
   script:
-    - nimble -y develop
+    - nimble -y install fragments
     - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
     - docker cp docker_aten_native-temp:/root/pytorch/aten/built/output output
     - export ATEN=`pwd`/output
@@ -40,7 +40,7 @@ test:nimtorch:native:
 test:nimtorch:wasm:
   stage: test
   script:
-    - nimble -y develop
+    - nimble -y install fragments
     - docker run --name docker_aten_wasm-temp -d docker_aten_wasm /bin/bash
     - docker cp docker_aten_wasm-temp:/root/pytorch/aten/built/output output
     - export ATEN=`pwd`/output
