@@ -129,7 +129,7 @@ macro autograd(head, body: untyped): untyped =
 
   forwardBody.add quote do:
     when not defined inference:
-      #if `requiresGradExpr`:
+      if `requiresGradExpr`:
 
         let grad_fn = new BackwardFunction
         grad_fn.apply = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
