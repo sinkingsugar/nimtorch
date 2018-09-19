@@ -78,3 +78,8 @@ else:
   {.passL: "-lATen_cpu -lcpuinfo -lsleef -pthread -fopenmp -lrt".}
   when defined cuda:
     {.passL: "-lATen_cuda -Wl,--no-as-needed -lcuda".}
+  
+  # Make sure we allow users to use rpath and be able find ATEN easier
+  const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
+  {.passL: atenEnvRpath.}
+  {.passL: """-Wl,-rpath,'$ORIGIN'""".}
