@@ -363,13 +363,13 @@ block declarations:
         case kind:
           of Tensor:
             procInfo.argsStr = argsStr1
-            procInfo.expression = fmt"self.tensor.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
+            procInfo.expression = fmt"self.tensor.atenMethod(""{procInfo.originalName}""{argsStr2}){convertStr}"
           of Type:
             procInfo.argsStr = "ty: TensorType; " & argsStr1
-            procInfo.expression = fmt"ty.dynamicCppCall(""{procInfo.originalName}""{argsStr2}){convertStr}"
+            procInfo.expression = fmt"ty.atenMethod(""{procInfo.originalName}""{argsStr2}){convertStr}"
           of Namespace:
             procInfo.argsStr = argsStr1
-            procInfo.expression = fmt"dynamicCCall(""at::{procInfo.originalName}""{argsStr2}){convertStr}"
+            procInfo.expression = fmt"atenFunction(""at::{procInfo.originalName}""{argsStr2}){convertStr}"
 
         #output.writeLine(procInfo.kind.procFormatString % [procInfo.name, procInfo.nimReturnType, procInfo.originalName, argsStr1, argsStr2, convertStr, pragmasStr, preCode])
         generatedProcs.add(procInfo)
@@ -600,6 +600,8 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   var output = newFileStream("torch/declarations.nim", fmWrite)
   output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
   output.writeLine "# nim c -r torch/generator.nim\n"
+  output.writeLine "template atenMethod*(obj: CppObject, field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = obj.dynamicCppCall(field, args)"
+  output.writeLine "template atenFunction*(field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = dynamicCCall(field, args)\n"
 
   for info in generatedProcs:
 
@@ -631,7 +633,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   output.writeLine "# nim c -r torch/generator.nim\n"
   output.writeLine "import math"
   output.writeLine "const M_PI = math.PI\n"
-
+  
   for info in generatedProcs:
     if info.bodyText != "":
       output.writeLine(
