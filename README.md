@@ -1,5 +1,7 @@
 # NimTorch
 
+[![Join the chat at https://gitter.im/nimtorch/Lobby](https://badges.gitter.im/nimtorch/Lobby.svg)](https://gitter.im/nimtorch/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Pytorch - Py + Nim
 
 A Nim frontend for pytorch, aiming to be mostly auto-generated and internally using ATen.
