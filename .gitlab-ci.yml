@@ -29,6 +29,7 @@ test:nimtorch:native:
     - nim cpp -r -o:test torch/nn/init.nim
     - nim cpp -r -o:test torch/nn/functional.nim
     - nim cpp -r -o:test tests/test_autograd.nim    
+    - nim cpp -r -o:test tests/test_xor.nim   
   after_script:
     - docker stop docker_aten_native-temp
     - docker rm docker_aten_native-temp
@@ -50,6 +51,8 @@ test:nimtorch:wasm:
     - nim cpp -d:wasm -d:release -o:test.js torch/nn.nim
     - node test.js
     - nim cpp -d:wasm -d:release -o:test.js tests/test_autograd.nim
+    - node test.js
+    - nim cpp -d:wasm -d:release -o:test.js tests/test_xor.nim
     - node test.js
   after_script:
     - docker stop docker_aten_wasm-temp
