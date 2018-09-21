@@ -35,6 +35,9 @@ type
 
 var undefinedTensor: ATensor
 
+# TODO: Shallow copy without leaf checking?
+proc data*(self: Tensor): Tensor {.inline.} = self
+
 proc requires_grad(self: not Tensor): bool = false
 
 template capture(name: untyped): untyped =
@@ -398,6 +401,10 @@ proc sizes*(a: Tensor): IntList {.inline.} =
 
 proc strides*(a: Tensor): IntList {.inline.} =
   a.tensor.dynamicCppCall("strides").to(AIntList).toIntList()
+
+proc add*(self: Tensor; value: SomeNumber; other: Tensor): Tensor {.inline.} = add(self, other, value)
+
+proc add_inplace*(self: Tensor; value: SomeNumber; other: Tensor): Tensor {.inline, discardable.} = add_inplace(self, other, value)
 
 proc `-`*(a: Tensor): Tensor {.inline, noinit.} = neg(a)
 
