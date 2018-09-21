@@ -618,7 +618,7 @@ proc backward*(tensors, grads: openarray[Tensor]) =
       let grads_inputs = node.grad_fn.apply(grad_outputs)
       for i, input in node.grad_fn.inputs:
         if input.requires_grad:
-          input.grad += grads_inputs[i]
+          input.grad += grads_inputs[i].sum_to(input.grad.sizes)
 
 proc backward*(tensor: Tensor; grad: Tensor = ones_like(tensor)) =
   backward([tensor], [grad])
