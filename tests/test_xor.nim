@@ -31,3 +31,6 @@ for i in 0 ..< 50000:
 
   if i mod 5000 == 0:
     print(loss)
+
+  # This is currently necessary in memory-limited environments, e.g. WASM
+  GC_fullCollect()
