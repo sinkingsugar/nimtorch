@@ -33,6 +33,7 @@ type
     expression: string
     bodyText: string
     needsForwardDeclaration: bool
+    isInplace: bool
 
   MethodOfKind = enum
     Type, Tensor, Namespace
@@ -299,7 +300,7 @@ block declarations:
       try:
         if not node.hasKey("returns") or node["returns"].len == 0:
           raise newException(InvalidReturnException, "Method has no returns") # should not happen by design
-          
+        
         elif node["returns"].len == 1:
           procInfo.nimReturnType = toNimType(node["returns"][0]["dynamic_type"].getStr())
           convertStr = ".to(" & procInfo.nimReturnType & ")"
@@ -359,6 +360,10 @@ block declarations:
          
         else:
           raise newException(InvalidReturnException, "Not implemented returns length")
+
+        if node.hasKey("inplace") and node["inplace"].getBool():
+          procInfo.isInplace = true
+          convertStr = ".to(void); self"
 
         case kind:
           of Tensor:
@@ -614,14 +619,15 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
       continue
 
     # If there was no autograd version generated, output a normal forward proc
+    let pragma = if info.isInplace: ", discardable" else: ""
     if info.bodyText == "":
       output.writeLine(
-        fmt"proc {info.name}*({info.argsStr}): {info.nimReturnType} = " & "\n" &
+        fmt"proc {info.name}*({info.argsStr}): {info.nimReturnType} {{.inline{pragma}.}} = " & "\n" &
         fmt"  {info.expression}" & "\n")
 
     # Otherwise output a forward declaration, if necessary
     else:
-      output.writeLine(fmt"proc {info.name}*({info.argsStr}): {info.nimReturnType}" & "\n")
+      output.writeLine(fmt"proc {info.name}*({info.argsStr}): {info.nimReturnType} {{.inline{pragma}.}}" & "\n")
 
   output.flush()
   output.close()
@@ -635,10 +641,11 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   output.writeLine "const M_PI = math.PI\n"
   
   for info in generatedProcs:
+    let pragma = if info.isInplace: ", discardable" else: ""
     if info.bodyText != "":
       output.writeLine(
         fmt"autograd {info.name}:" & "\n" &
-        fmt"  proc forward*({info.argsStr}): {info.nimReturnType} = " & "\n" &
+        fmt"  proc forward*({info.argsStr}): {info.nimReturnType} {{.inline{pragma}.}} = " & "\n" &
         fmt"    {info.expression}" & "\n" &
         info.bodyText)
 
