@@ -546,9 +546,14 @@ proc set_num_threads*(num: int) {.importcpp: "at::set_num_threads(#)", header: "
 
 proc get_num_threads*(): int {.importcpp: "at::get_num_threads()".}
 
-proc detach*(self: Tensor) =
+proc detach_inplace*(self: Tensor): Tensor {.discardable.} =
   self.grad_fn = nil
   self.requires_grad = false
+  return self
+
+proc detach*(self: Tensor): Tensor =
+  result = self.clone()
+  result.detach_inplace()
 
 iterator reverse*[T](a: openarray[T]): T =
   for i in countdown(a.high, 0):
