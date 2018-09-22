@@ -634,9 +634,6 @@ proc backward*(tensor: Tensor) =
   backward(tensor, ones_like(tensor))
 
 when isMainModule:
-  # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim
-  # nim cpp -d:wasm --nimcache=nimcache-wasm -o:nimcache-wasm/test.js torch.nim && node nimcache-wasm/test.js
-
   var
     z = torch.zeros(@[2, 1, 4])
 
