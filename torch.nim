@@ -382,10 +382,14 @@ converter toTensorOptions*(tensorType: TensorType): TensorOptions =
   return temp
 
 proc cpu*(a: Tensor): Tensor {.inline, noinit.} =
-  newTensor a.tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
+  result = newTensor a.tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
+  when not defined inference:
+    result.requires_grad = a.requires_grad
 
 proc cuda*(a: Tensor): Tensor {.inline, noinit.} =
-  newTensor a.tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
+  result = newTensor a.tensor.dynamicCppCall(toBackend, BackendCUDA).to(ATensor)
+  when not defined inference:
+    result.requires_grad = a.requires_grad
 
 proc copy*(typ: TensorType; self: Tensor; non_blocking: bool = false): Tensor {.inline, noinit.} =
   typ[].dynamicCppCall("copy", self.tensor, non_blocking).to(ATensor).newTensor()

@@ -32,6 +32,10 @@ type
 
 proc `()`*(m: Module; input: varargs[Tensor]): Tensor {.inline.} = m.forward(input)
 
+method cpu*(m: Module) {.base.} = discard
+
+method cuda*(m: Module) {.base.} = discard
+
 method reset_parameters*(m: LinearModule) {.base.} =
   m.weight = init.kaiming_uniform(m.weight, a = math.sqrt(5.float))
   
@@ -40,6 +44,16 @@ method reset_parameters*(m: LinearModule) {.base.} =
       (fan_in, _) = init.calculate_fan_in_and_fan_out(m.weight)
       bound = 1 / math.sqrt(fan_in.float)
     m.bias = init.uniform(m.bias, -bound, bound)
+
+method cuda*(m: LinearModule) =
+  m.weight = m.weight.cuda()
+  if not m.bias.isNil:
+    m.bias = m.bias.cuda()
+
+method cpu*(m: LinearModule) =
+  m.weight = m.weight.cpu()
+  if not m.bias.isNil:
+    m.bias = m.bias.cpu()
 
 proc Linear*(in_features, out_features: int; bias: bool = true): LinearModule =
   var m: LinearModule
