@@ -38,6 +38,27 @@ var undefinedTensor: ATensor
 # TODO: Shallow copy without leaf checking?
 proc data*(self: Tensor): Tensor {.inline.} = self
 
+var isGradDisabled {.threadvar.}: bool
+
+proc is_grad_enabled*(): bool = not isGradDisabled
+
+proc set_grad_enabled*(mode: bool) =
+  isGradDisabled = not mode
+
+template set_grad_enabled*(mode: bool; body: untyped): untyped =
+  let wasGradEnabled = is_grad_enabled()
+  set_grad_enabled(mode)
+  try:
+    body
+  finally:
+    set_grad_enabled(wasGradEnabled)
+
+template no_grad*(body: untyped): untyped = 
+  set_grad_enabled(false): body
+
+template enable_grad*(body: untyped): untyped = 
+  set_grad_enabled(true): body
+
 proc requires_grad(self: not Tensor): bool = false
 
 template capture(name: untyped): untyped =
@@ -132,7 +153,7 @@ macro autograd(head, body: untyped): untyped =
 
   forwardBody.add quote do:
     when not defined inference:
-      if `requiresGradExpr`:
+      if is_grad_enabled() and `requiresGradExpr`:
 
         let grad_fn = new BackwardFunction
         grad_fn.apply = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
@@ -631,7 +652,7 @@ proc backward*(tensors, grads: openarray[Tensor]) =
     # Issue #16, GC being lazy about cleaning up garbage
     GC_fullCollect()
 
-proc backward*(tensor, grad: Tensor;) =
+proc backward*(tensor, grad: Tensor) =
   backward([tensor], [grad])
 
 proc backward*(tensor: Tensor) =
