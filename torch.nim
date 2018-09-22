@@ -620,8 +620,11 @@ proc backward*(tensors, grads: openarray[Tensor]) =
         if input.requires_grad:
           input.grad += grads_inputs[i].sum_to(input.grad.sizes)
 
-proc backward*(tensor: Tensor; grad: Tensor = ones_like(tensor)) =
+proc backward*(tensor, grad: Tensor;) =
   backward([tensor], [grad])
+
+proc backward*(tensor: Tensor) =
+  backward(tensor, ones_like(tensor))
 
 when isMainModule:
   # LD_LIBRARY_PATH=../docker-cuda9.2-ubuntu18.04/output/lib nim cpp --nimcache=nimcache-native -d:cuda -o:nimcache-native/test -r torch.nim
