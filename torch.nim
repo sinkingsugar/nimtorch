@@ -623,6 +623,9 @@ proc backward*(tensors, grads: openarray[Tensor]) =
       for i, input in node.grad_fn.inputs:
         if input.requires_grad:
           input.grad += grads_inputs[i].sum_to(input.grad.sizes)
+    
+    # Issue #16, GC being lazy about cleaning up garbage
+    GC_fullCollect()
 
 proc backward*(tensor, grad: Tensor;) =
   backward([tensor], [grad])
