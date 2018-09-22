@@ -13,6 +13,8 @@ defineCppType(AIntList, "at::IntList", "ATen/ATen.h")
 defineCppType(AGenerator, "at::Generator", "ATen/ATen.h")
 defineCppType(AContext, "at::Context", "ATen/ATen.h")
 defineCppType(ATensors, "std::vector<at::Tensor>", "vector")
+defineCppType(OStringStream, "std::ostringstream", "sstream")
+defineCppType(StdString, "std::string", "string")
 
 var ATkByte {.importcpp: "at::kByte", nodecl.}: AScalarType
 var ATkChar {.importcpp: "at::kChar", nodecl.}: AScalarType

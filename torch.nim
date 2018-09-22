@@ -461,8 +461,6 @@ proc ndimension*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(nd
 
 proc dim*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(int64).int
 
-proc `$`*(a: Tensor): string {.inline, noinit.} = $a.tensor.dynamicCppCall(toString).to(cstring)
-
 proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
   newTensor a.tensor.toCpp()[index].to(ATensor)
 
@@ -484,9 +482,15 @@ macro chunk*(self: Tensor; chunks: static[int]; dim: int): untyped =
     let `tensors` = `self`.chunk(`chunks`, `dim`.int64)
     `tupleTree`
 
-proc print*(a: Tensor) =
-  printTensor(a.tensor)
-  echo ""
+proc `$`*(a: Tensor): string {.inline, noinit.} =
+  var sstream = cppinit(OStringStream)
+  dynamicCCall("at::print", sstream, a.tensor, 80).to(void)
+  let
+    stdstr = sstream.str().to(StdString)
+    res = stdstr.c_str().to(cstring)
+  return $res
+
+proc print*(a: Tensor) = echo a
 
 proc toSeq*[T](a: Tensor): seq[T] {.inline, noinit.} =
   let elements = a.numel()
