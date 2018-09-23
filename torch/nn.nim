@@ -34,6 +34,14 @@ method cpu*(m: Module) {.base.} = discard
 
 method cuda*(m: Module) {.base.} = discard
 
+method parameters*(self: Module): seq[Tensor] {.base.} = discard
+
+proc zero_grad*(self: Module) =
+  for param in self.parameters():
+    if not param.isNil:
+      param.detach_inplace()
+      param.zero_inplace()
+
 method reset_parameters*(m: LinearModule) {.base.} =
   m.weight = init.kaiming_uniform(m.weight, a = math.sqrt(5.float))
   
@@ -79,11 +87,7 @@ proc Linear*(in_features, out_features: int; bias: bool = true): LinearModule =
   
   return m
 
-# iterator parameters*(self: LinearModule): Tensor =
-#   yield self.weight
-#   yield self.bias
-
-proc parameters*(self: LinearModule): seq[Tensor] = @[self.weight, self.bias]
+method parameters*(self: LinearModule): seq[Tensor] = @[self.weight, self.bias]
 
 method reset_parameters*(m: BilinearModule) =
   let bound = 1 / math.sqrt(m.weight.size(1).float)
