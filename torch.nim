@@ -427,6 +427,9 @@ proc sizes*(a: Tensor): IntList {.inline.} =
 proc strides*(a: Tensor): IntList {.inline.} =
   a.tensor.dynamicCppCall("strides").to(AIntList).toIntList()
 
+proc size*(a: Tensor): int {.inline.} =
+  a.tensor.dynamicCppCall("size").to(int)
+
 proc add*(self: Tensor; value: SomeNumber; other: Tensor): Tensor {.inline.} = add(self, other, value)
 
 proc add_inplace*(self: Tensor; value: SomeNumber; other: Tensor): Tensor {.inline, discardable.} = add_inplace(self, other, value)
