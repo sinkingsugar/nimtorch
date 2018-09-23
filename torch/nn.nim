@@ -37,10 +37,14 @@ method cuda*(m: Module) {.base.} = discard
 method parameters*(self: Module): seq[Tensor] {.base.} = discard
 
 proc zero_grad*(self: Module) =
-  for param in self.parameters():
-    if not param.isNil:
-      param.detach_inplace()
-      param.zero_inplace()
+  when not defined inference:
+    for param in self.parameters():
+      if not param.isNil:
+        param.grad.detach_inplace()
+        param.grad.zero_inplace()
+  
+  else:
+    discard
 
 method reset_parameters*(m: LinearModule) {.base.} =
   m.weight = init.kaiming_uniform(m.weight, a = math.sqrt(5.float))
