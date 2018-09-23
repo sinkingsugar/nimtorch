@@ -402,6 +402,9 @@ converter toTensorOptions*(tensorType: TensorType): TensorOptions =
   let temp = cppinit(TensorOptions, tensorType.toCpp)
   return temp
 
+converter toTensorOptions*(tensorKind: TensorKind): TensorOptions =
+  result.dtype(tensorKind.toATenType()).to(void)
+
 proc cpu*(a: Tensor): Tensor {.inline, noinit.} =
   result = newTensor a.tensor.dynamicCppCall(toBackend, BackendCPU).to(ATensor)
   when not defined inference:
@@ -426,9 +429,6 @@ proc sizes*(a: Tensor): IntList {.inline.} =
 
 proc strides*(a: Tensor): IntList {.inline.} =
   a.tensor.dynamicCppCall("strides").to(AIntList).toIntList()
-
-proc size*(a: Tensor): int {.inline.} =
-  a.tensor.dynamicCppCall("size").to(int)
 
 proc add*(self: Tensor; value: SomeNumber; other: Tensor): Tensor {.inline.} = add(self, other, value)
 
@@ -490,6 +490,59 @@ proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
 
 proc `[]=`*(a: Tensor; index: int; b: Tensor) {.inline.} =
   a.tensor.toCpp()[index] = b.tensor
+
+proc `[]`*(a: Tensor; index: Tensor): Tensor {.inline, noinit.} =
+  newTensor a.tensor.toCpp()[index.tensor].to(ATensor)
+
+proc `[]=`*(a: Tensor; index: Tensor; b: Tensor) {.inline.} =
+  a.tensor.toCpp()[index.tensor] = b.tensor
+
+template _*: int = -1
+
+macro `[]`*(a: Tensor; args: varargs[int]): Tensor =
+  result = newStmtList()
+  
+  var resSym = gensym(nskVar)
+  result.add quote do:
+    var `resSym` {.inject.} = `a`
+  
+  var dimSkip = 0
+  for arg in args:
+    if arg.kind == nnkIntLit and arg.intVal == -1:
+      inc dimSkip
+    else:
+      result.add quote do:
+        `resSym` = `resSym`.select(`dimSkip`, `arg`)
+
+  result.add quote do:
+    `resSym`
+
+macro `[]=`*(a: Tensor; args: varargs[int]; value: Tensor | SomeNumber): untyped =
+  result = newStmtList()
+  
+  var resSym = gensym(nskVar)
+  result.add quote do:
+    var `resSym` {.inject.} = `a`
+  
+  var dimSkip = 0
+  for arg in args:
+    if arg.kind == nnkIntLit and arg.intVal == -1:
+      inc dimSkip
+    else:
+      result.add quote do:
+        `resSym` = `resSym`.select(`dimSkip`, `arg`)
+
+  result.add quote do:
+    when type(`value`) is Tensor:
+      let
+        sizeOne = `resSym`.sizes()[0] - 1
+        indexTensor = torch.range(0.float, sizeOne.float, LongTensor)
+      `resSym`.index_put_inplace([indexTensor], `value`)
+    else:
+      let
+        sizeOne = `resSym`.sizes()[0] - 1
+        indexTensor = torch.range(0.float, sizeOne.float, LongTensor)
+      `resSym`.index_put_inplace([indexTensor], torch.full_like(`resSym`, `value`.float, `resSym`.options()))
 
 include torch/autograd_helpers
 include torch/derivatives
@@ -807,6 +860,20 @@ when isMainModule:
   
   echo tos
   froms.print()
+
+  var accessorsTest = torch.zeros(@[5, 2, 3])
+  # echo accessorsTest.sizes()[0]
+  # var act1s = accessorsTest.select(1, 0)
+  # var act2s = accessorsTest.select(1, 1)
+  var act1 = accessorsTest[_, 0]
+  var act2 = accessorsTest[_, 1]
+  # var indexTensor = torch.range(0.float, 4.float, LongTensor)
+  # act1.index_put_inplace([indexTensor], torch.full_like(act1, 10.float))
+  # act2.index_put_inplace([indexTensor], torch.full_like(act1, 100.float))
+  accessorsTest[_, 0] = 10
+  accessorsTest[_, 1] = 100
+  accessorsTest[_, _, 2] = 1020
+  echo accessorsTest
   
   when defined cuda:
     if globalContext().hasCUDA().to(bool):
