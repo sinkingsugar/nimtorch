@@ -39,7 +39,7 @@ method parameters*(self: Module): seq[Tensor] {.base.} = discard
 proc zero_grad*(self: Module) =
   when not defined inference:
     for param in self.parameters():
-      if not param.isNil:
+      if not param.isNil and not param.grad.isNil:
         param.grad.detach_inplace()
         param.grad.zero_inplace()
   
