@@ -2153,6 +2153,16 @@ autograd sinh:
     self.tensor.atenMethod("sinh").to(ATensor).newTensor()
   self: firstOrSelf(grad * self.cosh())
 
+autograd slice:
+  proc forward*(ty: TensorType; self: Tensor; dim: int64 = 0; start: int64 = 0; end_name: int64 = 9223372036854775807; step: int64 = 1): Tensor {.inline.} = 
+    ty.atenMethod("slice", self.tensor, dim, start, end_name, step).to(ATensor).newTensor()
+  self: firstOrSelf(slice_backward(grad, self.sizes(), dim, start, end_name, step))
+
+autograd slice:
+  proc forward*(self: Tensor; dim: int64 = 0; start: int64 = 0; end_name: int64 = 9223372036854775807; step: int64 = 1): Tensor {.inline.} = 
+    self.tensor.atenMethod("slice", dim, start, end_name, step).to(ATensor).newTensor()
+  self: firstOrSelf(slice_backward(grad, self.sizes(), dim, start, end_name, step))
+
 autograd softmax:
   proc forward*(ty: TensorType; self: Tensor; dim: int64): Tensor {.inline.} = 
     ty.atenMethod("softmax", self.tensor, dim).to(ATensor).newTensor()

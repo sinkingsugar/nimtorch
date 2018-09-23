@@ -204,6 +204,11 @@ proc split_with_sizes_backward*(grads: openarray[Tensor]; split_sizes: openarray
       allDefinedList.add(torch.zeros(grad_size, tensorType))
   result = torch.cat(allDefinedList, ndim)
 
+proc slice_backward*(grad: Tensor; input_sizes: openarray[SomeInteger], dim, start, to, step: int64): Tensor =
+  let grad_input = zeros(input_sizes, grad.options())
+  grad_input.slice(dim, start, to, step).copy_inplace(grad)
+  return grad_input
+
 proc split_backward*(grads: openarray[Tensor]; split_size, dim: int64; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
   let
     ndim = maybe_wrap_dim(dim, sizes.len())
