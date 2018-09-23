@@ -549,6 +549,7 @@ macro `[]=`*(a: Tensor; args: varargs[int]; value: Tensor | SomeNumber): untyped
       `resSym`.index_put_inplace([indexTensor], torch.full_like(`resSym`, `value`.float, `resSym`.options()))
 
 include torch/autograd_helpers
+include torch/native/convolutions
 include torch/derivatives
 
 macro chunk*(self: Tensor; chunks: static[int]; dim: int): untyped =
