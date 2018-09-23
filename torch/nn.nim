@@ -44,7 +44,7 @@ proc zero_grad*(self: Module) =
         param.grad.zero_inplace()
   
   else:
-    discard
+    raiseAssert("zero_grad is not supported in inference mode")
 
 method reset_parameters*(m: LinearModule) {.base.} =
   m.weight = init.kaiming_uniform(m.weight, a = math.sqrt(5.float))
