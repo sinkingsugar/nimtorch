@@ -19,16 +19,17 @@ build:aten:wasm:
 test:nimtorch:native:
   stage: test
   script:
-    - nimble -y develop
+    - nimble -y install fragments
     - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
     - docker cp docker_aten_native-temp:/root/pytorch/aten/built/output output
     - export ATEN=`pwd`/output
-    - nim cpp -r -o:test nimtorch/generator.nim
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch/nn.nim
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch/test_derivatives.nim
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch/nn/init.nim
-    - LD_LIBRARY_PATH=$ATEN/lib nim cpp -r -o:test nimtorch/nn/functional.nim
+    - nim cpp -r -o:test torch/generator.nim
+    - nim cpp -r -o:test torch
+    - nim cpp -r -o:test torch/nn.nim
+    - nim cpp -r -o:test torch/nn/init.nim
+    - nim cpp -r -o:test torch/nn/functional.nim
+    - nim cpp -r -o:test tests/test_autograd.nim    
+    - nim cpp -r -o:test tests/test_xor.nim   
   after_script:
     - docker stop docker_aten_native-temp
     - docker rm docker_aten_native-temp
@@ -40,16 +41,18 @@ test:nimtorch:native:
 test:nimtorch:wasm:
   stage: test
   script:
-    - nimble -y develop
+    - nimble -y install fragments
     - docker run --name docker_aten_wasm-temp -d docker_aten_wasm /bin/bash
     - docker cp docker_aten_wasm-temp:/root/pytorch/aten/built/output output
     - export ATEN=`pwd`/output
-    - nim cpp -r -o:test nimtorch/generator.nim
-    - nim cpp -d:wasm -d:release -o:test.js nimtorch
+    - nim cpp -r -o:test torch/generator.nim
+    - nim cpp -d:wasm -d:release -o:test.js torch
     - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js nimtorch/test_derivatives.nim
+    - nim cpp -d:wasm -d:release -o:test.js torch/nn.nim
     - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js nimtorch/nn.nim
+    - nim cpp -d:wasm -d:release -o:test.js tests/test_autograd.nim
+    - node test.js
+    - nim cpp -d:wasm -d:release -o:test.js tests/test_xor.nim
     - node test.js
   after_script:
     - docker stop docker_aten_wasm-temp

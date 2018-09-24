@@ -1,5 +1,5 @@
 include torch_cuda_cpp
-import ../nimtorch
+import ../torch
 import macros
 
 type

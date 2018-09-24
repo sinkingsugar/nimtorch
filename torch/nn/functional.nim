@@ -1,4 +1,4 @@
-import ../../nimtorch
+import ../../torch
 
 proc linear*(input, weight: Tensor): Tensor {.inline.} = input.matmul(weight.t())
 

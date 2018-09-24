@@ -64,6 +64,8 @@ Also python is a complete mess...
 
 ## Getting started
 
+[Download ATen binaries](https://github.com/fragcolor-xyz/nimtorch/releases/tag/v0.2.0) or build it (instructions under)
+
 Make sure you have a recent Nim version and Nimble in your path
 
 `nimble install nimtorch`
@@ -77,7 +79,7 @@ Make sure you have a recent Nim version and Nimble in your path
 *finally*
 
 1. set `$ATEN` environment variable to point to ATen's folder (see instructions below)
-2. (optional) run self test `nim cpp -r nimtorch.nim`
+2. (optional) run self test `nim cpp -r torch.nim`
 
 ## ATen build instructions
 

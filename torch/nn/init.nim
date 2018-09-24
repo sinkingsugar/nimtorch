@@ -1,4 +1,4 @@
-import ../../nimtorch
+import ../../torch
 import ../python_helpers
 import math, strutils
 
@@ -66,7 +66,7 @@ proc xavier_normal*(tensor: Tensor; gain: float = 1.0): Tensor =
     std = gain * sqrt(2.0 / (fan_in.float + fan_out.float))
     a = math.sqrt(3.0) * std  # Calculate uniform bounds from standard deviation
   # with torch.no_grad():
-  return tensor.uniform_u(-a, a)
+  return tensor.uniform_inplace(-a, a)
 
 proc kaiming_uniform*(tensor: Tensor; a = 0.0; mode = "fan_in"; nonlinearity="leaky_relu"): Tensor =
   let
@@ -75,11 +75,11 @@ proc kaiming_uniform*(tensor: Tensor; a = 0.0; mode = "fan_in"; nonlinearity="le
     std = gain / math.sqrt(fan.float)
     bound = math.sqrt(3.0) * std  # Calculate uniform bounds from standard deviation
   # with torch.no_grad():
-  return tensor.uniform_u(-bound, bound)
+  return tensor.uniform_inplace(-bound, bound)
 
 proc uniform*(tensor: Tensor; a=0.0; b=1.0): Tensor =
   # with torch.no_grad():
-  return tensor.uniform_u(a, b)
+  return tensor.uniform_inplace(a, b)
 
 when isMainModule:
   let
