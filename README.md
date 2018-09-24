@@ -20,7 +20,6 @@ The only requirement from pytorch is ATen's core tensor library. Because of this
 - [x] Automatically generated, from `derivatives.yaml`, gradient procs
 - [x] Autograd
 - [ ] Add missing derivatives
-
 - [ ] More high level pytorch API (Module, Models etc)
 - [ ] ...
 
