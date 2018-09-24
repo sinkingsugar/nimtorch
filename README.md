@@ -18,9 +18,10 @@ The only requirement from pytorch is ATen's core tensor library. Because of this
 - [x] Cuda support ( add -d:cuda when compiling with nim )
 - [x] WASM support ( add -d:wasm when compiling with nim )
 - [x] Automatically generated, from `derivatives.yaml`, gradient procs
+- [x] Autograd
 - [ ] Add missing derivatives
-- [ ] Autograd
-- [ ] High level pytorch API (Module, Models etc)
+
+- [ ] More high level pytorch API (Module, Models etc)
 - [ ] ...
 
 The final aim is to be as compatible as possible with the pytorch API.
