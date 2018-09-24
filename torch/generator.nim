@@ -87,7 +87,15 @@ const customNames = [
   "matmul",
   "mm",
   "contiguous",
-  "chunk"
+  "chunk",
+  "convolution",
+  "_convolution",
+  "conv1d",
+  "conv2d",
+  "conv3d",
+  "conv_transpose1d",
+  "conv_transpose2d",
+  "conv_transpose3d",
 ]
 
 # add some known procs we created in torch.nim, don't care about args
@@ -99,6 +107,7 @@ const knownNames = [
   "pow_backward_self",
   "pow_backward_exponent",
   "atan2_backward",
+  "slice_backward",
   "split_backward",
   "split_with_sizes_backward",
   "sum_backward",
@@ -576,6 +585,9 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
 
           nimLikeStr = nimLikeStr.replacef(peg"{[^_]} 'output' {!\ident}", "$1fwd_result$2")
           nimLikeStr = nimLikeStr.replacef(peg"^'output' {!\ident}", "fwd_result$1")
+
+          # TODO: Handle invalide names
+          nimLikeStr = nimLikeStr.replacef(peg"'end'", "end_name")
 
           nimLikeStr = nimLikeStr.replace(".type()", ".getType()")
 
