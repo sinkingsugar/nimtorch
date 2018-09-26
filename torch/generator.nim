@@ -4,14 +4,6 @@ import os, strutils, macros, osproc, json, sequtils, streams, pegs, tables, strf
 # if a name is a nim keyword, like "var", the name will be prefixed by "a", and so it will be "avar"
 # underscores are replaced with "u_", "_" = "u_" or "_u"
 
-const
-  ofTensorTo = "proc $1*($4): $2 $7= $8self.tensor.dynamicCppCall(\"$3\"$5)$6"
-  ofTypeTo = "proc $1*(ty: TensorType; $4): $2 $7= $8ty.dynamicCppCall(\"$3\"$5)$6"
-  ofNamespaceTo = "proc $1*($4): $2 $7= $8dynamicCCall(\"at::$3\"$5)$6"
-  
-  backwardGrad = "#[ proc $1_bwd*(grad: Tensor; fwd_result: $2$3): $4 {.inline, noinit.} =$5 ]#"
-  backwardGrads = "proc $1_bwd*(grads: TensorList; fwd_result: $2$3): $4 {.inline, noinit.} =$5"
-
 static:
   doAssert(getenv("ATEN") != "", "Please add $ATEN variable installation path to the environment")
 
@@ -230,12 +222,6 @@ block declarations:
         else:
           # skipping defaults, might cause integration issues tho
           discard
-          
-    proc procFormatString(kind: MethodOfKind): string =
-      case kind:
-        of Type: return ofTypeTo
-        of Tensor: return ofTensorTo
-        of Namespace: return ofNamespaceTo
 
     proc generateProc(kind: MethodOfKind; arguments: seq[JsonNode]) =
 
