@@ -67,6 +67,8 @@ Also python is a complete mess...
 [Download ATen binaries](https://github.com/fragcolor-xyz/nimtorch/releases/tag/v0.2.0) or build it (instructions under)
 
 Make sure you have a recent Nim version and Nimble in your path
+* [Easy option: install nim with choosenim](https://github.com/dom96/choosenim)
+  * `choosenim devel`
 
 `nimble install nimtorch`
 
