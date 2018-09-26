@@ -21,6 +21,11 @@ let
   loss_fn = nn.MSELoss()
   optimizer = optim.SGD(fc1.parameters & fc2.parameters , lr = 0.01, momentum = 0.1)
 
+set_num_threads(1)
+
+when defined gperftools:
+  discard ProfilerStart("test_xor.log")
+
 for i in 0 ..< 50000:
   optimizer.zero_grad()
 
@@ -32,3 +37,6 @@ for i in 0 ..< 50000:
 
   if i mod 5000 == 0:
     print(loss)
+
+when defined gperftools:
+  ProfilerStop()

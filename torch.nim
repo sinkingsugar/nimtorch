@@ -429,7 +429,7 @@ proc copy*(self: Tensor; non_blocking: bool = false): Tensor {.inline, noinit.} 
 proc copy_inplace*(self: Tensor; other: Tensor; non_blocking: bool = false): Tensor {.inline, discardable.} =
   self.tensor.dynamicCppCall("copy_", other.tensor, non_blocking).to(void)
   return self
-   
+
 proc is_defined*(a: Tensor): bool {.inline.} =
   not a.isNil and a.tensor.dynamicCppCall("defined").to(bool)
 

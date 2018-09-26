@@ -21,6 +21,8 @@ fc2 = nn.Linear(4, 1)
 loss_fn = nn.MSELoss()
 optimizer = optim.SGD(list(fc1.parameters()) + list(fc2.parameters()), lr = 0.01, momentum = 0.1)
 
+torch.set_num_threads(1)
+
 for i in range(0, 50000):
   optimizer.zero_grad()
 

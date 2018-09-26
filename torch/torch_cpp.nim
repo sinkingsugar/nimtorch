@@ -85,3 +85,9 @@ else:
   const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
   {.passL: atenEnvRpath.}
   {.passL: """-Wl,-rpath,'$ORIGIN'""".}
+
+  when defined gperftools:
+    {.passC: "-DWITHGPERFTOOLS -g".}
+    {.passL: "-lprofiler -g".}
+    proc ProfilerStart*(fname: cstring): int {.importc.}
+    proc ProfilerStop*() {.importc.}
