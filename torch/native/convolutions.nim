@@ -20,7 +20,7 @@ proc is_dilated(self: ConvParams): bool =
   for x in self.dilation: result = result or x != 1
 
 proc is_padded(self: ConvParams): bool =
-  for x in self.padding: result = result or x != 1
+  for x in self.padding: result = result or x != 0
 
 proc is_output_padding_neg(self: ConvParams): bool =
   for x in self.padding: result = result or x < 0
@@ -83,7 +83,7 @@ proc use_mkldnn(self: ConvParams; input: Tensor): bool =
 # a depthwise multiplier)
 proc is_depthwise(self: ConvParams; input, weight: Tensor): bool =
   return
-    input.getType().is_cuda().to(bool) and
+    input.getType().is_cuda() and
     not self.transposed and
     input.ndimension() == 4 and
     input.size(1) == self.groups and
@@ -106,8 +106,9 @@ proc subtensor(tensor: Tensor; dim, groups, g: int): Tensor =
   return tensor.narrow(dim, n * g, n).contiguous()
 
 proc convolution*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int): Tensor
-proc convolution_internal(input_r, weight_r, bias_r: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int;
+proc convolution_internal*(input_r, weight_r, bias_r: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int;
     benchmark, deterministic, cudnn_enabled: bool): Tensor
+proc convolution_nogroup_internal*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int]; transposed: bool; output_padding: openarray[int]): Tensor
 
 proc conv1d*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int], groups: int): Tensor =
   convolution(input, weight, bias, stride, padding, dilation, false, [0], groups)
@@ -161,8 +162,8 @@ proc convolution_internal(input_r, weight_r, bias_r: Tensor; stride, padding, di
     input = input_r.contiguous()
     weight = weight_r
     bias = bias_r
-    k = weight_r.ndimension()
-    dim = k - 2;
+    k = weight.ndimension()
+    dim = k - 2
 
   assert(dim > 0, "weight should at least have at least two dimensions")
 
@@ -242,3 +243,43 @@ proc convolution_internal(input_r, weight_r, bias_r: Tensor; stride, padding, di
 
   if k == 3:
     result = view3d(result)
+
+# A generic function for convolution implementations which don't
+# natively implement groups (e.g., not CuDNN).
+proc convolution_nogroup_internal*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int]; transposed: bool; output_padding: openarray[int]): Tensor =
+
+  let params = ConvParams(
+    stride: @stride,
+    padding: @padding,
+    dilation: @dilation,
+    transposed: transposed,
+    output_padding: @output_padding,
+    groups: 1,
+    benchmark: false,
+    deterministic: false,
+    cudnn_enabled: false)
+
+  let
+    dim = input.ndimension()
+    dilated = params.is_dilated()
+    kernel_size = weight.sizes().slice(2)
+
+  if params.transposed:
+    if dim == 4:
+      return thnn_conv_transpose2d(input, weight, kernel_size, bias, stride, padding, output_padding, dilation).output
+    elif (dim == 5):
+      return thnn_conv_transpose3d(input, weight, kernel_size, bias, stride, padding, output_padding, dilation).output
+  else: # Not transposed
+    if dim == 4:
+      if dilated:
+        return thnn_conv_dilated2d(input, weight, kernel_size, bias, stride, padding, dilation).output
+      else: # dim == 4, non-dilated
+        # CPU implementation has specialized MM kernels for non-dilated case here
+        return thnn_conv2d(input, weight, kernel_size, bias, stride, padding)
+    elif dim == 5 and (input.getType().is_cuda() or dilated):
+      return thnn_conv_dilated3d(input, weight, kernel_size, bias, stride, padding, dilation).output
+    elif dim == 5: # dim == 5, CPU, non-dilated
+      # CPU implementation has specialized MM kernels for non-dilated case here
+      return thnn_conv3d(input, weight, kernel_size, bias, stride, padding).output
+
+  raiseAssert("unsupported ConvNd parameters")

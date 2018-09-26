@@ -49,12 +49,12 @@ autograd view:
 autograd index_select:
   proc forward*(ty: TensorType; self: Tensor; dim: int64; index: Tensor): Tensor {.inline.} = 
     ty.atenMethod("index_select", self.tensor, dim, index.tensor).to(ATensor).newTensor()
-  self: firstOrSelf(zeros(self.sizes(), grad.getType()).index_add_inplace(dim, index, grad))
+  self: firstOrSelf(zeros(self.sizes(), grad.options()).index_add_inplace(dim, index, grad))
 
 autograd index_select:
   proc forward*(self: Tensor; dim: int64; index: Tensor): Tensor {.inline.} = 
     self.tensor.atenMethod("index_select", dim, index.tensor).to(ATensor).newTensor()
-  self: firstOrSelf(zeros(self.sizes(), grad.getType()).index_add_inplace(dim, index, grad))
+  self: firstOrSelf(zeros(self.sizes(), grad.options()).index_add_inplace(dim, index, grad))
 
 autograd take:
   proc forward*(ty: TensorType; self: Tensor; index: Tensor): Tensor {.inline.} = 
@@ -149,12 +149,12 @@ autograd scatter_add_inplace:
 autograd gather:
   proc forward*(ty: TensorType; self: Tensor; dim: int64; index: Tensor): Tensor {.inline.} = 
     ty.atenMethod("gather", self.tensor, dim, index.tensor).to(ATensor).newTensor()
-  self: firstOrSelf(zeros(self.sizes(), grad.getType()).scatter_add_inplace(dim, index, grad))
+  self: firstOrSelf(zeros(self.sizes(), grad.options()).scatter_add_inplace(dim, index, grad))
 
 autograd gather:
   proc forward*(self: Tensor; dim: int64; index: Tensor): Tensor {.inline.} = 
     self.tensor.atenMethod("gather", dim, index.tensor).to(ATensor).newTensor()
-  self: firstOrSelf(zeros(self.sizes(), grad.getType()).scatter_add_inplace(dim, index, grad))
+  self: firstOrSelf(zeros(self.sizes(), grad.options()).scatter_add_inplace(dim, index, grad))
 
 autograd lt_inplace:
   proc forward*(ty: TensorType; self: Tensor; other: float): Tensor {.inline, discardable.} = 
@@ -646,34 +646,34 @@ autograd uniform_inplace:
 autograd normal:
   proc forward*(ty: TensorType; mean: Tensor; std: float64 = 1; generator: Generator = nil): Tensor {.inline.} = 
     ty.atenMethod("normal", mean.tensor, std, generator).to(ATensor).newTensor()
-  mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
+  mean: firstOrSelf(zeros(mean.sizes(), grad.options()))
 
 autograd normal:
   proc forward*(mean: Tensor; std: float64 = 1; generator: Generator = nil): Tensor {.inline.} = 
     atenFunction("at::normal", mean.tensor, std, generator).to(ATensor).newTensor()
-  mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
+  mean: firstOrSelf(zeros(mean.sizes(), grad.options()))
 
 autograd normal:
   proc forward*(ty: TensorType; mean: float64; std: Tensor; generator: Generator = nil): Tensor {.inline.} = 
     ty.atenMethod("normal", mean, std.tensor, generator).to(ATensor).newTensor()
-  std: firstOrSelf(zeros(std.sizes(), grad.getType()))
+  std: firstOrSelf(zeros(std.sizes(), grad.options()))
 
 autograd normal:
   proc forward*(mean: float64; std: Tensor; generator: Generator = nil): Tensor {.inline.} = 
     atenFunction("at::normal", mean, std.tensor, generator).to(ATensor).newTensor()
-  std: firstOrSelf(zeros(std.sizes(), grad.getType()))
+  std: firstOrSelf(zeros(std.sizes(), grad.options()))
 
 autograd normal:
   proc forward*(ty: TensorType; mean: Tensor; std: Tensor; generator: Generator = nil): Tensor {.inline.} = 
     ty.atenMethod("normal", mean.tensor, std.tensor, generator).to(ATensor).newTensor()
-  mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
-  std: firstOrSelf(zeros(std.sizes(), grad.getType()))
+  mean: firstOrSelf(zeros(mean.sizes(), grad.options()))
+  std: firstOrSelf(zeros(std.sizes(), grad.options()))
 
 autograd normal:
   proc forward*(mean: Tensor; std: Tensor; generator: Generator = nil): Tensor {.inline.} = 
     atenFunction("at::normal", mean.tensor, std.tensor, generator).to(ATensor).newTensor()
-  mean: firstOrSelf(zeros(mean.sizes(), grad.getType()))
-  std: firstOrSelf(zeros(std.sizes(), grad.getType()))
+  mean: firstOrSelf(zeros(mean.sizes(), grad.options()))
+  std: firstOrSelf(zeros(std.sizes(), grad.options()))
 
 autograd normal_inplace:
   proc forward*(ty: TensorType; self: Tensor; mean: float64 = 0; std: float64 = 1; generator: Generator = nil): Tensor {.inline, discardable.} = 

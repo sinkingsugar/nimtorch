@@ -2272,12 +2272,6 @@ proc cudnn_is_acceptable*(ty: TensorType; self: Tensor): bool {.inline.} =
 proc cudnn_is_acceptable*(self: Tensor): bool {.inline.} = 
   atenFunction("at::cudnn_is_acceptable", self.tensor).to(bool)
 
-proc convolution_nogroup_internal*(ty: TensorType; input: Tensor; weight: Tensor; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]; transposed: bool; output_padding: openarray[SomeInteger]): Tensor {.inline.} = 
-  ty.atenMethod("_convolution_nogroup", input.tensor, weight.tensor, bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), transposed, output_padding.toAIntList()).to(ATensor).newTensor()
-
-proc convolution_nogroup_internal*(input: Tensor; weight: Tensor; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]; transposed: bool; output_padding: openarray[SomeInteger]): Tensor {.inline.} = 
-  atenFunction("at::_convolution_nogroup", input.tensor, weight.tensor, bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), transposed, output_padding.toAIntList()).to(ATensor).newTensor()
-
 proc convolution_double_backward_internal*(ty: TensorType; ggI: Tensor; ggW: Tensor; ggb: Tensor; gO: Tensor; weight: Tensor; self: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]; transposed: bool; output_padding: openarray[SomeInteger]; groups: int64; benchmark: bool; deterministic: bool; cudnn_enabled: bool; output_mask: StdArray[bool, 3]): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.} = 
   ty.atenMethod("_convolution_double_backward", ggI.tensor, ggW.tensor, ggb.tensor, gO.tensor, weight.tensor, self.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), transposed, output_padding.toAIntList(), groups, benchmark, deterministic, cudnn_enabled, output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 

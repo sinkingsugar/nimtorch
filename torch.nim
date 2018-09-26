@@ -175,9 +175,6 @@ macro autograd(head, body: untyped): untyped =
             for k, f in `resultIdent`.fieldPairs:
               when f is Tensor:
                 grad_fn.outputs.add(f)
-
-            for k, f in `resultIdent`.fieldPairs:
-              when f is Tensor:
                 f.requires_grad = true
                 f.grad_fn = grad_fn
 
@@ -273,6 +270,12 @@ var defaultType = FloatTensor
 
 proc set_default_dtype*(dtype: TensorKind) {.inline.} = defaultType = dtype
 proc get_default_dtype*(): TensorKind {.inline.} = defaultType
+
+proc is_cuda*(self: TensorType): bool =
+  when defined cuda:
+    return self.is_cuda().to(bool)
+  else:
+    return false
 
 proc toATenType(kind: TensorKind): AScalarType {.inline.} =
   case kind
@@ -707,10 +710,10 @@ proc backward*(tensors, grads: openarray[Tensor]) =
       for output in node.grad_fn.outputs:
         grad_outputs.add(output.grad)
 
-      let grads_inputs = node.grad_fn.apply(grad_outputs)
+      let grad_inputs = node.grad_fn.apply(grad_outputs)
       for i, input in node.grad_fn.inputs:
         if input.requires_grad:
-          input.grad += grads_inputs[i].sum_to(input.grad.sizes)
+          input.grad += grad_inputs[i].sum_to(input.grad.sizes)
     
     # Issue #16, GC being lazy about cleaning up garbage
     GC_fullCollect()
@@ -930,3 +933,23 @@ when isMainModule:
     echo a1.requires_grad
     a1.backward()
     print a.grad
+
+  block:
+    var opts: TensorOptions
+    opts.dtype(defaultType.toATenType()).to(void)
+  
+    let
+      in_channels = 1
+      out_channels = 1
+      input = randn([1, in_channels, 100, 100], opts)
+      weight = randn([out_channels, in_channels, 10, 10], opts)
+      bias = randn([out_channels], opts)
+
+    weight.requires_grad = true
+    bias.requires_grad = true
+
+    let
+      x = conv2d(input, weight, bias, [1, 1], [0, 0], [1, 1], 1)
+      
+    x.backward()
+    echo weight.grad.sizes()

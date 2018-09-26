@@ -90,6 +90,7 @@ const customNames = [
   "chunk",
   "convolution",
   "_convolution",
+  "_convolution_nogroup",
   "conv1d",
   "conv2d",
   "conv3d",
@@ -117,7 +118,8 @@ const knownNames = [
   "to_args_sizes",
   "sizes",
   "strides",
-  "type"]
+  "type",
+  "options"]
 
 for knownName in knownNames:
   generatedProcs.add(ProcInfo(originalName: knownName, name: knownName, kind: Namespace))
