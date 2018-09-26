@@ -373,6 +373,11 @@ block declarations:
             procInfo.argsStr = argsStr1
             procInfo.expression = fmt"atenFunction(""at::{procInfo.originalName}""{argsStr2}){convertStr}"
 
+        if procInfo.nimReturnType == "void":
+          procInfo.expression = "checkVoid: " & procInfo.expression
+        else:
+          procInfo.expression = "check: " & procInfo.expression
+
         #output.writeLine(procInfo.kind.procFormatString % [procInfo.name, procInfo.nimReturnType, procInfo.originalName, argsStr1, argsStr2, convertStr, pragmasStr, preCode])
         generatedProcs.add(procInfo)
 
@@ -607,6 +612,18 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   output.writeLine "# nim c -r torch/generator.nim\n"
   output.writeLine "template atenMethod*(obj: CppObject, field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = obj.dynamicCppCall(field, args)"
   output.writeLine "template atenFunction*(field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = dynamicCCall(field, args)\n"
+
+  output.writeLine """
+template checkVoid(body: untyped): untyped =
+  try: body
+  except: raiseAssert(getCurrentCppExceptionMsg())
+
+template check(body: untyped): untyped =
+  var r: type(body)
+  try: r = body
+  except: raiseAssert(getCurrentCppExceptionMsg())
+  r
+"""
 
   for info in generatedProcs:
 
