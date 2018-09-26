@@ -33,10 +33,10 @@ proc is_padding_neg(self: ConvParams): bool =
 
 proc view1d_as_2d(self: var ConvParams) =
   if self.stride.len == 1:
-    self.stride.insert(self.stride, 1)
-    self.padding.insert(self.padding, 0)
-    self.dilation.insert(self.dilation, 1)
-    self.output_padding.insert(self.output_padding, 0)
+    self.stride.insert(self.stride[0], 1)
+    self.padding.insert(self.padding[0], 0)
+    self.dilation.insert(self.dilation[0], 1)
+    self.output_padding.insert(self.output_padding[0], 0)
 
 proc use_cudnn(self: ConvParams; input: Tensor): bool =
   false
