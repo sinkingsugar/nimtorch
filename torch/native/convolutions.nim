@@ -275,7 +275,7 @@ proc convolution_nogroup_internal*(input, weight, bias: Tensor; stride, padding,
         return thnn_conv_dilated2d(input, weight, kernel_size, bias, stride, padding, dilation).output
       else: # dim == 4, non-dilated
         # CPU implementation has specialized MM kernels for non-dilated case here
-        return thnn_conv2d(input, weight, kernel_size, bias, stride, padding)
+        return thnn_conv2d(input, weight, kernel_size, bias, stride, padding).output
     elif dim == 5 and (input.getType().is_cuda() or dilated):
       return thnn_conv_dilated3d(input, weight, kernel_size, bias, stride, padding, dilation).output
     elif dim == 5: # dim == 5, CPU, non-dilated
