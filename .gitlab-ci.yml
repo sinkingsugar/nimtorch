@@ -38,6 +38,29 @@ test:nimtorch:native:
   tags:
     - LINUX, DOCKER, NIM, PYYAML
 
+test:nimtorch:cuda:
+  stage: test
+  script:
+    - nimble -y install fragments
+    - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
+    - docker cp docker_aten_native-temp:/root/pytorch/aten/built/output output
+    - export ATEN=`pwd`/output
+    - export CUDA_INCLUDE=/opt/cuda/include
+    - nim cpp -r -o:test torch/generator.nim
+    - nim cpp -r -o:test -d:cuda torch
+    - nim cpp -r -o:test -d:cuda torch/nn.nim
+    - nim cpp -r -o:test -d:cuda torch/nn/init.nim
+    - nim cpp -r -o:test -d:cuda torch/nn/functional.nim
+    - nim cpp -r -o:test -d:cuda tests/test_autograd.nim    
+    - nim cpp -r -o:test -d:cuda tests/test_xor.nim   
+  after_script:
+    - docker stop docker_aten_native-temp
+    - docker rm docker_aten_native-temp
+  dependencies:
+    - build:aten:native
+  tags:
+    - LINUX, DOCKER, NIM, PYYAML, CUDA
+
 test:nimtorch:wasm:
   stage: test
   script:
