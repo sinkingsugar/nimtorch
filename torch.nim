@@ -126,10 +126,12 @@ macro autograd(head, body: untyped): untyped =
           var `gradInputMaskIdent`: StdArray[bool, `tupleCount`]
 
         resultExpr = newPar()
-        for r in x[0]:
-          r.expectKind(nnkIdent)
+        for i, inputIdent in x[0]:
+          inputIdent.expectKind(nnkIdent)
           resultExpr.add quote do: `resultIdent`[`resultIndex`]
-          inputIdents.add(r)
+          inputIdents.add(inputIdent)
+          backwardBody.add quote do:
+            `gradInputMaskIdent`[`i`] = `inputIdent`.requires_grad
           inc resultIndex
 
       let gradExpr = x[1]
