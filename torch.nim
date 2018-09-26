@@ -273,7 +273,7 @@ proc get_default_dtype*(): TensorKind {.inline.} = defaultType
 
 proc is_cuda*(self: TensorType): bool =
   when defined cuda:
-    return self.is_cuda().to(bool)
+    return self.dynamicCppCall("is_cuda").to(bool)
   else:
     return false
 
