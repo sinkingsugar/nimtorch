@@ -74,10 +74,10 @@ proc Linear*(in_features, out_features: int; bias: bool = true): LinearModule =
   m.in_features = in_features
   m.out_features = out_features
   
-  m.weight = torch.zeros(@[out_features, in_features])
+  m.weight = zeros(@[out_features, in_features])
   m.weight.requires_grad = true
   if bias:
-    m.bias = torch.zeros(@[out_features])
+    m.bias = zeros(@[out_features])
     m.bias.requires_grad = true
   
   m.forward = proc (input: varargs[Tensor]): Tensor =
@@ -113,17 +113,17 @@ proc Bilinear*(in1_features, in2_features, out_features: int; bias: bool = true)
   m.in2_features = in2_features
   m.out_features = out_features
   
-  m.weight = torch.zeros(@[out_features, in1_features, in2_features])
+  m.weight = zeros(@[out_features, in1_features, in2_features])
   m.weight.requires_grad = true
   if bias:
-    m.bias = torch.zeros(@[out_features])
+    m.bias = zeros(@[out_features])
     m.bias.requires_grad = true
   else:
     var emptyList: IntList
-    m.bias = torch.zeros(emptyList)
+    m.bias = zeros(emptyList)
   
   m.forward = proc (input: varargs[Tensor]): Tensor =
-    return torch.bilinear(input[0], input[1], m.weight, m.bias)
+    return bilinear(input[0], input[1], m.weight, m.bias)
 
   m.reset_parameters()
   
@@ -215,7 +215,7 @@ when isMainModule:
   block:
     let
       m = nn.Linear(2, 10)
-      inputs = torch.tensor([[1.0, 2.0]])
+      inputs = tensor([[1.0, 2.0]])
       res = m(inputs)
     print(res)
 

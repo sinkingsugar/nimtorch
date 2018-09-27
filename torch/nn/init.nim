@@ -83,12 +83,12 @@ proc uniform*(tensor: Tensor; a=0.0; b=1.0): Tensor =
 
 when isMainModule:
   let
-    z = torch.zeros(@[2, 1, 4])
+    z = zeros(@[2, 1, 4])
     xav = z.xavier_normal()
   
   xav.print()
 
   var
-    v = torch.zeros(@[2, 1, 4])
+    v = zeros(@[2, 1, 4])
   v = v.xavier_normal()
   v.print()

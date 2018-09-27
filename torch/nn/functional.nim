@@ -6,13 +6,13 @@ proc linear*(input, weight, bias: Tensor): Tensor {.inline.} = input.matmul(weig
 
 when isMainModule:
   var
-    x = torch.tensor([
+    x = tensor([
       [ 0.1,  0.2,  0.3,  0.4],
       [-0.1, -0.2, -0.3, -0.4],
       [ 0.5,  0.6,  0.7,  0.8]
     ])
 
-    w_input = torch.tensor([
+    w_input = tensor([
       [0.9, 0.8, 0.7, 0.6],
       [0.8, 0.7, 0.6, 0.5],
       [0.7, 0.6, 0.5, 0.4],

@@ -298,7 +298,7 @@ proc device*(deviceName: string): Device {.inline.} =
 proc zeros*[T: SomeInteger](size: varargs[T]): Tensor =
   var opts: TensorOptions
   opts.dtype(defaultType.toATenType()).to(void)
-  return torch.zeros(size, opts)
+  return zeros(size, opts)
 
 proc zeros*(size: openarray[SomeInteger]; device: Device): Tensor =
   var opts: TensorOptions
@@ -306,12 +306,12 @@ proc zeros*(size: openarray[SomeInteger]; device: Device): Tensor =
   case device
   of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
   of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return torch.zeros(size, opts)
+  return zeros(size, opts)
 
 proc zeros*(size: openarray[SomeInteger]; dtype: TensorKind): Tensor =
   var opts: TensorOptions
   opts.dtype(dtype.toATenType()).to(void)
-  return torch.zeros(size, opts)
+  return zeros(size, opts)
 
 proc zeros*(size: openarray[SomeInteger]; dtype: TensorKind; device: Device): Tensor =
   var opts: TensorOptions
@@ -319,12 +319,12 @@ proc zeros*(size: openarray[SomeInteger]; dtype: TensorKind; device: Device): Te
   case device
   of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
   of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return torch.zeros(size, opts)
+  return zeros(size, opts)
 
 proc ones*[T: SomeInteger](size: varargs[T]): Tensor =
   var opts: TensorOptions
   opts.dtype(defaultType.toATenType()).to(void)
-  return torch.ones(size, opts)
+  return ones(size, opts)
 
 proc ones*(size: openarray[SomeInteger]; device: Device): Tensor =
   var opts: TensorOptions
@@ -332,12 +332,12 @@ proc ones*(size: openarray[SomeInteger]; device: Device): Tensor =
   case device
   of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
   of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return torch.ones(size, opts)
+  return ones(size, opts)
 
 proc ones*(size: openarray[SomeInteger]; dtype: TensorKind): Tensor =
   var opts: TensorOptions
   opts.dtype(dtype.toATenType()).to(void)
-  return torch.ones(size, opts)
+  return ones(size, opts)
 
 proc ones*(size: openarray[SomeInteger]; dtype: TensorKind; device: Device): Tensor =
   var opts: TensorOptions
@@ -345,7 +345,7 @@ proc ones*(size: openarray[SomeInteger]; dtype: TensorKind; device: Device): Ten
   case device
   of CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
   of CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return torch.ones(size, opts)
+  return ones(size, opts)
 
 iterator lenIter[T](s: openarray[T]): int {.inline.} =
   ## Inline iterator on any-depth seq or array
@@ -545,13 +545,13 @@ macro `[]=`*(a: Tensor; args: varargs[int]; value: Tensor | SomeNumber): untyped
     when type(`value`) is Tensor:
       let
         sizeOne = `resSym`.sizes()[0] - 1
-        indexTensor = torch.range(0.float, sizeOne.float, LongTensor)
+        indexTensor = range(0.float, sizeOne.float, LongTensor)
       `resSym`.index_put_inplace([indexTensor], `value`)
     else:
       let
         sizeOne = `resSym`.sizes()[0] - 1
-        indexTensor = torch.range(0.float, sizeOne.float, LongTensor)
-      `resSym`.index_put_inplace([indexTensor], torch.full_like(`resSym`, `value`.float, `resSym`.options()))
+        indexTensor = range(0.float, sizeOne.float, LongTensor)
+      `resSym`.index_put_inplace([indexTensor], full_like(`resSym`, `value`.float, `resSym`.options()))
 
 include torch/autograd_helpers
 include torch/native/convolutions
@@ -741,9 +741,9 @@ proc backward*(tensor: Tensor; retain_graph = false; create_graph = false) =
 
 when isMainModule:
   var
-    z = torch.zeros(@[2, 1, 4])
+    z = zeros(@[2, 1, 4])
 
-    x = torch.tensor([
+    x = tensor([
         [
           [ 0.1,  0.2,  0.3,  0.4],
           [-0.1, -0.2, -0.3, -0.4],
@@ -756,7 +756,7 @@ when isMainModule:
         ]
       ])
 
-    hidden = torch.tensor([
+    hidden = tensor([
         [
           [ -1.0, -1.0],
           [ -1.0, -1.0],
@@ -769,7 +769,7 @@ when isMainModule:
         ]
       ])
 
-    w_input = torch.tensor([
+    w_input = tensor([
         [
           [0.9, 0.8, 0.7, 0.6],
           [0.8, 0.7, 0.6, 0.5],
@@ -788,7 +788,7 @@ when isMainModule:
         ]
       ])
 
-    w_recur = torch.tensor([
+    w_recur = tensor([
         [
           [-0.3, -0.1],
           [-0.2,  0.0],
@@ -807,7 +807,7 @@ when isMainModule:
         ]
       ])
 
-    b_input = torch.tensor([
+    b_input = tensor([
         [
           [0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
         ],
@@ -816,7 +816,7 @@ when isMainModule:
         ]
       ])
 
-    b_recur = torch.tensor([
+    b_recur = tensor([
         [
           [-0.1, -0.2, -0.3, -0.4, -0.5, -0.6],
         ],
@@ -849,10 +849,10 @@ when isMainModule:
 
   var hycopy = hy.copy()
 
-  var longt = torch.zeros(@[1, 1, 1], dtype = LongTensor)
+  var longt = zeros(@[1, 1, 1], dtype = LongTensor)
   longt.print()
 
-  var ht = torch.zeros(@[1, 1, 1], dtype = ByteTensor)
+  var ht = zeros(@[1, 1, 1], dtype = ByteTensor)
   ht.print()
 
   var tensorList: TensorList
@@ -861,14 +861,14 @@ when isMainModule:
     tensorList[i].print()
   
   var
-    c0 = torch.tensor([1.0, 0.0])
-    c1 = torch.tensor([0.2, 1.1])
-    c2 = torch.cat(@[c0, c1])
+    c0 = tensor([1.0, 0.0])
+    c1 = tensor([0.2, 1.1])
+    c2 = cat(@[c0, c1])
   
   echo "cat test:"
   c2.print()
   
-  # var tupleTest = torch.multilabel_margin_loss_forward(c0, c1, 0)
+  # var tupleTest = multilabel_margin_loss_forward(c0, c1, 0)
   
   var intList: IntList = @[10, 20, 30]
   for i in 0..intList.high:
@@ -881,20 +881,20 @@ when isMainModule:
     tos = toSeq[float32](hy)
     froms = tos.toTensor(2, 3, 2)
     
-  # var (ra, rb) = torch.prelu_backward(gi, gh, hy, @[true, true])
+  # var (ra, rb) = prelu_backward(gi, gh, hy, @[true, true])
   
   echo tos
   froms.print()
 
-  var accessorsTest = torch.zeros(@[5, 2, 3])
+  var accessorsTest = zeros(@[5, 2, 3])
   # echo accessorsTest.sizes()[0]
   # var act1s = accessorsTest.select(1, 0)
   # var act2s = accessorsTest.select(1, 1)
   var act1 = accessorsTest[_, 0]
   var act2 = accessorsTest[_, 1]
-  # var indexTensor = torch.range(0.float, 4.float, LongTensor)
-  # act1.index_put_inplace([indexTensor], torch.full_like(act1, 10.float))
-  # act2.index_put_inplace([indexTensor], torch.full_like(act1, 100.float))
+  # var indexTensor = range(0.float, 4.float, LongTensor)
+  # act1.index_put_inplace([indexTensor], full_like(act1, 10.float))
+  # act2.index_put_inplace([indexTensor], full_like(act1, 100.float))
   accessorsTest[_, 0] = 10
   accessorsTest[_, 1] = 100
   accessorsTest[_, _, 2] = 1020
@@ -904,7 +904,7 @@ when isMainModule:
     if globalContext().hasCUDA().to(bool):
       echo "Cuda available"
       echo "Cuda device ", globalContext().current_device().to(int)
-      var cudaTensor = torch.zeros(@[7, 7, 7], device = torch.device("cuda"), dtype = DoubleTensor)
+      var cudaTensor = zeros(@[7, 7, 7], device = device("cuda"), dtype = DoubleTensor)
       cudaTensor.print()
 
       froms = froms.cuda()
@@ -922,7 +922,7 @@ when isMainModule:
       (h_r, h_i, h_n) = gh.chunk(3, 2)
       resetgate = (i_r + h_r).sigmoid()
       presigmoid = i_i + h_i
-      inputgate = torch.sigmoid(presigmoid)
+      inputgate = sigmoid(presigmoid)
       newgate = (i_nn + resetgate * h_n).tanh()
       hy = newgate + inputgate * (hidden - newgate)
 

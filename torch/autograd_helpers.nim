@@ -157,28 +157,28 @@ proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
 
 proc mm_mat1_backward*(grad, mat2: Tensor; sizes, strides: IntList; alpha: float): Tensor {.inline, noinit.} =
   if strides[0] == 1 and strides[1] == sizes[0]:
-    return torch.maybe_multiply(mat2.mm(grad.t()).t(), alpha)
+    return maybe_multiply(mat2.mm(grad.t()).t(), alpha)
   else:
-    return torch.maybe_multiply(grad.mm(mat2.t()), alpha)
+    return maybe_multiply(grad.mm(mat2.t()), alpha)
 
 proc mm_mat2_backward*(grad, mat1: Tensor; sizes, strides: IntList; alpha: float): Tensor {.inline, noinit.} =
   if strides[0] == 1 and strides[1] == sizes[0]:
-    return torch.maybe_multiply(grad.t().mm(mat1).t(), alpha)
+    return maybe_multiply(grad.t().mm(mat1).t(), alpha)
   else:
-    return torch.maybe_multiply(mat1.t().mm(grad), alpha)
+    return maybe_multiply(mat1.t().mm(grad), alpha)
 
 proc pow_backward*(grad, self: Tensor; exponent: float): Tensor {.inline, noinit.} =
   if exponent == 0.0:
-    return torch.zeros_like(self)
+    return zeros_like(self)
   else:
     return grad * exponent * self.pow(exponent - 1)
 
 proc pow_backward_self*(grad, self, exponent: Tensor): Tensor {.inline, noinit.} =
   var l: IntList
-  return torch.where(exponent == 0.0, torch.zeros(l, grad.getType()), grad * exponent * torch.pow(self, exponent - 1))
+  return where(exponent == 0.0, zeros(l, grad.getType()), grad * exponent * pow(self, exponent - 1))
 
 proc pow_backward_exponent*(grad, self, exponent: Tensor): Tensor {.inline, noinit.} =
-  return grad * torch.pow(self, exponent) * self.log()
+  return grad * pow(self, exponent) * self.log()
 
 proc atan2_backward*(grad, self, other: Tensor; outputMask: StdArray[bool, 2]): (Tensor, Tensor) {.inline, noinit.} =
   let recip = (self * self + other * other).reciprocal()
@@ -201,8 +201,8 @@ proc split_with_sizes_backward*(grads: openarray[Tensor]; split_sizes: openarray
       let length = split_sizes[i]
       var grad_size = sizes 
       grad_size[dim.int] = length.int
-      allDefinedList.add(torch.zeros(grad_size, tensorType))
-  result = torch.cat(allDefinedList, ndim)
+      allDefinedList.add(zeros(grad_size, tensorType))
+  result = cat(allDefinedList, ndim)
 
 proc slice_backward*(grad: Tensor; input_sizes: openarray[SomeInteger], dim, start, to, step: int64): Tensor =
   let grad_input = zeros(input_sizes, grad.options())
