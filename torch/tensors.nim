@@ -95,7 +95,7 @@ proc high*(v: AIntList): int {.inline.} = v.size().to(int) - 1
 
 proc len*(v: AIntList): int {.inline.} = v.size().to(int)
 
-iterator items*(ints: AIntList): ilsize {.inline.} =
+iterator items*(ints: AIntList): AInt64 {.inline.} =
   for i in 0 .. ints.high:
     yield ints[i]
 
@@ -106,14 +106,14 @@ proc toIntList(self: AIntList): IntList =
     result[i] = self[i].int
 
 proc toAIntList*(self: openarray[int]): AIntList =
-  when sizeof(int) == sizeof(ilsize):
-    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(self[0])), self.len.csize)
+  when sizeof(int) == sizeof(AInt64):
+    let temp = cppinit(AIntList, cast[ptr AInt64](unsafeaddr(self[0])), self.len.csize)
     return temp
   else:
-    var converted = newSeq[ilsize](self.len)
+    var converted = newSeq[AInt64](self.len)
     for i, value in self:
-      converted[i] = value.ilsize
-    let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(converted[0])), self.len.csize)
+      converted[i] = value.AInt64
+    let temp = cppinit(AIntList, cast[ptr AInt64](unsafeaddr(converted[0])), self.len.csize)
     return temp
 
 proc newTensors*(nativeTensor: ATensor): Tensor {.inline.} = nativeTensor.newTensor()
@@ -133,7 +133,7 @@ macro newTensors*(nativeTensors: tuple): untyped =
     result.add quote do:
       newTensors(`nativeTensors`[`index`])
 
-proc toIntListType*(x: int): ilsize {.inline.} = x.ilsize
+proc toIntListType*(x: int): AInt64 {.inline.} = x.AInt64
 
 var defaultType = FloatTensor
 
@@ -253,9 +253,9 @@ proc strides*(a: Tensor): IntList {.inline.} =
 
 proc sqrt*(b: SomeFloat): SomeFloat {.inline, noinit.} = math.sqrt(b)
 
-proc ndimension*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(ndimension).to(ilsize).int
+proc ndimension*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(ndimension).to(AInt64).int
 
-proc dim*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(ilsize).int
+proc dim*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(AInt64).int
 
 proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
   newTensor a.tensor.toCpp()[index].to(ATensor)
@@ -279,16 +279,16 @@ proc `$`*(a: Tensor): string {.inline, noinit.} =
 
 proc print*(a: Tensor) = echo a
 
-proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]): Tensor {.inline, noinit.} =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+proc internalFromArray*[T](s: var openarray[T], size: openarray[AInt64]): Tensor {.inline, noinit.} =
+  let shape = cppinit(AIntList, cast[ptr AInt64](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
   
   result = newTensor ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device: Device): Tensor {.inline, noinit.} =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+proc internalFromArray*[T](s: var openarray[T], size: openarray[AInt64]; device: Device): Tensor {.inline, noinit.} =
+  let shape = cppinit(AIntList, cast[ptr AInt64](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
@@ -298,16 +298,16 @@ proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; device:
   of Device.CUDA: result = newTensor ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: result = newTensor ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; dtype: TensorType): Tensor {.inline, noinit.} =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+proc internalFromArray*[T](s: var openarray[T], size: openarray[AInt64]; dtype: TensorType): Tensor {.inline, noinit.} =
+  let shape = cppinit(AIntList, cast[ptr AInt64](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)
 
   result = newTensor ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc internalFromArray*[T](s: var openarray[T], size: openarray[ilsize]; dtype: TensorType; device: Device): Tensor {.inline, noinit.} =
-  let shape = cppinit(AIntList, cast[ptr ilsize](unsafeAddr(size)), size.len.csize)
+proc internalFromArray*[T](s: var openarray[T], size: openarray[AInt64]; dtype: TensorType; device: Device): Tensor {.inline, noinit.} =
+  let shape = cppinit(AIntList, cast[ptr AInt64](unsafeAddr(size)), size.len.csize)
   
   # create a temporary CPU tensor with our GCed data
   var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, addr(s[0]), shape).to(ATensor)

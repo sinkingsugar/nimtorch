@@ -52,12 +52,12 @@ cpplibpaths(atenPath & """/lib""")
 cpplibpaths(atenPath & """/lib64""")
 
 when defined wasm:
-  type ilsize* = int64
+  type AInt64* = int64
 
   {.passL: "-lATen_cpu".}
 
 elif defined windows:
-  type ilsize* = int64
+  type AInt64* = int64
 
   cpplibs(atenPath & "/lib/ATen_cpu.lib")
   cpplibs(atenPath & "/lib/cpuinfo.lib")
@@ -74,7 +74,7 @@ elif defined windows:
     cpplibs(cudaLibPath & "/cuda.lib")
 
 else:
-  type ilsize* = clong
+  type AInt64* = clong
 
   {.passL: "-lATen_cpu -lcpuinfo -lsleef -pthread -fopenmp -lrt".}
   when defined cuda:
