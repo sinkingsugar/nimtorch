@@ -1,8 +1,6 @@
 import fragments/ffi/cpp as cpp
 import sequtils, strformat, options
 
-{.experimental: "implicitDeref".}
-
 proc chunk*(self: Tensor; chunks, dim: int64): seq[Tensor] =
   assert(self.dim() > 0, "chunk expects at least a 1-dimensional tensor");
   assert(chunks > 0, "chunk expects `chunks` to be greater than 0, got: " & $chunks)

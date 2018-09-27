@@ -367,8 +367,9 @@ block declarations:
             procInfo.argsStr = argsStr1
             procInfo.expression = fmt"self.tensor.atenMethod(""{procInfo.originalName}""{argsStr2}){convertStr}"
           of Type:
+            # `ty` gets dereferenced here because it's a pointer. this wasn't necessary before splitting modules apart. Some compiler bug with `implicitDeref`?
             procInfo.argsStr = "ty: TensorType; " & argsStr1
-            procInfo.expression = fmt"ty.atenMethod(""{procInfo.originalName}""{argsStr2}){convertStr}"
+            procInfo.expression = fmt"ty[].atenMethod(""{procInfo.originalName}""{argsStr2}){convertStr}"
           of Namespace:
             procInfo.argsStr = argsStr1
             procInfo.expression = fmt"atenFunction(""at::{procInfo.originalName}""{argsStr2}){convertStr}"
@@ -608,12 +609,16 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
 
   # Generate forward declarations
   var output = newFileStream("torch/declarations.nim", fmWrite)
-  output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r torch/generator.nim\n"
-  output.writeLine "template atenMethod*(obj: CppObject, field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = obj.dynamicCppCall(field, args)"
-  output.writeLine "template atenFunction*(field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = dynamicCCall(field, args)\n"
-
   output.writeLine """
+# Automatically generated, to update run again the generator from the torch root path
+# nim c -r torch/generator.nim
+import fragments/ffi/cpp
+import torch_cpp
+import tensors
+
+template atenMethod*(obj: CppObject, field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = obj.dynamicCppCall(field, args)
+template atenFunction*(field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = dynamicCCall(field, args)
+
 template checkVoid(body: untyped): untyped =
   try: body
   except StdException as e: raiseAssert($e.what())
@@ -654,9 +659,9 @@ template check(body: untyped): untyped =
 
   output.writeLine """
 # Automatically generated, to update run again the generator from the torch root path
-# nim c -r torch/generator.nim\n
+# nim c -r torch/generator.nim
 import math
-const M_PI = math.PI\n
+const M_PI = math.PI
   
 template firstOrSelf(self: tuple): untyped = self[0]
 template firstOrSelf(self: not tuple): untyped = self
