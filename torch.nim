@@ -678,9 +678,6 @@ proc backward*(tensors, grads: openarray[Tensor]) =
       if not node.requires_grad:
         return
 
-      # If the gradient is needed, initialize it
-      node.grad = torch.zeros_like(node)
-
       # Gradient is not defined, so don't evaluate inputs
       if node.grad_fn == nil:
         return
@@ -705,7 +702,6 @@ proc backward*(tensors, grads: openarray[Tensor]) =
 
     # Accumulate grads
     for node in sortedNodes.reverse:
-      # TODO: handle multiple output gradients
       var grad_outputs: seq[Tensor]
       for output in node.grad_fn.outputs:
         grad_outputs.add(output.grad)
@@ -713,7 +709,15 @@ proc backward*(tensors, grads: openarray[Tensor]) =
       let grad_inputs = node.grad_fn.apply(grad_outputs)
       for i, input in node.grad_fn.inputs:
         if input.requires_grad:
-          input.grad += grad_inputs[i].sum_to(input.grad.sizes)
+
+          # Undo broadcast that might have occured in the forward pass
+          let grad = grad_inputs[i].sum_to(input.sizes)
+
+          # Sum up gradient or initialize it if not present
+          if input.grad.isNil:
+            input.grad = grad
+          else:
+            input.grad += grad
     
     # Issue #16, GC being lazy about cleaning up garbage
     GC_fullCollect()
