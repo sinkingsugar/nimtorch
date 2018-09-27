@@ -616,12 +616,12 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
   output.writeLine """
 template checkVoid(body: untyped): untyped =
   try: body
-  except: raiseAssert(getCurrentCppExceptionMsg())
+  except StdException as e: raiseAssert($e.what())
 
 template check(body: untyped): untyped =
   var r: type(body)
   try: r = body
-  except: raiseAssert(getCurrentCppExceptionMsg())
+  except StdException as e: raiseAssert($e.what())
   r
 """
 

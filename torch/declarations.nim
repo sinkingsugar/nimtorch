@@ -6,12 +6,12 @@ template atenFunction*(field: untyped, args: varargs[CppProxy, CppFromAst]): Cpp
 
 template checkVoid(body: untyped): untyped =
   try: body
-  except: raiseAssert(getCurrentCppExceptionMsg())
+  except StdException as e: raiseAssert($e.what())
 
 template check(body: untyped): untyped =
   var r: type(body)
   try: r = body
-  except: raiseAssert(getCurrentCppExceptionMsg())
+  except StdException as e: raiseAssert($e.what())
   r
 
 proc storage_offset*(ty: TensorType; self: Tensor): int64 {.inline.} = 
