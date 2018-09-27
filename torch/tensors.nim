@@ -189,13 +189,8 @@ proc tensor*(data: openarray; dtype: TensorKind; device: Device = Device.CPU; du
   ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
 
-  # figure out size of array/seq
-  var size = newSeq[ilsize]()
-  for length in lenIter(data):
-    size.add((ilsize)length)
-  
-  # make shape out of size
-  let shape = size.toAIntList()
+  # make shape out of nested array/seq size
+  let shape = toSeq(lenIter(data)).toAIntList()
   
   # TODO avoid some of those copies and iterations
   
