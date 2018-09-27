@@ -1,5 +1,7 @@
 import fragments/ffi/cpp as cpp
-import sequtils
+import sequtils, strformat, options
+
+{.experimental: "implicitDeref".}
 
 proc chunk*(self: Tensor; chunks, dim: int64): seq[Tensor] =
   assert(self.dim() > 0, "chunk expects at least a 1-dimensional tensor");
@@ -60,12 +62,12 @@ proc integer_upcast(self: Tensor; dtype: Option[AScalarType] = AScalarType.none)
     upcast_scalarType = if dtype.isSome: dtype.get else: (if scalarType.toCpp().isIntegralType().to(bool): ATkLong else: scalarType)
   return self.toType(upcast_scalarType)
 
-proc sum(self: Tensor; dim: IntList; keepdim: bool; dtype: Option[AScalarType] = AScalarType.none): Tensor =
+proc sum*(self: Tensor; dim: IntList; keepdim: bool; dtype: Option[AScalarType] = AScalarType.none): Tensor =
   sum_internal(integer_upcast(self, dtype), dim, keepdim)
 
 # Sums `tensor` repeatedly to produce a tensor of shape `shape`.
 # Precondition: is_expandable_to(shape, tensor.sizes()) must be true
-proc sum_to(tensor: Tensor; shape: IntList): Tensor =
+proc sum_to*(tensor: Tensor; shape: IntList): Tensor =
   if shape.len == 0:
     return tensor.sum()
 
@@ -79,7 +81,7 @@ proc sum_to(tensor: Tensor; shape: IntList): Tensor =
 
 proc mm*(self, mat2: Tensor): Tensor =
   if self.is_sparse:
-    return mat2.getType().addmm(zeros[int]([], mat2.getType()), self, mat2, 0, 1)
+    return mat2.getType().addmm(zeros[int]([], mat2.getType()), self, mat2, 0.0, 1.0)
   return mm_internal(self, mat2);
 
 proc matmul*(tensor1, tensor2: Tensor): Tensor =

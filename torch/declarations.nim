@@ -1,5 +1,10 @@
 # Automatically generated, to update run again the generator from the torch root path
 # nim c -r torch/generator.nim
+import fragments/ffi/cpp
+import torch_cpp
+import tensors
+
+{.experimental: "implicitDeref".}
 
 template atenMethod*(obj: CppObject, field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = obj.dynamicCppCall(field, args)
 template atenFunction*(field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = dynamicCCall(field, args)

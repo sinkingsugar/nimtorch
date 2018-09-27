@@ -4,6 +4,9 @@
 import math
 const M_PI = math.PI
 
+template firstOrSelf(self: tuple): untyped = self[0]
+template firstOrSelf(self: not tuple): untyped = self
+
 autograd masked_fill_inplace:
   proc forward*(ty: TensorType; self: Tensor; mask: Tensor; value: float): Tensor {.inline, discardable.} = 
     check: ty.atenMethod("masked_fill_", self.tensor, mask.tensor, value).to(void); self
@@ -551,15 +554,15 @@ autograd addbmm:
   proc forward*(ty: TensorType; self: Tensor; batch1: Tensor; batch2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
     check: ty.atenMethod("addbmm", self.tensor, batch1.tensor, batch2.tensor, beta, alpha).to(ATensor).newTensor()
   self: firstOrSelf(maybe_multiply(grad, beta))
-  batch1: firstOrSelf(grad.unsqueeze(0).expand(@[ batch1.size(0), batch1.size(1), batch2.size(2) ]).bmm(batch2.transpose(1, 2)) * alpha)
-  batch2: firstOrSelf(batch1.transpose(1, 2).bmm(grad.unsqueeze(0).expand(@[ batch1.size(0), batch1.size(1), batch2.size(2) ])) * alpha)
+  batch1: firstOrSelf(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ]).bmm(batch2.transpose(1, 2)) * alpha)
+  batch2: firstOrSelf(batch1.transpose(1, 2).bmm(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ])) * alpha)
 
 autograd addbmm:
   proc forward*(self: Tensor; batch1: Tensor; batch2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
     check: self.tensor.atenMethod("addbmm", batch1.tensor, batch2.tensor, beta, alpha).to(ATensor).newTensor()
   self: firstOrSelf(maybe_multiply(grad, beta))
-  batch1: firstOrSelf(grad.unsqueeze(0).expand(@[ batch1.size(0), batch1.size(1), batch2.size(2) ]).bmm(batch2.transpose(1, 2)) * alpha)
-  batch2: firstOrSelf(batch1.transpose(1, 2).bmm(grad.unsqueeze(0).expand(@[ batch1.size(0), batch1.size(1), batch2.size(2) ])) * alpha)
+  batch1: firstOrSelf(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ]).bmm(batch2.transpose(1, 2)) * alpha)
+  batch2: firstOrSelf(batch1.transpose(1, 2).bmm(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ])) * alpha)
 
 autograd baddbmm:
   proc forward*(ty: TensorType; self: Tensor; batch1: Tensor; batch2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
@@ -1062,13 +1065,13 @@ autograd adaptive_avg_pool2d:
 autograd adaptive_avg_pool2d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; self: Tensor): Tensor {.inline.} = 
     check: ty.atenMethod("adaptive_avg_pool2d_backward", grad_output.tensor, self.tensor).to(ATensor).newTensor()
-  grad_output: firstOrSelf(adaptive_avg_pool2d(grad, @[ grad_output.size(-2), grad_output.size(-1) ]))
+  grad_output: firstOrSelf(adaptive_avg_pool2d(grad, [ grad_output.size(-2), grad_output.size(-1) ]))
   self: firstOrSelf(zeros_like(self))
 
 autograd adaptive_avg_pool2d_backward:
   proc forward*(grad_output: Tensor; self: Tensor): Tensor {.inline.} = 
     check: atenFunction("at::adaptive_avg_pool2d_backward", grad_output.tensor, self.tensor).to(ATensor).newTensor()
-  grad_output: firstOrSelf(adaptive_avg_pool2d(grad, @[ grad_output.size(-2), grad_output.size(-1) ]))
+  grad_output: firstOrSelf(adaptive_avg_pool2d(grad, [ grad_output.size(-2), grad_output.size(-1) ]))
   self: firstOrSelf(zeros_like(self))
 
 autograd adaptive_avg_pool3d:
@@ -1084,13 +1087,13 @@ autograd adaptive_avg_pool3d:
 autograd adaptive_avg_pool3d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; self: Tensor): Tensor {.inline.} = 
     check: ty.atenMethod("adaptive_avg_pool3d_backward", grad_output.tensor, self.tensor).to(ATensor).newTensor()
-  grad_output: firstOrSelf(adaptive_avg_pool3d(grad, @[ grad_output.size(-3), grad_output.size(-2), grad_output.size(-1) ]))
+  grad_output: firstOrSelf(adaptive_avg_pool3d(grad, [ grad_output.size(-3), grad_output.size(-2), grad_output.size(-1) ]))
   self: firstOrSelf(zeros_like(self))
 
 autograd adaptive_avg_pool3d_backward:
   proc forward*(grad_output: Tensor; self: Tensor): Tensor {.inline.} = 
     check: atenFunction("at::adaptive_avg_pool3d_backward", grad_output.tensor, self.tensor).to(ATensor).newTensor()
-  grad_output: firstOrSelf(adaptive_avg_pool3d(grad, @[ grad_output.size(-3), grad_output.size(-2), grad_output.size(-1) ]))
+  grad_output: firstOrSelf(adaptive_avg_pool3d(grad, [ grad_output.size(-3), grad_output.size(-2), grad_output.size(-1) ]))
   self: firstOrSelf(zeros_like(self))
 
 autograd adaptive_max_pool2d:
@@ -1517,13 +1520,13 @@ autograd thnn_conv_depthwise2d:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): Tensor {.inline.} = 
     check: ty.atenMethod("thnn_conv_depthwise2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(ATensor).newTensor()
   (self, weight): thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
-  bias: firstOrSelf(grad.contiguous().view(@[grad.size(0), grad.size(1), -1]).sum(0).sum(1))
+  bias: firstOrSelf(grad.contiguous().view([grad.size(0), grad.size(1), -1]).sum(0).sum(1))
 
 autograd thnn_conv_depthwise2d:
   proc forward*(self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]; dilation: openarray[SomeInteger]): Tensor {.inline.} = 
     check: atenFunction("at::thnn_conv_depthwise2d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(ATensor).newTensor()
   (self, weight): thnn_conv_depthwise2d_backward(grad.contiguous(), self, weight, kernel_size, stride, padding, dilation, grad_input_mask)
-  bias: firstOrSelf(grad.contiguous().view(@[grad.size(0), grad.size(1), -1]).sum(0).sum(1))
+  bias: firstOrSelf(grad.contiguous().view([grad.size(0), grad.size(1), -1]).sum(0).sum(1))
 
 autograd thnn_conv3d:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[SomeInteger]; bias: Tensor; stride: openarray[SomeInteger]; padding: openarray[SomeInteger]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.} = 

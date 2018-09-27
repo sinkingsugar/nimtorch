@@ -589,8 +589,8 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             for retArg in info.returns:
               nimLikeStr = nimLikeStr.replacef(peg("{[^_]} '" & retArg.originalName & "' {!\\ident}"), "$1fwd_result." & retArg.name & "$2")
 
-          # replace int lists {} to our @[]
-          nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
+          # replace int lists {} to our []
+          nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "[$1]")
 
           # TODO: Properly handle "training ? A : B"
           nimLikeStr = nimLikeStr.replacef(re"^(.*)\?(.*):(.*)$", "$2")
@@ -652,11 +652,16 @@ template check(body: untyped): untyped =
   # Generate autograd definitions
   output = newFileStream("torch/derivatives.nim", fmWrite)
 
-  output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r torch/generator.nim\n"
-  output.writeLine "import math"
-  output.writeLine "const M_PI = math.PI\n"
+  output.writeLine """
+# Automatically generated, to update run again the generator from the torch root path
+# nim c -r torch/generator.nim\n
+import math
+const M_PI = math.PI\n
   
+template firstOrSelf(self: tuple): untyped = self[0]
+template firstOrSelf(self: not tuple): untyped = self
+"""
+
   for info in generatedProcs:
     let pragma = if info.isInplace: ", discardable" else: ""
     if info.bodyText != "":
