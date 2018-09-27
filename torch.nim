@@ -223,7 +223,9 @@ when isMainModule:
     a1.backward()
     print a.grad
 
-  block:
+  import torch/nn/functional
+
+  block:  
     var opts: TensorOptions
     opts.dtype(get_default_dtype().toATenType()).to(void)
   
