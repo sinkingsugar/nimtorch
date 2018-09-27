@@ -38,7 +38,7 @@ proc toNimType(typeName: string): string =
   of "TensorOptions": return "TensorOptions"
   of "Storage": return "AStorage"
   of "TensorList": return "TensorList"
-  of "int64_t": return "int64"
+  of "int64_t": return "int" # We expose indexes as integers
   of "bool": return "bool"
   of "real", "accreal": return "float"
   of "double": return "float64"
@@ -210,11 +210,21 @@ block declarations:
       if arguments[i].hasKey("default"):
         let defaultNode = arguments[i]["default"]
         case defaultNode.kind
-        of JInt, JBool:
+        of JInt:
           # easy case, no need to transform
           case nimType
-          of "IntList": defaultStr = " = @[" & $arguments[i]["default"] & "]"
-          else: defaultStr = " = " & $arguments[i]["default"]
+          of "IntList": defaultStr = " = [" & $arguments[i]["default"] & "]"
+          else:
+            let value = parseBiggestInt($arguments[i]["default"])
+            if value == int64.high:
+              # We assume this is not a special value, but just a "very large" one
+              defaultStr = " = int.high"
+            else:
+              defaultStr = " = " & $arguments[i]["default"]
+              
+        of JBool:
+          defaultStr = " = " & $arguments[i]["default"]
+
         of JString:
           let stringValue = arguments[i]["default"].getStr()
           case stringValue
@@ -262,7 +272,7 @@ block declarations:
         
         var nimInputType = nimType
         if nimInputType == "IntList":
-          nimInputType = "openarray[SomeInteger]"
+          nimInputType = "openarray[int]"
         elif nimInputType == "TensorList":
           nimInputType = "openarray[Tensor]"
 

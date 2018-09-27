@@ -105,8 +105,8 @@ proc toIntList(self: AIntList): IntList =
   for i in 0 ..< self.len:
     result[i] = self[i].int
 
-proc toAIntList*[T: SomeInteger](self: openarray[T]): AIntList =
-  when T is ilsize:
+proc toAIntList*(self: openarray[int]): AIntList =
+  when sizeof(int) == sizeof(ilsize):
     let temp = cppinit(AIntList, cast[ptr ilsize](unsafeaddr(self[0])), self.len.csize)
     return temp
   else:
@@ -258,9 +258,9 @@ proc strides*(a: Tensor): IntList {.inline.} =
 
 proc sqrt*(b: SomeFloat): SomeFloat {.inline, noinit.} = math.sqrt(b)
 
-proc ndimension*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(ndimension).to(int64).int
+proc ndimension*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(ndimension).to(ilsize).int
 
-proc dim*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(int64).int
+proc dim*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(ilsize).int
 
 proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
   newTensor a.tensor.toCpp()[index].to(ATensor)

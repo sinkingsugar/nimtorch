@@ -23,13 +23,13 @@ proc calculate_gain*(nonlinearity: string; param: SomeNumber = 0.01): float =
   else:
     raiseAssert("Unsupported nonlinearity")
 
-proc calculate_fan_in_and_fan_out*(tensor: Tensor): (int64, int64) =
+proc calculate_fan_in_and_fan_out*(tensor: Tensor): (int, int) =
   let dimensions = tensor.ndimension()
   if dimensions < 2:
       raiseAssert("Fan in and fan out can not be computed for tensor with less than 2 dimensions")
 
   var
-    fan_in, fan_out: int64
+    fan_in, fan_out: int
 
   if dimensions == 2:  # Linear
       fan_in = tensor.size(1)
@@ -39,7 +39,7 @@ proc calculate_fan_in_and_fan_out*(tensor: Tensor): (int64, int64) =
         num_input_fmaps = tensor.size(1)
         num_output_fmaps = tensor.size(0)
       var
-        receptive_field_size: int64 = 1
+        receptive_field_size: int = 1
       if tensor.dim() > 2:
           receptive_field_size = tensor[0][0].numel()
       fan_in = num_input_fmaps * receptive_field_size
@@ -47,7 +47,7 @@ proc calculate_fan_in_and_fan_out*(tensor: Tensor): (int64, int64) =
 
   return (fan_in, fan_out)
 
-proc calculate_correct_fan*(tensor: Tensor; mode: string): int64 =
+proc calculate_correct_fan*(tensor: Tensor; mode: string): int =
     let modeLower = mode.toLowerAscii()
     const valid_modes = ["fan_in", "fan_out"]
     if valid_modes.contains(modeLower):

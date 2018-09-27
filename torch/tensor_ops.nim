@@ -5,51 +5,51 @@ import macros
 
 include torch/declarations
 
-proc zeros*[T: SomeInteger](size: varargs[T]): Tensor =
+proc zeros*[T: int](size: varargs[T]): Tensor =
   var opts: TensorOptions
   opts.dtype(get_default_dtype().toATenType()).to(void)
   return zeros(size, opts)
 
-proc zeros*(size: openarray[SomeInteger]; device: Device): Tensor =
-  var opts: TensorOptions
-  opts.dtype(get_default_dtype().toATenType()).to(void)
-  case device
-  of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
-  of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return zeros(size, opts)
-
-proc zeros*(size: openarray[SomeInteger]; dtype: TensorKind): Tensor =
-  var opts: TensorOptions
-  opts.dtype(dtype.toATenType()).to(void)
-  return zeros(size, opts)
-
-proc zeros*(size: openarray[SomeInteger]; dtype: TensorKind; device: Device): Tensor =
-  var opts: TensorOptions
-  opts.dtype(dtype.toATenType()).to(void)
-  case device
-  of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
-  of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
-  return zeros(size, opts)
-
-proc ones*[T: SomeInteger](size: varargs[T]): Tensor =
-  var opts: TensorOptions
-  opts.dtype(get_default_dtype().toATenType()).to(void)
-  return ones(size, opts)
-
-proc ones*(size: openarray[SomeInteger]; device: Device): Tensor =
+proc zeros*(size: openarray[int]; device: Device): Tensor =
   var opts: TensorOptions
   opts.dtype(get_default_dtype().toATenType()).to(void)
   case device
   of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
   of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return zeros(size, opts)
+
+proc zeros*(size: openarray[int]; dtype: TensorKind): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  return zeros(size, opts)
+
+proc zeros*(size: openarray[int]; dtype: TensorKind; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(dtype.toATenType()).to(void)
+  case device
+  of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return zeros(size, opts)
+
+proc ones*[T: int](size: varargs[T]): Tensor =
+  var opts: TensorOptions
+  opts.dtype(get_default_dtype().toATenType()).to(void)
   return ones(size, opts)
 
-proc ones*(size: openarray[SomeInteger]; dtype: TensorKind): Tensor =
+proc ones*(size: openarray[int]; device: Device): Tensor =
+  var opts: TensorOptions
+  opts.dtype(get_default_dtype().toATenType()).to(void)
+  case device
+  of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+  of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+  return ones(size, opts)
+
+proc ones*(size: openarray[int]; dtype: TensorKind): Tensor =
   var opts: TensorOptions
   opts.dtype(dtype.toATenType()).to(void)
   return ones(size, opts)
 
-proc ones*(size: openarray[SomeInteger]; dtype: TensorKind; device: Device): Tensor =
+proc ones*(size: openarray[int]; dtype: TensorKind; device: Device): Tensor =
   var opts: TensorOptions
   opts.dtype(dtype.toATenType()).to(void)
   case device
@@ -171,7 +171,7 @@ macro `[]=`*(a: Tensor; args: varargs[int]; value: Tensor | SomeNumber): untyped
         indexTensor = range(0.float, sizeOne.float, LongTensor)
       `resSym`.index_put_inplace([indexTensor], full_like(`resSym`, `value`.float, `resSym`.options()))
 
-macro chunk*(self: Tensor; chunks: static[int]; dim: int): untyped =
+macro nchunk*(self: Tensor; chunks: static[int]; dim: int): untyped =
   var tensors = genSym()
   var tupleTree = nnkTupleConstr.newTree()
 
@@ -180,5 +180,5 @@ macro chunk*(self: Tensor; chunks: static[int]; dim: int): untyped =
       `tensors`[`i`]
   
   result = quote do:
-    let `tensors` = `self`.chunk(`chunks`, `dim`.int64)
+    let `tensors` = `self`.chunk(`chunks`, `dim`)
     `tupleTree`
