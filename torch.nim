@@ -111,8 +111,8 @@ when isMainModule:
   var
     gi = x.matmul(w_input.transpose(1, 2)) + b_input
     gh = hidden.matmul(w_recur.transpose(1, 2)) + b_recur
-    (i_r, i_i, i_nn) = gi.nchunk(3, 2)
-    (h_r, h_i, h_n) = gh.nchunk(3, 2)
+    (i_r, i_i, i_nn) = gi.chunk(3, 2)
+    (h_r, h_i, h_n) = gh.chunk(3, 2)
     resetgate = (i_r + h_r).sigmoid()
     presigmoid = i_i + h_i
     inputgate = presigmoid.sigmoid()

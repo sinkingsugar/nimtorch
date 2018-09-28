@@ -17,7 +17,7 @@ print(x.grad)
 x = torch.tensor([0.9, 0.8, 0.7])
 x.requires_grad = true
 
-let (a, b, c) = x.nchunk(3, 0)
+let (a, b, c) = x.chunk(3, 0)
 r = (c + (a + a))
 r.backward(torch.ones_like(r))
 print(x.grad)

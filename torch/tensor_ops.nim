@@ -171,7 +171,7 @@ macro `[]=`*(a: Tensor; args: varargs[int]; value: Tensor | SomeNumber): untyped
         indexTensor = range(0.float, sizeOne.float, LongTensor)
       `resSym`.index_put_inplace([indexTensor], full_like(`resSym`, `value`.float, `resSym`.options()))
 
-macro nchunk*(self: Tensor; chunks: static[int]; dim: int): untyped =
+macro chunk*(self: Tensor; chunks: static int; dim: int): untyped =
   var tensors = genSym()
   var tupleTree = nnkTupleConstr.newTree()
 
@@ -180,5 +180,7 @@ macro nchunk*(self: Tensor; chunks: static[int]; dim: int): untyped =
       `tensors`[`i`]
   
   result = quote do:
-    let `tensors` = `self`.chunk(`chunks`, `dim`)
+    # Turn static into a dynamic value, so overload resolution picks up the non-tuple version
+    let chunks = `chunks`
+    let `tensors` = `self`.chunk(chunks, `dim`)
     `tupleTree`
