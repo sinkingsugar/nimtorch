@@ -111,8 +111,8 @@ include torch/native/convolutions
 include torch/derivatives
 
 proc detach*(self: Tensor): Tensor =
-  result = self.clone()
-  result.detach_inplace()
+  # Create a new reference to the same tensor, discarding grad_fn, etc.
+  result = newTensor(self.tensor)
 
 proc toSeq*[T](a: Tensor): seq[T] {.inline, noinit.} =
   let elements = a.numel()
@@ -131,7 +131,7 @@ macro `[]`*(a: Tensor; args: varargs[int]): Tensor =
   
   var resSym = gensym(nskVar)
   result.add quote do:
-    var `resSym` {.inject.} = `a`
+    var `resSym` = `a`
   
   var dimSkip = 0
   for arg in args:
@@ -149,7 +149,7 @@ macro `[]=`*(a: Tensor; args: varargs[int]; value: Tensor | SomeNumber): untyped
   
   var resSym = gensym(nskVar)
   result.add quote do:
-    var `resSym` {.inject.} = `a`
+    var `resSym` = `a`
   
   var dimSkip = 0
   for arg in args:
