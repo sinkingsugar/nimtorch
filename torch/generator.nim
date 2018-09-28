@@ -38,7 +38,7 @@ proc toNimType(typeName: string): string =
   of "TensorOptions": return "TensorOptions"
   of "Storage": return "AStorage"
   of "TensorList": return "TensorList"
-  of "int64_t": return "int64"
+  of "int64_t": return "int" # We expose indexes as integers
   of "bool": return "bool"
   of "real", "accreal": return "float"
   of "double": return "float64"
@@ -76,6 +76,7 @@ var generatedProcs = newSeq[ProcInfo]()
 
 # Functions that are implemented manually to enable autograd
 const customNames = [
+  "sum",
   "matmul",
   "mm",
   "contiguous",
@@ -210,11 +211,21 @@ block declarations:
       if arguments[i].hasKey("default"):
         let defaultNode = arguments[i]["default"]
         case defaultNode.kind
-        of JInt, JBool:
+        of JInt:
           # easy case, no need to transform
           case nimType
-          of "IntList": defaultStr = " = @[" & $arguments[i]["default"] & "]"
-          else: defaultStr = " = " & $arguments[i]["default"]
+          of "IntList": defaultStr = " = [" & $arguments[i]["default"] & "]"
+          else:
+            let value = parseBiggestInt($arguments[i]["default"])
+            if value == int64.high:
+              # We assume this is not a special value, but just a "very large" one
+              defaultStr = " = int.high"
+            else:
+              defaultStr = " = " & $arguments[i]["default"]
+              
+        of JBool:
+          defaultStr = " = " & $arguments[i]["default"]
+
         of JString:
           let stringValue = arguments[i]["default"].getStr()
           case stringValue
@@ -262,7 +273,7 @@ block declarations:
         
         var nimInputType = nimType
         if nimInputType == "IntList":
-          nimInputType = "openarray[SomeInteger]"
+          nimInputType = "openarray[int]"
         elif nimInputType == "TensorList":
           nimInputType = "openarray[Tensor]"
 
@@ -367,8 +378,9 @@ block declarations:
             procInfo.argsStr = argsStr1
             procInfo.expression = fmt"self.tensor.atenMethod(""{procInfo.originalName}""{argsStr2}){convertStr}"
           of Type:
+            # `ty` gets dereferenced here because it's a pointer. this wasn't necessary before splitting modules apart. Some compiler bug with `implicitDeref`?
             procInfo.argsStr = "ty: TensorType; " & argsStr1
-            procInfo.expression = fmt"ty.atenMethod(""{procInfo.originalName}""{argsStr2}){convertStr}"
+            procInfo.expression = fmt"ty[].atenMethod(""{procInfo.originalName}""{argsStr2}){convertStr}"
           of Namespace:
             procInfo.argsStr = argsStr1
             procInfo.expression = fmt"atenFunction(""at::{procInfo.originalName}""{argsStr2}){convertStr}"
@@ -589,8 +601,8 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             for retArg in info.returns:
               nimLikeStr = nimLikeStr.replacef(peg("{[^_]} '" & retArg.originalName & "' {!\\ident}"), "$1fwd_result." & retArg.name & "$2")
 
-          # replace int lists {} to our @[]
-          nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "@[$1]")
+          # replace int lists {} to our []
+          nimLikeStr = nimLikeStr.replacef(peg"'{' {@} '}'", "[$1]")
 
           # TODO: Properly handle "training ? A : B"
           nimLikeStr = nimLikeStr.replacef(re"^(.*)\?(.*):(.*)$", "$2")
@@ -608,12 +620,16 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
 
   # Generate forward declarations
   var output = newFileStream("torch/declarations.nim", fmWrite)
-  output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r torch/generator.nim\n"
-  output.writeLine "template atenMethod*(obj: CppObject, field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = obj.dynamicCppCall(field, args)"
-  output.writeLine "template atenFunction*(field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = dynamicCCall(field, args)\n"
-
   output.writeLine """
+# Automatically generated, to update run again the generator from the torch root path
+# nim c -r torch/generator.nim
+import fragments/ffi/cpp
+import torch_cpp
+import tensors
+
+template atenMethod*(obj: CppObject, field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = obj.dynamicCppCall(field, args)
+template atenFunction*(field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = dynamicCCall(field, args)
+
 template checkVoid(body: untyped): untyped =
   try: body
   except StdException as e: raiseAssert($e.what())
@@ -652,11 +668,16 @@ template check(body: untyped): untyped =
   # Generate autograd definitions
   output = newFileStream("torch/derivatives.nim", fmWrite)
 
-  output.writeLine "# Automatically generated, to update run again the generator from the torch root path"
-  output.writeLine "# nim c -r torch/generator.nim\n"
-  output.writeLine "import math"
-  output.writeLine "const M_PI = math.PI\n"
+  output.writeLine """
+# Automatically generated, to update run again the generator from the torch root path
+# nim c -r torch/generator.nim
+import math
+const M_PI = math.PI
   
+template firstOrSelf(self: tuple): untyped = self[0]
+template firstOrSelf(self: not tuple): untyped = self
+"""
+
   for info in generatedProcs:
     let pragma = if info.isInplace: ", discardable" else: ""
     if info.bodyText != "":

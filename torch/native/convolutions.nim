@@ -105,28 +105,9 @@ proc subtensor(tensor: Tensor; dim, groups, g: int): Tensor =
   let n = tensor.sizes[dim] div groups;
   return tensor.narrow(dim, n * g, n).contiguous()
 
-proc convolution*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int): Tensor
 proc convolution_internal*(input_r, weight_r, bias_r: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int;
     benchmark, deterministic, cudnn_enabled: bool): Tensor
 proc convolution_nogroup_internal*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int]; transposed: bool; output_padding: openarray[int]): Tensor
-
-proc conv1d*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int], groups: int): Tensor =
-  convolution(input, weight, bias, stride, padding, dilation, false, [0], groups)
-
-proc conv2d*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int], groups: int): Tensor =
-  convolution(input, weight, bias, stride, padding, dilation, false, [0, 0], groups)
-
-proc conv3d*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int], groups: int): Tensor =
-  convolution(input, weight, bias, stride, padding, dilation, false, [0, 0, 0], groups)
-
-proc conv_transpose1d*(input, weight, bias: Tensor; stride, padding, output_padding: openarray[int], groups: int, dilation: openarray[int]): Tensor =
-  convolution(input, weight, bias, stride, padding, dilation, true, output_padding, groups)
-
-proc conv_transpose2d*(input, weight, bias: Tensor; stride, padding, output_padding: openarray[int], groups: int, dilation: openarray[int]): Tensor =
-  convolution(input, weight, bias, stride, padding, dilation, true, output_padding, groups)
-
-proc conv_transpose3d*(input, weight, bias: Tensor; stride, padding, output_padding: openarray[int], groups: int, dilation: openarray[int]): Tensor =
-  convolution(input, weight, bias, stride, padding, dilation, true, output_padding, groups)
 
 proc convolution*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int): Tensor =
   #let ctx = globalContext

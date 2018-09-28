@@ -1,7 +1,7 @@
 import fragments/ffi/cpp as cpp
-import sequtils
+import sequtils, strformat, options
 
-proc chunk*(self: Tensor; chunks, dim: int64): seq[Tensor] =
+proc chunk*(self: Tensor; chunks, dim: int): seq[Tensor] =
   assert(self.dim() > 0, "chunk expects at least a 1-dimensional tensor");
   assert(chunks > 0, "chunk expects `chunks` to be greater than 0, got: " & $chunks)
   
@@ -12,8 +12,8 @@ proc chunk*(self: Tensor; chunks, dim: int64): seq[Tensor] =
   # 0-sized chunks adding up to 0).  So, call split_with_sizes with the correct number of chunks,
   # eventually we will do this for all cases.
   if split_size == 0 and self.size(dim) == 0:
-    var split_sizes = newSeqWith(chunks.int, split_size)
-    split_sizes[chunks.int - 1] = split_size - (split_size * chunks - self.size(dim))
+    var split_sizes = newSeqWith(chunks, split_size)
+    split_sizes[chunks - 1] = split_size - (split_size * chunks - self.size(dim))
     return self.split_with_sizes(split_sizes, dim)
   else:
     return self.split(split_size, dim)
@@ -51,21 +51,34 @@ proc toType(self: Tensor; t: TensorType; non_blocking: bool = false): Tensor =
     return self
   return t.copy(self, non_blocking)
 
+proc toScalarType(t: TensorType; s: AScalarType): TensorType {.importcpp: "&(#->toScalarType(#))".}
+
+proc scalarType(t: TensorType): AScalarType {.importcpp: "#->scalarType()".}
+
+proc isIntegralType(dtype: AScalarType): bool {.importcpp: "at::isIntegralType(#)".}
+
 proc toType(self: Tensor; t: AScalarType; non_blocking: bool = false): Tensor =
-  self.toType(self.getType().toScalarType(t).to(TensorType))
+  self.toType(self.getType().toScalarType(t))
 
 proc integer_upcast(self: Tensor; dtype: Option[AScalarType] = AScalarType.none): Tensor =
   let 
-    scalarType = self.getType().scalarType().to(AScalarType)
-    upcast_scalarType = if dtype.isSome: dtype.get else: (if scalarType.toCpp().isIntegralType().to(bool): ATkLong else: scalarType)
+    scalarType = self.getType().scalarType
+    upcast_scalarType =
+      if dtype.isSome: dtype.get()
+      elif scalarType.isIntegralType(): ATkLong
+      else: scalarType
+
   return self.toType(upcast_scalarType)
 
-proc sum(self: Tensor; dim: IntList; keepdim: bool; dtype: Option[AScalarType] = AScalarType.none): Tensor =
+proc sum*(self: Tensor; dim: openarray[int]; keepdim: bool = false; dtype: Option[AScalarType] = AScalarType.none): Tensor {.inline.} =
   sum_internal(integer_upcast(self, dtype), dim, keepdim)
+
+proc sum*(self: Tensor; dtype: Option[AScalarType] = AScalarType.none): Tensor {.inline.} =
+  sum_internal(integer_upcast(self, dtype))
 
 # Sums `tensor` repeatedly to produce a tensor of shape `shape`.
 # Precondition: is_expandable_to(shape, tensor.sizes()) must be true
-proc sum_to(tensor: Tensor; shape: IntList): Tensor =
+proc sum_to*(tensor: Tensor; shape: IntList): Tensor =
   if shape.len == 0:
     return tensor.sum()
 
@@ -79,7 +92,7 @@ proc sum_to(tensor: Tensor; shape: IntList): Tensor =
 
 proc mm*(self, mat2: Tensor): Tensor =
   if self.is_sparse:
-    return mat2.getType().addmm(zeros[int]([], mat2.getType()), self, mat2, 0, 1)
+    return mat2.getType().addmm(zeros([], mat2.getType()), self, mat2, 0.0, 1.0)
   return mm_internal(self, mat2);
 
 proc matmul*(tensor1, tensor2: Tensor): Tensor =
@@ -124,12 +137,12 @@ proc matmul*(tensor1, tensor2: Tensor): Tensor =
     # expand the batch portion (i.e. cut off matrix dimensions and expand rest)
     let
       expand_batch_portion = infer_size(batch_tensor1, batch_tensor2)
-      tensor1_expand_size = expand_batch_portion & n.int & m1.int
-      tensor2_expand_size = expand_batch_portion & m2.int & p.int
+      tensor1_expand_size = expand_batch_portion & n & m1
+      tensor2_expand_size = expand_batch_portion & m2 & p
 
       expand_batch_product = expand_batch_portion.foldl(a * b)
-      tensor1_bmm_view = @[expand_batch_product, n.int, m1.int]
-      tensor2_bmm_view = @[expand_batch_product, m2.int, p.int]
+      tensor1_bmm_view = @[expand_batch_product, n, m1]
+      tensor2_bmm_view = @[expand_batch_product, m2, p]
 
     # flatten expanded batches
     let
@@ -138,8 +151,8 @@ proc matmul*(tensor1, tensor2: Tensor): Tensor =
 
     # reshape batches back into result
     var output_shape = expand_batch_portion;
-    if dim_tensor1 > 1: output_shape.add(n.int)
-    if dim_tensor2 > 1: output_shape.add(p.int)
+    if dim_tensor1 > 1: output_shape.add(n)
+    if dim_tensor2 > 1: output_shape.add(p)
 
     return unsafe_view_internal(tensor1_expanded.bmm(tensor2_expanded), output_shape)
 
@@ -147,7 +160,7 @@ proc matmul*(tensor1, tensor2: Tensor): Tensor =
 
 # TODO: Workaround for int instead of IntList
 proc sum(self: Tensor; dim: int): Tensor =
-  self.sum(@[dim])
+  self.sum([dim])
 
 proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
   if b.float == 1.0:
@@ -157,28 +170,28 @@ proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
 
 proc mm_mat1_backward*(grad, mat2: Tensor; sizes, strides: IntList; alpha: float): Tensor {.inline, noinit.} =
   if strides[0] == 1 and strides[1] == sizes[0]:
-    return torch.maybe_multiply(mat2.mm(grad.t()).t(), alpha)
+    return maybe_multiply(mat2.mm(grad.t()).t(), alpha)
   else:
-    return torch.maybe_multiply(grad.mm(mat2.t()), alpha)
+    return maybe_multiply(grad.mm(mat2.t()), alpha)
 
 proc mm_mat2_backward*(grad, mat1: Tensor; sizes, strides: IntList; alpha: float): Tensor {.inline, noinit.} =
   if strides[0] == 1 and strides[1] == sizes[0]:
-    return torch.maybe_multiply(grad.t().mm(mat1).t(), alpha)
+    return maybe_multiply(grad.t().mm(mat1).t(), alpha)
   else:
-    return torch.maybe_multiply(mat1.t().mm(grad), alpha)
+    return maybe_multiply(mat1.t().mm(grad), alpha)
 
 proc pow_backward*(grad, self: Tensor; exponent: float): Tensor {.inline, noinit.} =
   if exponent == 0.0:
-    return torch.zeros_like(self)
+    return zeros_like(self)
   else:
     return grad * exponent * self.pow(exponent - 1)
 
 proc pow_backward_self*(grad, self, exponent: Tensor): Tensor {.inline, noinit.} =
   var l: IntList
-  return torch.where(exponent == 0.0, torch.zeros(l, grad.getType()), grad * exponent * torch.pow(self, exponent - 1))
+  return where(exponent == 0.0, zeros(l, grad.getType()), grad * exponent * pow(self, exponent - 1))
 
 proc pow_backward_exponent*(grad, self, exponent: Tensor): Tensor {.inline, noinit.} =
-  return grad * torch.pow(self, exponent) * self.log()
+  return grad * pow(self, exponent) * self.log()
 
 proc atan2_backward*(grad, self, other: Tensor; outputMask: StdArray[bool, 2]): (Tensor, Tensor) {.inline, noinit.} =
   let recip = (self * self + other * other).reciprocal()
@@ -187,10 +200,10 @@ proc atan2_backward*(grad, self, other: Tensor; outputMask: StdArray[bool, 2]): 
   if output_mask[1]:
     result[1] = grad * -self * recip
 
-proc maybe_wrap_dim(dim, size: int64): int {.inline.} =
+proc maybe_wrap_dim(dim, size: int): int {.inline.} =
   return dynamicCCall("at::maybe_wrap_dim", dim, size).to(int)
 
-proc split_with_sizes_backward*(grads: openarray[Tensor]; split_sizes: openarray[SomeInteger]; dim: int64; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
+proc split_with_sizes_backward*(grads: openarray[Tensor]; split_sizes: openarray[int]; dim: int; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
   let ndim = maybe_wrap_dim(dim, sizes.len())
   var allDefinedList: TensorList
   for i in 0..grads.high:
@@ -200,46 +213,46 @@ proc split_with_sizes_backward*(grads: openarray[Tensor]; split_sizes: openarray
     else:
       let length = split_sizes[i]
       var grad_size = sizes 
-      grad_size[dim.int] = length.int
-      allDefinedList.add(torch.zeros(grad_size, tensorType))
-  result = torch.cat(allDefinedList, ndim)
+      grad_size[dim] = length
+      allDefinedList.add(zeros(grad_size, tensorType))
+  result = cat(allDefinedList, ndim)
 
-proc slice_backward*(grad: Tensor; input_sizes: openarray[SomeInteger], dim, start, to, step: int64): Tensor =
+proc slice_backward*(grad: Tensor; input_sizes: openarray[int], dim, start, to, step: int): Tensor =
   let grad_input = zeros(input_sizes, grad.options())
   grad_input.slice(dim, start, to, step).copy_inplace(grad)
   return grad_input
 
-proc split_backward*(grads: openarray[Tensor]; split_size, dim: int64; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
+proc split_backward*(grads: openarray[Tensor]; split_size, dim: int; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
   let
     ndim = maybe_wrap_dim(dim, sizes.len())
     dim_size = sizes[ndim]
     num_splits = grads.len
-  var split_sizes = newSeqWith(num_splits, split_size.int)
-  split_sizes[num_splits - 1] = split_size.int - (split_size.int * num_splits - dim_size)
+  var split_sizes = newSeqWith(num_splits, split_size)
+  split_sizes[num_splits - 1] = split_size - (split_size * num_splits - dim_size)
   result = split_with_sizes_backward(grads, split_sizes, ndim, sizes, tensorType)
 
-proc unsqueeze_to(self: Tensor; sizes: openarray[SomeInteger]): Tensor =
+proc unsqueeze_to(self: Tensor; sizes: openarray[int]): Tensor =
   result = self
   for dim, size in sizes:
     if size == 1:
-      result = result.unsqueeze(dim.int64)
+      result = result.unsqueeze(dim)
 
-proc unsqueeze_to(self: Tensor; dim: int64; sizes: openarray[SomeInteger]): Tensor =
-  let dim = maybe_wrap_dim(dim.int, sizes.len)
+proc unsqueeze_to(self: Tensor; dim: int; sizes: openarray[int]): Tensor =
+  let dim = maybe_wrap_dim(dim, sizes.len)
   # in NumPy it's not an error to unsqueeze a scalar, but we still need to avoided
   # unsqueezing in the backward.
-  if sizes.len > 0 and sizes[dim.int] == 1:
-    return self.unsqueeze(dim.int64)
+  if sizes.len > 0 and sizes[dim] == 1:
+    return self.unsqueeze(dim)
   return self
 
-proc dim_list_to_bitset(dims: openarray[SomeInteger]; ndims: int64; wrap_scalar: bool = true): set[0..63] =
+proc dim_list_to_bitset(dims: openarray[int]; ndims: int; wrap_scalar: bool = true): set[0..63] =
   assert(ndims <= 64, "only tensors with up to 64 dims are supported")
   for i in 0 ..< dims.len:
-    let dim = maybe_wrap_dim(dims[i].int, ndims.int)
+    let dim = maybe_wrap_dim(dims[i], ndims)
     assert(dim in result, "dim " & $dim & " appears multiple times in the list of dims")
     result.incl(dim)
 
-proc sum_backward(grad: Tensor; sizes: openarray[SomeInteger]; dims: openarray[SomeInteger]; keepdim: bool): Tensor =
+proc sum_backward(grad: Tensor; sizes: openarray[int]; dims: openarray[int]; keepdim: bool): Tensor =
   if not keepdim and sizes.len > 0:
     if dims.len == 1:
       return grad.unsqueeze(dims[0]).expand(sizes)
@@ -259,8 +272,8 @@ proc legacy_cat_wrap_dim(dim: int; tensor_sizes: seq[seq[int]]): int =
       return maybe_wrap_dim(dim, sizes.len);
   return dim
 
-proc cat_tensors_backward(grad: Tensor; sizes: seq[seq[int]]; dim: int64): TensorList =
-  let dim = legacy_cat_wrap_dim(dim.int, sizes)
+proc cat_tensors_backward(grad: Tensor; sizes: seq[seq[int]]; dim: int): TensorList =
+  let dim = legacy_cat_wrap_dim(dim, sizes)
   result.setLen(sizes.len)
   var accumulate = 0
 
@@ -272,7 +285,7 @@ proc cat_tensors_backward(grad: Tensor; sizes: seq[seq[int]]; dim: int64): Tenso
 
     let size = shape[dim]
     accumulate += size
-    result[i] = grad.narrow(dim, (accumulate - size).int64, size.int64)
+    result[i] = grad.narrow(dim, (accumulate - size), size)
 
 proc to_args_sizes(tensors: openarray[Tensor]): seq[seq[int]] =
   result.setLen(tensors.len)
