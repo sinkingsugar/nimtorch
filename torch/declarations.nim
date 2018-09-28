@@ -3551,39 +3551,9 @@ proc stride*(ty: TensorType; self: Tensor; dim: int): int {.inline.} =
 proc stride*(self: Tensor; dim: int): int {.inline.} = 
   check: self.tensor.atenMethod("stride", dim).to(int)
 
-proc sum*(ty: TensorType; self: Tensor; dtype: AScalarType): Tensor {.inline.} = 
-  check: ty[].atenMethod("sum", self.tensor, dtype).to(ATensor).newTensor()
-
-proc sum*(self: Tensor; dtype: AScalarType): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("sum", dtype).to(ATensor).newTensor()
-
-proc sum*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("sum", self.tensor).to(ATensor).newTensor()
-
-proc sum*(self: Tensor): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("sum").to(ATensor).newTensor()
-
 proc sum_internal*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
 proc sum_internal*(self: Tensor): Tensor {.inline.}
-
-proc sum*(ty: TensorType; self: Tensor; dim: openarray[int]; keepdim: bool; dtype: AScalarType): Tensor {.inline.} = 
-  check: ty[].atenMethod("sum", self.tensor, dim.toAIntList(), keepdim, dtype).to(ATensor).newTensor()
-
-proc sum*(self: Tensor; dim: openarray[int]; keepdim: bool; dtype: AScalarType): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("sum", dim.toAIntList(), keepdim, dtype).to(ATensor).newTensor()
-
-proc sum*(ty: TensorType; self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("sum", self.tensor, dim.toAIntList(), keepdim).to(ATensor).newTensor()
-
-proc sum*(self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("sum", dim.toAIntList(), keepdim).to(ATensor).newTensor()
-
-proc sum*(ty: TensorType; self: Tensor; dim: openarray[int]; dtype: AScalarType): Tensor {.inline.} = 
-  check: ty[].atenMethod("sum", self.tensor, dim.toAIntList(), dtype).to(ATensor).newTensor()
-
-proc sum*(self: Tensor; dim: openarray[int]; dtype: AScalarType): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("sum", dim.toAIntList(), dtype).to(ATensor).newTensor()
 
 proc sum_internal*(ty: TensorType; self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.}
 

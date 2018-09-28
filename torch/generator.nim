@@ -76,6 +76,7 @@ var generatedProcs = newSeq[ProcInfo]()
 
 # Functions that are implemented manually to enable autograd
 const customNames = [
+  "sum",
   "matmul",
   "mm",
   "contiguous",

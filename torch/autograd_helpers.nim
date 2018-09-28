@@ -51,17 +51,30 @@ proc toType(self: Tensor; t: TensorType; non_blocking: bool = false): Tensor =
     return self
   return t.copy(self, non_blocking)
 
+proc toScalarType(t: TensorType; s: AScalarType): TensorType {.importcpp: "&(#->toScalarType(#))".}
+
+proc scalarType(t: TensorType): AScalarType {.importcpp: "#->scalarType()".}
+
+proc isIntegralType(dtype: AScalarType): bool {.importcpp: "at::isIntegralType(#)".}
+
 proc toType(self: Tensor; t: AScalarType; non_blocking: bool = false): Tensor =
-  self.toType(self.getType().toScalarType(t).to(TensorType))
+  self.toType(self.getType().toScalarType(t))
 
 proc integer_upcast(self: Tensor; dtype: Option[AScalarType] = AScalarType.none): Tensor =
   let 
-    scalarType = self.getType().scalarType().to(AScalarType)
-    upcast_scalarType = if dtype.isSome: dtype.get else: (if scalarType.toCpp().isIntegralType().to(bool): ATkLong else: scalarType)
+    scalarType = self.getType().scalarType
+    upcast_scalarType =
+      if dtype.isSome: dtype.get()
+      elif scalarType.isIntegralType(): ATkLong
+      else: scalarType
+
   return self.toType(upcast_scalarType)
 
-proc sum*(self: Tensor; dim: IntList; keepdim: bool; dtype: Option[AScalarType] = AScalarType.none): Tensor =
+proc sum*(self: Tensor; dim: openarray[int]; keepdim: bool = false; dtype: Option[AScalarType] = AScalarType.none): Tensor {.inline.} =
   sum_internal(integer_upcast(self, dtype), dim, keepdim)
+
+proc sum*(self: Tensor; dtype: Option[AScalarType] = AScalarType.none): Tensor {.inline.} =
+  sum_internal(integer_upcast(self, dtype))
 
 # Sums `tensor` repeatedly to produce a tensor of shape `shape`.
 # Precondition: is_expandable_to(shape, tensor.sizes()) must be true
@@ -147,7 +160,7 @@ proc matmul*(tensor1, tensor2: Tensor): Tensor =
 
 # TODO: Workaround for int instead of IntList
 proc sum(self: Tensor; dim: int): Tensor =
-  self.sum(@[dim])
+  self.sum([dim])
 
 proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
   if b.float == 1.0:
