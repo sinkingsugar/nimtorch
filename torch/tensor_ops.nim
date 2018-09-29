@@ -124,6 +124,12 @@ proc toSeq*[T](a: Tensor): seq[T] {.inline, noinit.} =
   else:
     copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
 
+converter toFloat32*(a: Tensor): float32 {.inline, noinit.} =
+  doAssert(a.numel() == 1, "Trying to call converter toFloat32 on a multi element tensor")
+  proc scalarToF32(s: AScalar): float32 {.importcpp: "#.to<float>()".}
+  let scalar = cppinit(AScalar, a.tensor)
+  return scalar.scalarToF32() 
+
 template _*: int = -1
 
 macro `[]`*(a: Tensor; args: varargs[int]): Tensor =
