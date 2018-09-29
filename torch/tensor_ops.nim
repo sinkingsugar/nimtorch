@@ -65,17 +65,25 @@ proc `-`*(a: Tensor): Tensor {.inline, noinit.} = neg(a)
 
 proc `+`*(a, b: Tensor): Tensor {.inline, noinit.} = add(a, b)
 
-proc `<=`*(a, b: Tensor): Tensor {.inline, noinit.} = le(a, b)
+proc `<`*(a: Tensor; b: Tensor | float): Tensor {.inline, noinit.} = lt(a, b)
 
-proc `<`*(a, b: Tensor): Tensor {.inline, noinit.} = lt(a, b)
+proc `>`*(a: Tensor; b: Tensor | float): Tensor {.inline, noinit.} = ge(a, b)
 
-proc `>`*(a, b: Tensor): Tensor {.inline, noinit.} = ge(a, b)
+proc `<=`*(a: Tensor; b: Tensor | float): Tensor {.inline, noinit.} = le(a, b)
 
-proc `>=`*(a, b: Tensor): Tensor {.inline, noinit.} = ge(a, b)
+proc `>=`*(a: Tensor; b: Tensor | float): Tensor {.inline, noinit.} = ge(a, b)
 
-proc `<=`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = le(a, b)
+proc `and`*(a: Tensor; b: Tensor | float): Tensor {.inline, noinit.} = and_builtin(a, b)
 
-proc `>=`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = ge(a, b)
+proc `or`*(a: Tensor; b: Tensor | float): Tensor {.inline, noinit.} = or_builtin(a, b)
+
+proc `xor`*(a: Tensor; b: Tensor | float): Tensor {.inline, noinit.} = xor_builtin(a, b)
+
+proc `not`*(a: Tensor): Tensor {.inline, noinit.} = a xor 1.0
+
+proc `shl`*(a: Tensor; b: Tensor | float): Tensor {.inline, noinit.} = lshift_builtin(a, b)
+
+proc `shr`*(a: Tensor; b: Tensor | float): Tensor {.inline, noinit.} = rshift_builtin(a, b)
 
 proc `+`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = add(a, b.float)
 
@@ -96,6 +104,8 @@ proc `*`*(a, b: Tensor): Tensor {.inline, noinit.} = mul(a, b)
 proc `-`*(a, b: Tensor): Tensor {.inline, noinit.} = sub(a, b)
 
 proc `-`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = sub(a, b.float)
+
+proc `-`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} = -b + a.float
 
 proc `==`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = eq(a, b)
 
