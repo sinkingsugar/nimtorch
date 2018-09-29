@@ -46,7 +46,7 @@ proc infer_size(a, b: IntList): IntList =
     # 1s map to the other size (even 0).
     result[i] = if sizeA == 1: sizeB else: sizeA
 
-proc toType(self: Tensor; t: TensorType; non_blocking: bool = false): Tensor =
+proc toType*(self: Tensor; t: TensorType; non_blocking: bool = false): Tensor =
   if self.getType() == t:
     return self
   return t.copy(self, non_blocking)
@@ -57,7 +57,7 @@ proc scalarType(t: TensorType): AScalarType {.importcpp: "#->scalarType()".}
 
 proc isIntegralType(dtype: AScalarType): bool {.importcpp: "at::isIntegralType(#)".}
 
-proc toType(self: Tensor; t: AScalarType; non_blocking: bool = false): Tensor =
+proc toType*(self: Tensor; t: AScalarType; non_blocking: bool = false): Tensor =
   self.toType(self.getType().toScalarType(t))
 
 proc integer_upcast(self: Tensor; dtype: Option[AScalarType] = AScalarType.none): Tensor =
