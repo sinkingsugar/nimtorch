@@ -47,9 +47,12 @@ proc backward*(tensors, grads: openarray[Tensor]; retain_graph = false; create_g
     # Accumulate grads
     set_grad_enabled(create_graph):
       for node in sortedNodes.reverse:
+
+        # Consume intermediate gradients
         var grad_outputs: seq[Tensor]
         for output in node.grad_fn.outputs:
           grad_outputs.add(output.grad)
+          output.grad = nil
 
         let grad_inputs = node.grad_fn.apply(grad_outputs)
         for i, input in node.grad_fn.inputs:
