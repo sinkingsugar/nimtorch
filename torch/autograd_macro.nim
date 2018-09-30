@@ -1,7 +1,12 @@
 import macros
 import tensors
 
-proc requires_grad*(self: not Tensor): bool = false
+proc requires_grad_internal*(self: Tensor): bool {.inline.} = self.requires_grad
+
+proc requires_grad_internal*(self: openarray[Tensor]): bool {.inline.} =
+  for tensor in  self:
+    if tensor.requires_grad:
+      return true
 
 template capture*(name: untyped): untyped =
   when name is openarray | varargs:
@@ -73,10 +78,11 @@ macro autograd*(head, body: untyped): untyped =
           resultExpr.add quote do: `resultIdent`[`resultIndex`]
           inputIdents.add(inputIdent)
           backwardBody.add quote do:
-            `gradInputMaskIdent`[`i`] = `inputIdent`.requires_grad
+            `gradInputMaskIdent`[`i`] = `inputIdent`.requires_grad_internal
           inc resultIndex
 
       let gradExpr = x[1]
+
       backwardBody.add quote do:
         when type(`gradExpr`) isnot TensorList:
           #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
@@ -84,16 +90,15 @@ macro autograd*(head, body: untyped): untyped =
         else:
           `resultIdent`.add(`gradExpr`)
 
-
   # Propagate whether gradient is needed or not
   var requiresGradExpr: NimNode
   for i, inputIdent in inputIdents:
     if i == 0:
       requiresGradExpr = quote do:
-        `inputIdent`.requires_grad
+        `inputIdent`.requires_grad_internal
     else:
       requiresGradExpr = quote do:
-        `requiresGradExpr` or `inputIdent`.requires_grad
+        `requiresGradExpr` or `inputIdent`.requires_grad_internal
 
   forwardBody.add quote do:
     when not defined inference:

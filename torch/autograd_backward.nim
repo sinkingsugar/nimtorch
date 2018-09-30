@@ -9,8 +9,11 @@ proc backward*(tensors, grads: openarray[Tensor]; retain_graph = false; create_g
 
   when defined inference:
     raiseAssert("Backward pass is not supported in inference mode")
-  
+
   else:
+    for i, tensor in tensors:
+      assert(tensor.requires_grad, "Input " & $i & " has no gradient information. Did you use a non-differentiable function?")
+
     var
       sortedNodes: seq[Tensor]
       gradFuncs: HashSet[pointer]
