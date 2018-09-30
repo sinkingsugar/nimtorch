@@ -19,7 +19,8 @@ let
   fc1 = nn.Linear(2, 4)
   fc2 = nn.Linear(4, 1)
   loss_fn = nn.MSELoss()
-  optimizer = optim.SGD(fc1.parameters & fc2.parameters , lr = 0.01, momentum = 0.1)
+  #optimizer = optim.SGD(fc1.parameters & fc2.parameters , lr = 0.01, momentum = 0.1)
+  optimizer = optim.Adam(fc1.parameters & fc2.parameters)
 
 set_num_threads(1)
 
@@ -33,7 +34,7 @@ for i in 0 ..< 50000:
 
   let loss = loss_fn(predictions, targets)
   loss.backward()
-  discard optimizer.step()
+  optimizer.step()
 
   if i mod 5000 == 0:
     print(loss)

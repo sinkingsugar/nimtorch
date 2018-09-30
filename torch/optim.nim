@@ -45,7 +45,7 @@ proc zero_grad*(self: Optimizer) =
         p.grad.detach_inplace()
         p.grad.zero_inplace()
 
-method step*(self: Optimizer; closure: proc(): Tensor = nil) {.base.} = discard
+method step*(self: Optimizer) {.base.} = discard
 
 proc SGD*(params: openarray[Tensor]; lr: float; momentum: float = 0; dampening: float = 0; weight_decay: float = 0; nesterov: bool = false): SgdOptimizer =
   new result
@@ -65,10 +65,7 @@ proc SGD*(params: openarray[Tensor]; lr: float; momentum: float = 0; dampening: 
 
   result.Optimizer.init(params, defaults)
 
-method step*(self: SgdOptimizer; closure: proc(): Tensor = nil): Tensor =
-
-  if closure != nil:
-    result = closure()
+method step*(self: SgdOptimizer) =
 
   for group in self.param_groups:
     let
@@ -121,10 +118,7 @@ proc Adam*(params: openarray[Tensor]; lr: float = 1e-3; betas: (float, float) = 
 
   result.init(params, defaults)
 
-method step*(self: AdamOptimizer; closure: proc(): Tensor = nil): Tensor =
-
-  if closure != nil:
-    result = closure()
+method step*(self: AdamOptimizer) =
 
   for group in self.param_groups:
     for i, p in group.params:
