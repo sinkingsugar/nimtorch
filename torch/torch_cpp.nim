@@ -43,9 +43,12 @@ var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
 var DeviceTypeCPU* {.importcpp: "at::DeviceType::CPU", nodecl.}: cint
 var DeviceTypeCUDA* {.importcpp: "at::DeviceType::CUDA", nodecl.}: cint
 
-const atenPath = getEnv("ATEN")
-when atenPath == "":
-  {.error: "Please set $ATEN environment variable to point to the ATen installation path".}
+when getEnv("ATEN") == "" and defined(atenPath):
+  const atenPath {.strdefine.} = ""   
+else:
+  const atenPath = getEnv("ATEN")
+  when atenPath == "":
+    {.error: "Please set $ATEN environment variable to point to the ATen installation path".}
 
 cppincludes(atenPath & """/include""")
 cpplibpaths(atenPath & """/lib""")
