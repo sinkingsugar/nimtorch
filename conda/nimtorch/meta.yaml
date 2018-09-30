@@ -1,0 +1,15 @@
+package:
+  name: nimtorch
+  version: 0.2.0
+
+source:
+  path: ../..
+
+requirements:
+  run:
+    - nim
+    - fragments
+
+build:
+  script_env:
+    - ATEN
