@@ -33,7 +33,7 @@ for i in 0 ..< 50000:
 
   let loss = loss_fn(predictions, targets)
   loss.backward()
-  discard optimizer.step()
+  optimizer.step()
 
   if i mod 5000 == 0:
     print(loss)
