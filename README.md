@@ -72,7 +72,7 @@ This will install, nim, fragments and nimtorch all in one command.
 
 Make sure you use a recent version of conda and have gcc installed in your system.
 
-Also make sure your system is recent (ubuntu 18.04 reference) and you have cuda 9.2 at least installed.
+Also make sure your system is recent (ubuntu 18.04 reference) and you have cuda 9.2 at least installed (if you need cuda).
 
 Test with with something like:
 `nim cpp <my conda folder>/dist/nimtorch/tests/test_xor.nim`
@@ -119,3 +119,8 @@ Make sure you have a recent Nim version and Nimble in your path
 ### Hard way
 
 1. Check content of dockerfiles for requirements and cmake command
+
+## Know issues
+
+* The commit hash we are using for ATen has some bugs with openmp, if you run in high CPU load issues even if your task is quite easy, try reduce openmp CPU count with this environment variable:
+`export OMP_NUM_THREADS=1`
