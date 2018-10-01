@@ -125,11 +125,7 @@ method step*(self: AdamOptimizer) =
       if p.grad.isNil:
         continue
 
-      var d_p = p.grad.data
-      if group.weight_decay != 0:
-        d_p.add_inplace(group.weight_decay, p.data)
-
-      assert(not p.grad.is_sparse, "Adam does not support sparse gradients, please consider SparseAdam instead")
+      doAssert(not p.grad.is_sparse, "Adam does not support sparse gradients, please consider SparseAdam instead")
     
       let state = addr self.state.mgetOrPut(cast[pointer](p), ParameterState())
 
@@ -143,23 +139,21 @@ method step*(self: AdamOptimizer) =
           # Maintains max of all exp. moving avg. of sq. grad. values
           state.max_exp_avg_sq = zeros_like(p.data)
 
-      if group.amsgrad:
-        state.max_exp_avg_sq = state.max_exp_avg_sq
-
       inc state.step
 
       if group.weight_decay != 0:
-        p.grad.add_inplace(group.weight_decay, p.data)
+        p.grad.data.add_inplace(group.weight_decay, p.data)
 
       let (beta1, beta2) = group.betas
 
       # Decay the first and second moment running average coefficient
       state.exp_avg.mul_inplace(beta1).add_inplace(1 - beta1, p.grad.data)
       state.exp_avg_sq.mul_inplace(beta2).addcmul_inplace(p.grad.data, p.grad.data, 1 - beta2)
+      
       var denom: Tensor
       if group.amsgrad:
         # Maintains the maximum of all 2nd moment running avg. till now
-        state.max_exp_avg_sq = torch.max(state.max_exp_avg_sq, state.exp_avg_sq)
+        state.max_exp_avg_sq = max(state.max_exp_avg_sq, state.exp_avg_sq)
         # Use the max. for normalizing running avg. of gradient
         denom = state.max_exp_avg_sq.sqrt().add_inplace(group.eps)
       else:
