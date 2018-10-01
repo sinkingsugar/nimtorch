@@ -64,6 +64,21 @@ Also python is a complete mess...
 
 ## Getting started
 
+### Super easy, using conda
+
+`conda install -c fragcolor nimtorch`
+
+This will install, nim, fragments and nimtorch all in one command.
+
+Make sure you use a recent version of conda and have gcc installed in your system.
+
+Also make sure your system is recent (ubuntu 18.04 reference) and you have cuda 9.2 at least installed.
+
+Test with with something like:
+`nim cpp <my conda folder>/dist/nimtorch/tests/test_xor.nim`
+
+### Semi manual way
+
 [Download ATen binaries](https://github.com/fragcolor-xyz/nimtorch/releases/tag/v0.2.0) or build it (instructions under)
 
 Make sure you have a recent Nim version and Nimble in your path
