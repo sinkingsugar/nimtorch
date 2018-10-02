@@ -90,6 +90,10 @@ const customNames = [
   "conv_transpose1d",
   "conv_transpose2d",
   "conv_transpose3d",
+
+  # We use our own gradient information
+  "detach",
+  "detach_",
 ]
 
 # add some known procs we created in torch.nim, don't care about args
