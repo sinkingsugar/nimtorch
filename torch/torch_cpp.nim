@@ -57,7 +57,7 @@ cpplibpaths(atenPath & """/lib64""")
 when defined wasm:
   type AInt64* = int64
 
-  {.passL: "-lcaffe2".}
+  {.passL: "-lcaffe2 -lc10".}
 
 elif defined windows:
   type AInt64* = int64
