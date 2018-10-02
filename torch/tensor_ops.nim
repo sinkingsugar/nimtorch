@@ -97,7 +97,7 @@ proc `/`*(a, b: Tensor): Tensor {.inline, noinit.} = div_name(a, b)
 
 proc `/`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = div_name(a, b.float)
 
-proc `/`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} = div_name(a.float, b)
+proc `/`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} = b.reciprocal() * a
 
 proc `*`*(a, b: Tensor): Tensor {.inline, noinit.} = mul(a, b)
 
