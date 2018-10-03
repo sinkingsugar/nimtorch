@@ -497,41 +497,41 @@ autograd th_addmm:
   mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
   mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
 
-autograd addmv_internal:
+autograd addmv_impl:
   proc forward*(ty: TensorType; self: Tensor; mat: Tensor; vec: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
     check: ty[].atenMethod("_addmv", self.tensor, mat.tensor, vec.tensor, beta, alpha).to(ATensor).newTensor()
   self: firstOrSelf(maybe_multiply(grad, beta))
   mat: firstOrSelf(grad.ger(vec) * alpha)
   vec: firstOrSelf(mat.t().mv(grad) * alpha)
 
-autograd addmv_internal:
+autograd addmv_impl:
   proc forward*(self: Tensor; mat: Tensor; vec: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
     check: atenFunction("at::_addmv", self.tensor, mat.tensor, vec.tensor, beta, alpha).to(ATensor).newTensor()
   self: firstOrSelf(maybe_multiply(grad, beta))
   mat: firstOrSelf(grad.ger(vec) * alpha)
   vec: firstOrSelf(mat.t().mv(grad) * alpha)
 
-autograd addr_internal:
+autograd addr_impl:
   proc forward*(ty: TensorType; self: Tensor; vec1: Tensor; vec2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
     check: ty[].atenMethod("_addr", self.tensor, vec1.tensor, vec2.tensor, beta, alpha).to(ATensor).newTensor()
   self: firstOrSelf(maybe_multiply(grad, beta))
   vec1: firstOrSelf(grad.mv(vec2) * alpha)
   vec2: firstOrSelf(grad.t().mv(vec1) * alpha)
 
-autograd addr_internal:
+autograd addr_impl:
   proc forward*(self: Tensor; vec1: Tensor; vec2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
     check: atenFunction("at::_addr", self.tensor, vec1.tensor, vec2.tensor, beta, alpha).to(ATensor).newTensor()
   self: firstOrSelf(maybe_multiply(grad, beta))
   vec1: firstOrSelf(grad.mv(vec2) * alpha)
   vec2: firstOrSelf(grad.t().mv(vec1) * alpha)
 
-autograd mm_internal:
+autograd mm_impl:
   proc forward*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor {.inline.} = 
     check: ty[].atenMethod("_mm", self.tensor, mat2.tensor).to(ATensor).newTensor()
   self: firstOrSelf(mm_mat1_backward(grad, mat2, self.sizes(), self.strides(), 1))
   mat2: firstOrSelf(mm_mat2_backward(grad, self, mat2.sizes(), mat2.strides(), 1))
 
-autograd mm_internal:
+autograd mm_impl:
   proc forward*(self: Tensor; mat2: Tensor): Tensor {.inline.} = 
     check: atenFunction("at::_mm", self.tensor, mat2.tensor).to(ATensor).newTensor()
   self: firstOrSelf(mm_mat1_backward(grad, mat2, self.sizes(), self.strides(), 1))
@@ -1415,28 +1415,28 @@ autograd upsample_nearest3d_backward:
     check: atenFunction("at::upsample_nearest3d_backward", grad_output.tensor, output_size.toAIntList(), input_size.toAIntList()).to(ATensor).newTensor()
   grad_output: firstOrSelf(upsample_nearest3d(grad, output_size))
 
-autograd sigmoid_backward_internal:
+autograd sigmoid_backward_impl:
   proc forward*(ty: TensorType; grad_output: Tensor; output: Tensor): Tensor {.inline.} = 
     check: ty[].atenMethod("_sigmoid_backward", grad_output.tensor, output.tensor).to(ATensor).newTensor()
-  grad_output: firstOrSelf(sigmoid_backward_internal(grad, fwd_result))
+  grad_output: firstOrSelf(sigmoid_backward_impl(grad, fwd_result))
   output: firstOrSelf(grad * grad_output * (-2 * fwd_result + 1))
 
-autograd sigmoid_backward_internal:
+autograd sigmoid_backward_impl:
   proc forward*(grad_output: Tensor; output: Tensor): Tensor {.inline.} = 
     check: atenFunction("at::_sigmoid_backward", grad_output.tensor, output.tensor).to(ATensor).newTensor()
-  grad_output: firstOrSelf(sigmoid_backward_internal(grad, fwd_result))
+  grad_output: firstOrSelf(sigmoid_backward_impl(grad, fwd_result))
   output: firstOrSelf(grad * grad_output * (-2 * fwd_result + 1))
 
-autograd tanh_backward_internal:
+autograd tanh_backward_impl:
   proc forward*(ty: TensorType; grad_output: Tensor; output: Tensor): Tensor {.inline.} = 
     check: ty[].atenMethod("_tanh_backward", grad_output.tensor, output.tensor).to(ATensor).newTensor()
-  grad_output: firstOrSelf(tanh_backward_internal(grad, fwd_result))
+  grad_output: firstOrSelf(tanh_backward_impl(grad, fwd_result))
   output: firstOrSelf(-2 * fwd_result * grad * grad_output)
 
-autograd tanh_backward_internal:
+autograd tanh_backward_impl:
   proc forward*(grad_output: Tensor; output: Tensor): Tensor {.inline.} = 
     check: atenFunction("at::_tanh_backward", grad_output.tensor, output.tensor).to(ATensor).newTensor()
-  grad_output: firstOrSelf(tanh_backward_internal(grad, fwd_result))
+  grad_output: firstOrSelf(tanh_backward_impl(grad, fwd_result))
   output: firstOrSelf(-2 * fwd_result * grad * grad_output)
 
 autograd thnn_batch_norm:
@@ -1521,22 +1521,22 @@ autograd thnn_conv_dilated3d:
     check: atenFunction("at::thnn_conv_dilated3d_forward", self.tensor, weight.tensor, kernel_size.toAIntList(), bias.tensor, stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (self, weight, bias): thnn_conv_dilated3d_backward(grad, self, weight, kernel_size, stride, padding, dilation, fwd_result.columns, fwd_result.ones, grad_input_mask)
 
-autograd cudnn_ctc_loss_internal:
+autograd cudnn_ctc_loss_impl:
   proc forward*(ty: TensorType; log_probs: Tensor; targets: Tensor; input_lengths: openarray[int]; target_lengths: openarray[int]; blank: int; deterministic: bool): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     check: ty[].atenMethod("_cudnn_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList(), target_lengths.toAIntList(), blank, deterministic).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   log_probs: firstOrSelf(fwd_result[1])
 
-autograd cudnn_ctc_loss_internal:
+autograd cudnn_ctc_loss_impl:
   proc forward*(log_probs: Tensor; targets: Tensor; input_lengths: openarray[int]; target_lengths: openarray[int]; blank: int; deterministic: bool): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     check: atenFunction("at::_cudnn_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList(), target_lengths.toAIntList(), blank, deterministic).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   log_probs: firstOrSelf(fwd_result[1])
 
-autograd cudnn_rnn_internal:
+autograd cudnn_rnn_impl:
   proc forward*(ty: TensorType; input: Tensor; weight: openarray[Tensor]; weight_stride0: int; weight_buf: Tensor; hx: Tensor; cx: Tensor; mode: int; hidden_size: int; num_layers: int; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[int]; dropout_state: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] {.inline.} = 
     check: ty[].atenMethod("_cudnn_rnn", input.tensor, weight.toATensors(), weight_stride0, weight_buf.tensor, hx.tensor, cx.tensor, mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes.toAIntList(), dropout_state.tensor).to(StdTuple5[ATensor, ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (input, hx, cx, weight):  fwd_result[3].clone() 
 
-autograd cudnn_rnn_internal:
+autograd cudnn_rnn_impl:
   proc forward*(input: Tensor; weight: openarray[Tensor]; weight_stride0: int; weight_buf: Tensor; hx: Tensor; cx: Tensor; mode: int; hidden_size: int; num_layers: int; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[int]; dropout_state: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] {.inline.} = 
     check: atenFunction("at::_cudnn_rnn", input.tensor, weight.toATensors(), weight_stride0, weight_buf.tensor, hx.tensor, cx.tensor, mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes.toAIntList(), dropout_state.tensor).to(StdTuple5[ATensor, ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
   (input, hx, cx, weight):  fwd_result[3].clone() 
@@ -1781,15 +1781,15 @@ autograd cudnn_grid_sampler:
     check: atenFunction("at::cudnn_grid_sampler", self.tensor, grid.tensor).to(ATensor).newTensor()
   (self, grid): cudnn_grid_sampler_backward(self, grid, grad)
 
-autograd ctc_loss_internal:
+autograd ctc_loss_impl:
   proc forward*(ty: TensorType; log_probs: Tensor; targets: Tensor; input_lengths: openarray[int]; target_lengths: openarray[int]; blank: int = 0): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     check: ty[].atenMethod("_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList(), target_lengths.toAIntList(), blank).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-  log_probs: firstOrSelf(ctc_loss_backward_internal(grad, log_probs, targets, input_lengths, target_lengths, fwd_result[0], fwd_result[1], blank))
+  log_probs: firstOrSelf(ctc_loss_backward_impl(grad, log_probs, targets, input_lengths, target_lengths, fwd_result[0], fwd_result[1], blank))
 
-autograd ctc_loss_internal:
+autograd ctc_loss_impl:
   proc forward*(log_probs: Tensor; targets: Tensor; input_lengths: openarray[int]; target_lengths: openarray[int]; blank: int = 0): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     check: atenFunction("at::_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList(), target_lengths.toAIntList(), blank).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-  log_probs: firstOrSelf(ctc_loss_backward_internal(grad, log_probs, targets, input_lengths, target_lengths, fwd_result[0], fwd_result[1], blank))
+  log_probs: firstOrSelf(ctc_loss_backward_impl(grad, log_probs, targets, input_lengths, target_lengths, fwd_result[0], fwd_result[1], blank))
 
 autograd div_name:
   proc forward*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline.} = 
@@ -1835,15 +1835,15 @@ autograd embedding:
     check: atenFunction("at::embedding", weight.tensor, indices.tensor, padding_idx, scale_grad_by_freq, sparse).to(ATensor).newTensor()
   weight: firstOrSelf(embedding_backward(grad, indices, weight.size(0), padding_idx, scale_grad_by_freq, sparse))
 
-autograd embedding_bag_internal:
+autograd embedding_bag_impl:
   proc forward*(ty: TensorType; weight: Tensor; indices: Tensor; offsets: Tensor; scale_grad_by_freq: bool = false; mode: int = 0; sparse: bool = false): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor] {.inline.} = 
     check: ty[].atenMethod("_embedding_bag", weight.tensor, indices.tensor, offsets.tensor, scale_grad_by_freq, mode, sparse).to(StdTuple4[ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  weight: firstOrSelf(embedding_bag_backward_internal(grad, indices, offsets, fwd_result[1], fwd_result[2], fwd_result[3], weight.size(0), scale_grad_by_freq, mode, sparse))
+  weight: firstOrSelf(embedding_bag_backward_impl(grad, indices, offsets, fwd_result[1], fwd_result[2], fwd_result[3], weight.size(0), scale_grad_by_freq, mode, sparse))
 
-autograd embedding_bag_internal:
+autograd embedding_bag_impl:
   proc forward*(weight: Tensor; indices: Tensor; offsets: Tensor; scale_grad_by_freq: bool = false; mode: int = 0; sparse: bool = false): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor] {.inline.} = 
     check: atenFunction("at::_embedding_bag", weight.tensor, indices.tensor, offsets.tensor, scale_grad_by_freq, mode, sparse).to(StdTuple4[ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  weight: firstOrSelf(embedding_bag_backward_internal(grad, indices, offsets, fwd_result[1], fwd_result[2], fwd_result[3], weight.size(0), scale_grad_by_freq, mode, sparse))
+  weight: firstOrSelf(embedding_bag_backward_impl(grad, indices, offsets, fwd_result[1], fwd_result[2], fwd_result[3], weight.size(0), scale_grad_by_freq, mode, sparse))
 
 autograd erf:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
@@ -2105,15 +2105,15 @@ autograd mv:
   self: firstOrSelf(grad.ger(vec))
   vec: firstOrSelf(self.t().mv(grad))
 
-autograd pdist_forward_internal:
+autograd pdist_forward_impl:
   proc forward*(ty: TensorType; self: Tensor; p: float64 = 2): Tensor {.inline.} = 
     check: ty[].atenMethod("_pdist_forward", self.tensor, p).to(ATensor).newTensor()
-  self: firstOrSelf(pdist_backward_internal(grad, self, p, fwd_result))
+  self: firstOrSelf(pdist_backward_impl(grad, self, p, fwd_result))
 
-autograd pdist_forward_internal:
+autograd pdist_forward_impl:
   proc forward*(self: Tensor; p: float64 = 2): Tensor {.inline.} = 
     check: atenFunction("at::_pdist_forward", self.tensor, p).to(ATensor).newTensor()
-  self: firstOrSelf(pdist_backward_internal(grad, self, p, fwd_result))
+  self: firstOrSelf(pdist_backward_impl(grad, self, p, fwd_result))
 
 autograd RoiPooling2d_forward:
   proc forward*(ty: TensorType; input: Tensor; rois: Tensor; pooledHeight: int; pooledWidth: int; spatialScale: float64): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
@@ -2180,12 +2180,12 @@ autograd rsqrt:
 autograd sigmoid:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
     check: ty[].atenMethod("sigmoid", self.tensor).to(ATensor).newTensor()
-  self: firstOrSelf(sigmoid_backward_internal(grad, fwd_result))
+  self: firstOrSelf(sigmoid_backward_impl(grad, fwd_result))
 
 autograd sigmoid:
   proc forward*(self: Tensor): Tensor {.inline.} = 
     check: self.tensor.atenMethod("sigmoid").to(ATensor).newTensor()
-  self: firstOrSelf(sigmoid_backward_internal(grad, fwd_result))
+  self: firstOrSelf(sigmoid_backward_impl(grad, fwd_result))
 
 autograd sin:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
@@ -2297,22 +2297,22 @@ autograd stack:
     check: atenFunction("at::stack", tensors.toATensors(), dim).to(ATensor).newTensor()
   tensors: firstOrSelf(unbind(grad, dim))
 
-autograd sum_internal:
+autograd sum_impl:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
     check: ty[].atenMethod("_sum", self.tensor).to(ATensor).newTensor()
   self: firstOrSelf(grad.expand(self.sizes()))
 
-autograd sum_internal:
+autograd sum_impl:
   proc forward*(self: Tensor): Tensor {.inline.} = 
     check: atenFunction("at::_sum", self.tensor).to(ATensor).newTensor()
   self: firstOrSelf(grad.expand(self.sizes()))
 
-autograd sum_internal:
+autograd sum_impl:
   proc forward*(ty: TensorType; self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.} = 
     check: ty[].atenMethod("_sum", self.tensor, dim.toAIntList(), keepdim).to(ATensor).newTensor()
   self: firstOrSelf(sum_backward(grad, self.sizes(), dim, keepdim))
 
-autograd sum_internal:
+autograd sum_impl:
   proc forward*(self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.} = 
     check: atenFunction("at::_sum", self.tensor, dim.toAIntList(), keepdim).to(ATensor).newTensor()
   self: firstOrSelf(sum_backward(grad, self.sizes(), dim, keepdim))
@@ -2350,12 +2350,12 @@ autograd tan:
 autograd tanh:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
     check: ty[].atenMethod("tanh", self.tensor).to(ATensor).newTensor()
-  self: firstOrSelf(tanh_backward_internal(grad, fwd_result))
+  self: firstOrSelf(tanh_backward_impl(grad, fwd_result))
 
 autograd tanh:
   proc forward*(self: Tensor): Tensor {.inline.} = 
     check: self.tensor.atenMethod("tanh").to(ATensor).newTensor()
-  self: firstOrSelf(tanh_backward_internal(grad, fwd_result))
+  self: firstOrSelf(tanh_backward_impl(grad, fwd_result))
 
 autograd transpose:
   proc forward*(ty: TensorType; self: Tensor; dim0: int; dim1: int): Tensor {.inline.} = 
@@ -2407,12 +2407,12 @@ autograd trunc:
     check: self.tensor.atenMethod("trunc").to(ATensor).newTensor()
   self: firstOrSelf(zeros_like(grad))
 
-autograd unsafe_view_internal:
+autograd unsafe_view_impl:
   proc forward*(ty: TensorType; self: Tensor; size: openarray[int]): Tensor {.inline.} = 
     check: ty[].atenMethod("_unsafe_view", self.tensor, size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.reshape(self.sizes()))
 
-autograd unsafe_view_internal:
+autograd unsafe_view_impl:
   proc forward*(self: Tensor; size: openarray[int]): Tensor {.inline.} = 
     check: atenFunction("at::_unsafe_view", self.tensor, size.toAIntList()).to(ATensor).newTensor()
   self: firstOrSelf(grad.reshape(self.sizes()))
@@ -2437,27 +2437,27 @@ autograd unsqueeze_inplace:
     check: self.tensor.atenMethod("unsqueeze_", dim).to(void); self
   self: firstOrSelf(grad.squeeze(dim))
 
-autograd s_where_internal:
+autograd s_where_impl:
   proc forward*(ty: TensorType; condition: Tensor; self: Tensor; other: Tensor): Tensor {.inline.} = 
     check: ty[].atenMethod("_s_where", condition.tensor, self.tensor, other.tensor).to(ATensor).newTensor()
   self: firstOrSelf(where(condition, grad, zeros_like(grad)))
   other: firstOrSelf(where(condition, zeros_like(grad), grad))
 
-autograd s_where_internal:
+autograd s_where_impl:
   proc forward*(condition: Tensor; self: Tensor; other: Tensor): Tensor {.inline.} = 
     check: atenFunction("at::_s_where", condition.tensor, self.tensor, other.tensor).to(ATensor).newTensor()
   self: firstOrSelf(where(condition, grad, zeros_like(grad)))
   other: firstOrSelf(where(condition, zeros_like(grad), grad))
 
-autograd standard_gamma_internal:
+autograd standard_gamma_impl:
   proc forward*(ty: TensorType; self: Tensor; generator: Generator = nil): Tensor {.inline.} = 
     check: ty[].atenMethod("_standard_gamma", self.tensor, generator).to(ATensor).newTensor()
-  self: firstOrSelf(grad * standard_gamma_grad_internal(self, fwd_result))
+  self: firstOrSelf(grad * standard_gamma_grad_impl(self, fwd_result))
 
-autograd standard_gamma_internal:
+autograd standard_gamma_impl:
   proc forward*(self: Tensor; generator: Generator = nil): Tensor {.inline.} = 
     check: atenFunction("at::_standard_gamma", self.tensor, generator).to(ATensor).newTensor()
-  self: firstOrSelf(grad * standard_gamma_grad_internal(self, fwd_result))
+  self: firstOrSelf(grad * standard_gamma_grad_impl(self, fwd_result))
 
 autograd poisson:
   proc forward*(ty: TensorType; self: Tensor; generator: Generator = nil): Tensor {.inline.} = 
@@ -2535,33 +2535,33 @@ autograd s_native_addmm:
   mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
   mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
 
-autograd thnn_fused_lstm_cell_internal:
+autograd thnn_fused_lstm_cell_impl:
   proc forward*(ty: TensorType; input_gates: Tensor; hidden_gates: Tensor; cx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.} = 
     check: ty[].atenMethod("_thnn_fused_lstm_cell", input_gates.tensor, hidden_gates.tensor, cx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  (input_gates, hidden_gates, cx, input_bias, hidden_bias): thnn_fused_lstm_cell_backward_internal(grads[0], grads[1], cx, fwd_result[1], fwd_result[2], input_bias.defined())
+  (input_gates, hidden_gates, cx, input_bias, hidden_bias): thnn_fused_lstm_cell_backward_impl(grads[0], grads[1], cx, fwd_result[1], fwd_result[2], input_bias.defined())
 
-autograd thnn_fused_lstm_cell_internal:
+autograd thnn_fused_lstm_cell_impl:
   proc forward*(input_gates: Tensor; hidden_gates: Tensor; cx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.} = 
     check: atenFunction("at::_thnn_fused_lstm_cell", input_gates.tensor, hidden_gates.tensor, cx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
-  (input_gates, hidden_gates, cx, input_bias, hidden_bias): thnn_fused_lstm_cell_backward_internal(grads[0], grads[1], cx, fwd_result[1], fwd_result[2], input_bias.defined())
+  (input_gates, hidden_gates, cx, input_bias, hidden_bias): thnn_fused_lstm_cell_backward_impl(grads[0], grads[1], cx, fwd_result[1], fwd_result[2], input_bias.defined())
 
-autograd thnn_fused_gru_cell_internal:
+autograd thnn_fused_gru_cell_impl:
   proc forward*(ty: TensorType; input_gates: Tensor; hidden_gates: Tensor; hx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     check: ty[].atenMethod("_thnn_fused_gru_cell", input_gates.tensor, hidden_gates.tensor, hx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-  (input_gates, hidden_gates, hx, input_bias, hidden_bias): thnn_fused_gru_cell_backward_internal(grad, fwd_result[1], input_bias.defined())
+  (input_gates, hidden_gates, hx, input_bias, hidden_bias): thnn_fused_gru_cell_backward_impl(grad, fwd_result[1], input_bias.defined())
 
-autograd thnn_fused_gru_cell_internal:
+autograd thnn_fused_gru_cell_impl:
   proc forward*(input_gates: Tensor; hidden_gates: Tensor; hx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     check: atenFunction("at::_thnn_fused_gru_cell", input_gates.tensor, hidden_gates.tensor, hx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-  (input_gates, hidden_gates, hx, input_bias, hidden_bias): thnn_fused_gru_cell_backward_internal(grad, fwd_result[1], input_bias.defined())
+  (input_gates, hidden_gates, hx, input_bias, hidden_bias): thnn_fused_gru_cell_backward_impl(grad, fwd_result[1], input_bias.defined())
 
-autograd pack_padded_sequence_internal:
+autograd pack_padded_sequence_impl:
   proc forward*(ty: TensorType; input: Tensor; lengths: Tensor; batch_first: bool): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     check: ty[].atenMethod("_pack_padded_sequence", input.tensor, lengths.tensor, batch_first).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-  input: firstOrSelf(pack_padded_sequence_backward_internal(grad, input.sizes(), fwd_result[1], batch_first))
+  input: firstOrSelf(pack_padded_sequence_backward_impl(grad, input.sizes(), fwd_result[1], batch_first))
 
-autograd pack_padded_sequence_internal:
+autograd pack_padded_sequence_impl:
   proc forward*(input: Tensor; lengths: Tensor; batch_first: bool): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     check: atenFunction("at::_pack_padded_sequence", input.tensor, lengths.tensor, batch_first).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-  input: firstOrSelf(pack_padded_sequence_backward_internal(grad, input.sizes(), fwd_result[1], batch_first))
+  input: firstOrSelf(pack_padded_sequence_backward_impl(grad, input.sizes(), fwd_result[1], batch_first))
 

@@ -69,7 +69,7 @@ proc validate(name: string): string =
         result = result.replacef(re"^_*(.*?)_*$", "$1")
         if name.match(re"^__(.*)__$"): result &= "_builtin"
         else:
-          if name.match(re"^_(.*)$"): result &= "_internal"
+          if name.match(re"^_(.*)$"): result &= "_impl"
           if name.match(re"^(.*)_$"): result &= "_inplace"
   
 var generatedProcs = newSeq[ProcInfo]()

@@ -105,13 +105,13 @@ proc subtensor(tensor: Tensor; dim, groups, g: int): Tensor =
   let n = tensor.sizes[dim] div groups;
   return tensor.narrow(dim, n * g, n).contiguous()
 
-proc convolution_internal*(input_r, weight_r, bias_r: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int;
+proc convolution_impl*(input_r, weight_r, bias_r: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int;
     benchmark, deterministic, cudnn_enabled: bool): Tensor
-proc convolution_nogroup_internal*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int]; transposed: bool; output_padding: openarray[int]): Tensor
+proc convolution_nogroup_impl*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int]; transposed: bool; output_padding: openarray[int]): Tensor
 
 proc convolution*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int): Tensor =
   #let ctx = globalContext
-  convolution_internal(input, weight, bias, stride, padding, dilation, transposed, output_padding, groups, false, false, false)
+  convolution_impl(input, weight, bias, stride, padding, dilation, transposed, output_padding, groups, false, false, false)
     #ctx.benchmarkCuDNN(), ctx.deterministicCuDNN(), ctx.userEnabledCuDNN())
 
 proc convolution_expand_param_if_needed(list_param: openarray[int]; param_name: static string; expected_dim: int): seq[int] =
@@ -136,7 +136,7 @@ proc slice[T](self: seq[T]; N, M: int): seq[T] =
 proc slice[T](self: seq[T]; N: int): seq[T] =
   self.slice(N, self.len - N)
 
-proc convolution_internal(input_r, weight_r, bias_r: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int;
+proc convolution_impl(input_r, weight_r, bias_r: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int;
     benchmark, deterministic, cudnn_enabled: bool): Tensor =
 
   var
@@ -209,7 +209,7 @@ proc convolution_internal(input_r, weight_r, bias_r: Tensor; stride, padding, di
 
   else:
     if params.groups == 1:
-      result = convolution_nogroup_internal(input, weight, bias, params.stride, params.padding, params.dilation, params.transposed, params.output_padding)
+      result = convolution_nogroup_impl(input, weight, bias, params.stride, params.padding, params.dilation, params.transposed, params.output_padding)
     else:
       var outputs = newSeq[Tensor](params.groups)
       for g in 0 ..< params.groups:
@@ -218,7 +218,7 @@ proc convolution_internal(input_r, weight_r, bias_r: Tensor; stride, padding, di
           weight_g = subtensor(weight, 0, params.groups, g)
           bias_g = subtensor(bias, 0, params.groups, g)
         
-        outputs[g] = convolution_nogroup_internal(input_g, weight_g, bias_g, params.stride, params.padding, params.dilation, params.transposed, params.output_padding)
+        outputs[g] = convolution_nogroup_impl(input_g, weight_g, bias_g, params.stride, params.padding, params.dilation, params.transposed, params.output_padding)
 
       result = cat(outputs, 1)
 
@@ -227,7 +227,7 @@ proc convolution_internal(input_r, weight_r, bias_r: Tensor; stride, padding, di
 
 # A generic function for convolution implementations which don't
 # natively implement groups (e.g., not CuDNN).
-proc convolution_nogroup_internal*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int]; transposed: bool; output_padding: openarray[int]): Tensor =
+proc convolution_nogroup_impl*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int]; transposed: bool; output_padding: openarray[int]): Tensor =
 
   let params = ConvParams(
     stride: @stride,
