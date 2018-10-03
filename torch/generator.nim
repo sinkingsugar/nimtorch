@@ -58,7 +58,7 @@ proc toNimType(typeName: string): string =
 
 proc validate(name: string): string =
   case name:
-    of "__add__": return "`+`"
+    of "linear", "bilinear": return name & "_internal"
 
     else:
       const invalidNames = ["div", "var", "end", "result", "to", "from"]

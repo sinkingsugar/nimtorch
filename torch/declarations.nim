@@ -2167,10 +2167,10 @@ proc bernoulli*(ty: TensorType; self: Tensor; p: float64; generator: Generator =
 proc bernoulli*(self: Tensor; p: float64; generator: Generator = nil): Tensor {.inline.} = 
   check: self.tensor.atenMethod("bernoulli", p, generator).to(ATensor).newTensor()
 
-proc bilinear*(ty: TensorType; input1: Tensor; input2: Tensor; weight: Tensor; bias: Tensor): Tensor {.inline.} = 
+proc bilinear_internal*(ty: TensorType; input1: Tensor; input2: Tensor; weight: Tensor; bias: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("bilinear", input1.tensor, input2.tensor, weight.tensor, bias.tensor).to(ATensor).newTensor()
 
-proc bilinear*(input1: Tensor; input2: Tensor; weight: Tensor; bias: Tensor): Tensor {.inline.} = 
+proc bilinear_internal*(input1: Tensor; input2: Tensor; weight: Tensor; bias: Tensor): Tensor {.inline.} = 
   check: atenFunction("at::bilinear", input1.tensor, input2.tensor, weight.tensor, bias.tensor).to(ATensor).newTensor()
 
 proc bincount*(ty: TensorType; self: Tensor; weights: Tensor; minlength: int = 0): Tensor {.inline.} = 
@@ -2913,10 +2913,10 @@ proc layer_norm*(ty: TensorType; input: Tensor; normalized_shape: openarray[int]
 proc layer_norm*(input: Tensor; normalized_shape: openarray[int]; weight: Tensor; bias: Tensor; eps: float64; cudnn_enable: bool = true): Tensor {.inline.} = 
   check: atenFunction("at::layer_norm", input.tensor, normalized_shape.toAIntList(), weight.tensor, bias.tensor, eps, cudnn_enable).to(ATensor).newTensor()
 
-proc linear*(ty: TensorType; input: Tensor; weight: Tensor; bias: Tensor): Tensor {.inline.} = 
+proc linear_internal*(ty: TensorType; input: Tensor; weight: Tensor; bias: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("linear", input.tensor, weight.tensor, bias.tensor).to(ATensor).newTensor()
 
-proc linear*(input: Tensor; weight: Tensor; bias: Tensor): Tensor {.inline.} = 
+proc linear_internal*(input: Tensor; weight: Tensor; bias: Tensor): Tensor {.inline.} = 
   check: atenFunction("at::linear", input.tensor, weight.tensor, bias.tensor).to(ATensor).newTensor()
 
 proc linspace*(ty: TensorType; start: float; end_name: float; options: TensorOptions): Tensor {.inline.} = 
