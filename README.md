@@ -68,7 +68,7 @@ Also python is a complete mess...
 
 `conda install -c fragcolor nimtorch`
 
-This will install, nim, fragments and nimtorch all in one command.
+This will install: nim and ATen binaries, fragments and nimtorch all in one command, nothing else needed.
 
 Make sure you use a recent version of conda and have gcc installed in your system.
 
