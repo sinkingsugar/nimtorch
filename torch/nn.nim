@@ -1,5 +1,5 @@
 import ../torch
-import nn/init
+import nn/[init, functional]
 import math
 
 {.experimental: "callOperator".}
@@ -81,13 +81,7 @@ proc Linear*(in_features, out_features: int; bias: bool = true): LinearModule =
     m.bias.requires_grad = true
   
   m.forward = proc (input: varargs[Tensor]): Tensor =
-    assert(not m.bias.isNil)
-    assert(not m.weight.isNil)
-    let step1 = input[0].matmul(m.weight.t())
-    if not m.bias.isNil:
-      return step1 + m.bias
-    else:
-      return step1
+    linear(input[0], m.weight, m.bias)
 
   m.reset_parameters()
   
@@ -115,13 +109,11 @@ proc Bilinear*(in1_features, in2_features, out_features: int; bias: bool = true)
   
   m.weight = zeros(@[out_features, in1_features, in2_features])
   m.weight.requires_grad = true
+
   if bias:
     m.bias = zeros(@[out_features])
     m.bias.requires_grad = true
-  else:
-    var emptyList: IntList
-    m.bias = zeros(emptyList)
-  
+
   m.forward = proc (input: varargs[Tensor]): Tensor =
     return bilinear(input[0], input[1], m.weight, m.bias)
 

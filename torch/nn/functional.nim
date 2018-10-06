@@ -1,8 +1,35 @@
 import ../../torch
+import strformat
 
-proc linear*(input, weight: Tensor): Tensor {.inline.} = input.matmul(weight.t())
+proc linear*(input, weight: Tensor; bias: Tensor = nil): Tensor {.inline.} =
+  result = input.matmul(weight.t())
+  if not bias.isNil:
+    result = result + bias
 
-proc linear*(input, weight, bias: Tensor): Tensor {.inline.} = input.matmul(weight.t()) + bias
+proc bilinear*(input1, input2, weight: Tensor; bias: Tensor = nil): Tensor =
+
+  assert(input1.dim() == input2.dim(), fmt"bilinear(): input dimensions do not match: got {input1.dim()} and {input2.dim()}")
+  for i in 0 ..< input1.dim() - 1:
+    assert(input1.size(i) == input2.size(i),
+      fmt"bilinear(): input batch dimensions do not match at dim {i}: got {input1.size(i)} and {input2.size(i)}")
+
+  assert(input1.size(input1.dim() - 1) == weight.size(1), fmt"bilinear(): input1 size does not match weight size: got {input1.size(input1.dim() - 1)} but expected {weight.size(1)}")
+  assert(input2.size(input2.dim() - 1) == weight.size(2), fmt"bilinear(): input2 size does not match weight size: got {input2.size(input2.dim() - 1)} but expected {weight.size(2)}")
+  assert(not bias.is_defined() or bias.size(0) == weight.size(0), fmt"bilinear(): bias size does not match weight size: got {bias.size(0)} but expected {weight.size(0)}")
+
+  var output_size: seq[int]
+  let size1 = input1.sizes()
+  for i in 0 ..< size1.len - 1:
+    output_size.add(size1[i])
+  output_size.add(weight.size(0))
+
+  let
+    input1_flattened = input1.view([-1, input1.size(-1)])
+    input2_flattened = input2.view([-1, input2.size(-1)])
+  result = trilinear_impl(input1_flattened, weight, input2_flattened, [1, 3], [0], [1, 2], [2, 3]).reshape(output_size)
+  
+  if bias.is_defined():
+    result = result + bias
 
 proc conv1d*(input, weight: Tensor; bias: Tensor = nil; stride: int = 1; padding: int = 0; dilation: int = 1; groups: int = 1): Tensor =
   convolution(input, weight, bias, [stride], [padding], [dilation], false, [0], groups)
