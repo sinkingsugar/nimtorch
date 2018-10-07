@@ -26,4 +26,4 @@ cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pw
 make -j10 && \
 make install -j10 && \
 make clean && \
-cp ../../tools/autograd/derivatives.yaml `pwd`/output/share/
+cp ../tools/autograd/derivatives.yaml `pwd`/output/share/

@@ -33,4 +33,4 @@ cd built && \
 emmake make -j10 && \
 emmake make install && \
 emmake make clean && \
-cp ../../tools/autograd/derivatives.yaml `pwd`/output/share/
+cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
