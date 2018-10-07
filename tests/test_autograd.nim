@@ -1,22 +1,20 @@
 import ../torch
 
-block:
-  var
-    x = torch.tensor([[0.1, 0.3], [-0.4, 0.2]])
-    y = torch.tensor([[0.7, -0.5], [0.1, 0.1]])
-    z = torch.tensor([[0.2, -0.4], [-0.5, -0.2]])
+var
+  x = torch.tensor([[0.1, 0.3], [-0.4, 0.2]])
+  y = torch.tensor([[0.7, -0.5], [0.1, 0.1]])
+  z = torch.tensor([[0.2, -0.4], [-0.5, -0.2]])
 
-  x.requires_grad = true
+x.requires_grad = true
 
-  var r = ((x + y) * y).sin() + (z - x).tanh()
-  r.backward(torch.ones_like(r))
-  print(x.grad)
+var r = ((x + y) * y).sin() + (z - x).tanh()
+r.backward(torch.ones_like(r))
+print(x.grad)
 
-block:
-  var x = torch.tensor([0.9, 0.8, 0.7])
-  x.requires_grad = true
+x = torch.tensor([0.9, 0.8, 0.7])
+x.requires_grad = true
 
-  let (a, b, c) = x.chunk(3, 0)
-  var r = (c + (a + a))
-  r.backward(torch.ones_like(r))
-  print(x.grad)
+let (a, b, c) = x.chunk(3, 0)
+r = (c + (a + a))
+r.backward(torch.ones_like(r))
+print(x.grad)
