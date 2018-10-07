@@ -31,7 +31,8 @@ build:aten:native:
   stage: build
   script:
     - cd docker
-    - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg VERSION=0.2.0.$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+    - sed -i "s/#BRANCH#/$CI_COMMIT_REF_NAME/g" conda/aten/meta.yaml
+    - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten
   tags:
@@ -41,7 +42,8 @@ build:aten:wasm:
   stage: build
   script:
     - cd docker
-    - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg VERSION=0.2.0.$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+    - sed -i "s/#BRANCH#/$CI_COMMIT_REF_NAME/g" conda/aten_wasm/meta.yaml
+    - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten
   tags:
