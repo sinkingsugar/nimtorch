@@ -216,8 +216,7 @@ proc options*(a: Tensor): TensorOptions {.inline, noinit.} =
   a.tensor.dynamicCppCall("options").to(TensorOptions)
 
 converter toTensorOptions*(tensorType: TensorType): TensorOptions =
-  let temp = cppinit(TensorOptions, tensorType.toCpp)
-  return temp
+  result = tensorType.options()
 
 converter toTensorOptions*(tensorKind: TensorKind): TensorOptions =
   result.dtype(tensorKind.toATenType()).to(void)
