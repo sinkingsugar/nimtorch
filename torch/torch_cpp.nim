@@ -76,7 +76,7 @@ elif defined windows:
 
     cpplibs(cudaLibPath & "/cuda.lib")
 
-elif defined macos:
+elif defined osx:
   type AInt64* = int64
 
   {.passC: "-std=c++14".}
