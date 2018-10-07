@@ -7,7 +7,7 @@ RUN pip3 install pyyaml
 RUN pip3 install typing
 
 RUN cd && \
-git clone --depth=1 https://github.com/fragcolor-xyz/pytorch.git && \
+git clone --depth=1 -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git && \
 cd pytorch && \
 git reset --hard 7a401c98ba24c07cc86ae245fa260a31cf58396d
 
