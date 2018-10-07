@@ -44,10 +44,10 @@ test:nimtorch:cuda:
   stage: test
   script:
     - nimble -y install fragments
-    - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
+    - docker run --name docker_aten_cuda-temp -d docker_aten_native /bin/bash
     - rm -rf output || yes
     - rm -rf nimcache || yes
-    - docker cp docker_aten_native-temp:/root/pytorch/built/output output
+    - docker cp docker_aten_cuda-temp:/root/pytorch/built/output output
     - export ATEN=`pwd`/output
     - export CUDA_INCLUDE=/opt/cuda/include
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
@@ -58,8 +58,8 @@ test:nimtorch:cuda:
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_autograd.nim    
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_xor.nim   
   after_script:
-    - docker stop docker_aten_native-temp
-    - docker rm docker_aten_native-temp
+    - docker stop docker_aten_cuda-temp
+    - docker rm docker_aten_cuda-temp
   dependencies:
     - build:aten:native
   tags:
