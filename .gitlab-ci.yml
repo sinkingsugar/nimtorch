@@ -9,7 +9,7 @@ stages:
 prepare:aten: # nightly
   stage: prepare
   script:
-    - rm -rf _pytorch || yes
+    - rm -rf _pytorch
     - mkdir _pytorch
     - cd _pytorch
     - git clone -b fragcolor-devel https://$GITHUB_LOGIN@github.com/fragcolor-xyz/pytorch.git
@@ -31,7 +31,7 @@ build:aten:native:
   stage: build
   script:
     - cd docker
-    - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+    - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg VERSION=0.2.0.$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten
   tags:
@@ -41,7 +41,7 @@ build:aten:wasm:
   stage: build
   script:
     - cd docker
-    - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+    - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg VERSION=0.2.0.$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten
   tags:
@@ -52,8 +52,8 @@ test:nimtorch:native:
   script:
     - nimble -y install fragments
     - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
-    - rm -rf output || yes
-    - rm -rf nimcache || yes
+    - rm -rf output
+    - rm -rf nimcache
     - docker cp docker_aten_native-temp:/root/pytorch/built/output output
     - export ATEN=`pwd`/output
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
@@ -80,8 +80,8 @@ test:nimtorch:cuda:
   script:
     - nimble -y install fragments
     - docker run --name docker_aten_cuda-temp -d docker_aten_native /bin/bash
-    - rm -rf output || yes
-    - rm -rf nimcache || yes
+    - rm -rf output
+    - rm -rf nimcache
     - docker cp docker_aten_cuda-temp:/root/pytorch/built/output output
     - export ATEN=`pwd`/output
     - export CUDA_INCLUDE=/opt/cuda/include
@@ -106,8 +106,8 @@ test:nimtorch:wasm:
   script:
     - nimble -y install fragments
     - docker run --name docker_aten_wasm-temp -d docker_aten_wasm /bin/bash
-    - rm -rf output || yes
-    - rm -rf nimcache || yes
+    - rm -rf output
+    - rm -rf nimcache
     - docker cp docker_aten_wasm-temp:/root/pytorch/built/output output
     - export ATEN=`pwd`/output
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
@@ -131,12 +131,11 @@ test:nimtorch:wasm:
 deploy:nimtorch:
   stage: deploy
   script:
+    - git checkout $CI_COMMIT_REF_NAME
     - git commit -a -m "PyTorch upstream nightly success"
     - git push
   dependencies:
     - test:nimtorch:native
-    - test:nimtorch:cuda
-    - test:nimtorch:wasm
   tags:
     - LINUX
   only:
