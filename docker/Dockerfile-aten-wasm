@@ -37,7 +37,7 @@ cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
 
 COPY conda /root/conda
 
-RUN apt-get install -y wget
+RUN pacman -S --noconfirm wget
 
 RUN cd && \
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
