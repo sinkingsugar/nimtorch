@@ -3493,11 +3493,9 @@ proc relu_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, discardable.}
 proc relu_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
   check: self.tensor.atenMethod("relu_").to(void); self
 
-proc prelu*(ty: TensorType; self: Tensor; weight: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("prelu", self.tensor, weight.tensor).to(ATensor).newTensor()
+proc prelu*(ty: TensorType; self: Tensor; weight: Tensor): Tensor {.inline.}
 
-proc prelu*(self: Tensor; weight: Tensor): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("prelu", weight.tensor).to(ATensor).newTensor()
+proc prelu*(self: Tensor; weight: Tensor): Tensor {.inline.}
 
 proc prelu_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
   check: ty[].atenMethod("prelu_backward", grad_output.tensor, self.tensor, weight.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
@@ -4046,9 +4044,6 @@ proc addmm_inplace*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; be
 
 proc addmm_inplace*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline, discardable.} = 
   check: self.tensor.atenMethod("addmm_", mat1.tensor, mat2.tensor, beta, alpha).to(void); self
-
-proc native_tensor*(ty: TensorType; self_ty: TensorType): Tensor {.inline.} = 
-  check: ty[].atenMethod("native_tensor", self_ty).to(ATensor).newTensor()
 
 proc native_tensor*(ty: TensorType; self_ty: TensorType; size: openarray[int]): Tensor {.inline.} = 
   check: ty[].atenMethod("native_tensor", self_ty, size.toAIntList()).to(ATensor).newTensor()

@@ -2145,6 +2145,16 @@ autograd relu:
     check: self.tensor.atenMethod("relu").to(ATensor).newTensor()
   self: firstOrSelf(threshold_backward(grad, self, 0, 0))
 
+autograd prelu:
+  proc forward*(ty: TensorType; self: Tensor; weight: Tensor): Tensor {.inline.} = 
+    check: ty[].atenMethod("prelu", self.tensor, weight.tensor).to(ATensor).newTensor()
+  (self, weight): prelu_backward(grad, self, weight)
+
+autograd prelu:
+  proc forward*(self: Tensor; weight: Tensor): Tensor {.inline.} = 
+    check: self.tensor.atenMethod("prelu", weight.tensor).to(ATensor).newTensor()
+  (self, weight): prelu_backward(grad, self, weight)
+
 autograd hardshrink:
   proc forward*(ty: TensorType; self: Tensor; lambd: float): Tensor {.inline.} = 
     check: ty[].atenMethod("hardshrink", self.tensor, lambd).to(ATensor).newTensor()

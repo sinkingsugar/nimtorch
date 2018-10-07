@@ -21,6 +21,7 @@ test:nimtorch:native:
   script:
     - nimble -y install fragments
     - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
+    - rm -rf output || yes
     - docker cp docker_aten_native-temp:/root/pytorch/built/output output
     - export ATEN=`pwd`/output
     - nim cpp -r -o:test torch/generator.nim
@@ -43,6 +44,7 @@ test:nimtorch:cuda:
   script:
     - nimble -y install fragments
     - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
+    - rm -rf output || yes
     - docker cp docker_aten_native-temp:/root/pytorch/built/output output
     - export ATEN=`pwd`/output
     - export CUDA_INCLUDE=/opt/cuda/include
@@ -66,6 +68,7 @@ test:nimtorch:wasm:
   script:
     - nimble -y install fragments
     - docker run --name docker_aten_wasm-temp -d docker_aten_wasm /bin/bash
+    - rm -rf output || yes
     - docker cp docker_aten_wasm-temp:/root/pytorch/built/output output
     - export ATEN=`pwd`/output
     - nim cpp -r -o:test torch/generator.nim
