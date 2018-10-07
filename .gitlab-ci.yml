@@ -18,6 +18,9 @@ prepare:aten: # nightly
     - git pull upstream master --no-edit
     - git push
     - git rev-parse HEAD > ../../torch/commit.txt
+  artifacts:
+    paths:
+      - torch/commit.txt
   tags:
     - LINUX
   only:
@@ -66,6 +69,9 @@ test:nimtorch:native:
     - git clean -x -d -f
   dependencies:
     - build:aten:native
+  artifacts:
+    paths:
+      - torch/ # used to pass generated stuff to nightly push deploy
   tags:
     - LINUX, DOCKER, NIM, PYYAML
 
