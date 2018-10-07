@@ -76,6 +76,26 @@ elif defined windows:
 
     cpplibs(cudaLibPath & "/cuda.lib")
 
+elif defined macos:
+  type AInt64* = int64
+
+  {.passC: "-std=c++14".}
+
+  {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -lc10".}
+  when defined cuda:
+    {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda".}
+  
+  # Make sure we allow users to use rpath and be able find ATEN easier
+  const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
+  {.passL: atenEnvRpath.}
+  {.passL: """-Wl,-rpath,'$ORIGIN'""".}
+
+  when defined gperftools:
+    {.passC: "-DWITHGPERFTOOLS -g".}
+    {.passL: "-lprofiler -g".}
+    proc ProfilerStart*(fname: cstring): int {.importc.}
+    proc ProfilerStop*() {.importc.}
+
 else:
   type AInt64* = clong
 
@@ -93,5 +113,3 @@ else:
     {.passL: "-lprofiler -g".}
     proc ProfilerStart*(fname: cstring): int {.importc.}
     proc ProfilerStop*() {.importc.}
-
-    
