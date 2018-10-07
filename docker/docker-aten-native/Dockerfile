@@ -9,21 +9,20 @@ RUN pip3 install typing
 RUN cd && \
 git clone --depth=1 https://github.com/fragcolor-xyz/pytorch.git && \
 cd pytorch && \
-git reset --hard 5c0eece2fdca6006300875e002b1483bc7761854
+git reset --hard 7a401c98ba24c07cc86ae245fa260a31cf58396d
 
 RUN cd && \
 cd pytorch && \
 git submodule init && \
-git submodule update third_party/sleef && \
-git submodule update third_party/cpuinfo
+git submodule update
 
 ENV PYTORCH_PYTHON=python3
 
 RUN cd && \
-cd pytorch/aten && \
+cd pytorch && \
 mkdir built && \
 cd built && \
-cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDNN=OFF -DATEN_NO_TEST=ON -DCAFFE2_CMAKE_BUILDING_WITH_MAIN_REPO=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
 make -j10 && \
 make install -j10 && \
 make clean && \
