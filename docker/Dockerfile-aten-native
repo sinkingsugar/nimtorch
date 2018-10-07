@@ -9,7 +9,7 @@ RUN pip3 install typing
 ARG PYTORCH_COMMIT
 
 RUN cd && \
-git clone --depth=1 -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git && \
+git clone -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git && \
 cd pytorch && \
 git reset --hard ${PYTORCH_COMMIT}
 
