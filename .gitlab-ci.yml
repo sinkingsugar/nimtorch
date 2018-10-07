@@ -6,7 +6,7 @@ stages:
   - test
   - deploy
 
-prepare:aten:nightly:
+prepare:aten: # nightly
   stage: prepare
   script:
     - rm -rf _pytorch || yes
@@ -20,25 +20,29 @@ prepare:aten:nightly:
     - git rev-parse HEAD > ../../torch/commit.txt
   tags:
     - LINUX
-  when: manual
-  allow_failure: false
-  # only:
-  #   - schedules
+  # when: manual
+  # allow_failure: false
+  only:
+    - triggers
+    - schedules
 
-.prepare:aten:normal:
+prepare:aten: # normal
   stage: prepare
   script:
     - rm -rf _pytorch || yes
   tags:
     - LINUX
   except:
+    - triggers
     - schedules
 
 build:aten:native:
   stage: build
   script:
     - cd docker
-    - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME .
+    - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+  dependencies:
+    - prepare:aten
   tags:
     - LINUX, DOCKER
 
@@ -46,7 +50,9 @@ build:aten:wasm:
   stage: build
   script:
     - cd docker
-    - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME .
+    - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+  dependencies:
+    - prepare:aten
   tags:
     - LINUX, DOCKER
   

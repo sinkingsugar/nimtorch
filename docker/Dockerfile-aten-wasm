@@ -6,10 +6,12 @@ RUN pacman -S --noconfirm git cmake python python-pip mpfr gmp emscripten
 RUN pip install pyyaml
 RUN pip install typing
 
+ARG PYTORCH_COMMIT
+
 RUN cd && \
 git clone --depth=1 -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git && \
 cd pytorch && \
-git reset --hard 7a401c98ba24c07cc86ae245fa260a31cf58396d
+git reset --hard ${PYTORCH_COMMIT}
 
 RUN cd && \
 cd pytorch && \
