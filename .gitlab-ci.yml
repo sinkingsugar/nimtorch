@@ -3,16 +3,16 @@
 build:aten:native:
   stage: build
   script:
-    - cd docker/docker-aten-native
-    - docker build -t docker_aten_native .
+    - cd docker
+    - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME .
   tags:
     - LINUX, DOCKER
 
 build:aten:wasm:
   stage: build
   script:
-    - cd docker/docker-aten-wasm
-    - docker build -t docker_aten_wasm .
+    - cd docker
+    - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME .
   tags:
     - LINUX, DOCKER
   
@@ -57,10 +57,6 @@ test:nimtorch:cuda:
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn/functional.nim
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_autograd.nim
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_xor.nim
-    - export PATH=~/miniconda3/bin:$PATH
-    - cd conda
-    - conda build aten
-    - anaconda -l "$CI_COMMIT_REF_NAME" -t $CONDA_TOKEN upload --force ~/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
   after_script:
     - docker stop docker_aten_cuda-temp
     - docker rm docker_aten_cuda-temp
@@ -87,10 +83,6 @@ test:nimtorch:wasm:
     - node test.js
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_xor.nim
     - node test.js
-    - export PATH=~/miniconda3/bin:$PATH
-    - cd conda
-    - conda build aten
-    - anaconda -l wasm -l "$CI_COMMIT_REF_NAME" -t $CONDA_TOKEN upload --force ~/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
   after_script:
     - docker stop docker_aten_wasm-temp
     - docker rm docker_aten_wasm-temp
