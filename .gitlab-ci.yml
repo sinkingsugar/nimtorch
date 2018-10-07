@@ -6,7 +6,7 @@ stages:
   - test
   - deploy
 
-build:aten:native:
+prepare:aten:nightly:
   stage: prepare
   script:
     - rm -rf _pytorch || yes
@@ -14,6 +14,7 @@ build:aten:native:
     - cd _pytorch
     - git clone --depth=1 -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git
     - cd pytorch
+    - git submodule init
     - git remote add upstream https://github.com/pytorch/pytorch.git
     - git pull upstream master
     - git push
@@ -23,6 +24,15 @@ build:aten:native:
   when: manual
   # only:
   #   - schedules
+
+.prepare:aten:normal:
+  stage: prepare
+  script:
+    - rm -rf _pytorch || yes
+  tags:
+    - LINUX
+  except:
+    - schedules
 
 build:aten:native:
   stage: build
