@@ -20,19 +20,7 @@ prepare:aten: # nightly
     - git rev-parse HEAD > ../../torch/commit.txt
   tags:
     - LINUX
-  # when: manual
-  # allow_failure: false
   only:
-    - triggers
-    - schedules
-
-prepare:aten: # normal
-  stage: prepare
-  script:
-    - rm -rf _pytorch || yes
-  tags:
-    - LINUX
-  except:
     - triggers
     - schedules
 
@@ -75,6 +63,7 @@ test:nimtorch:native:
   after_script:
     - docker stop docker_aten_native-temp
     - docker rm docker_aten_native-temp
+    - git clean -x -d -f
   dependencies:
     - build:aten:native
   tags:
@@ -100,10 +89,11 @@ test:nimtorch:cuda:
   after_script:
     - docker stop docker_aten_cuda-temp
     - docker rm docker_aten_cuda-temp
+    - git clean -x -d -f
   dependencies:
     - build:aten:native
   tags:
-    - LINUX, DOCKER, NIM, PYYAML, CUDA, CONDA
+    - LINUX, DOCKER, NIM, PYYAML, CUDA
 
 test:nimtorch:wasm:
   stage: test
@@ -126,7 +116,23 @@ test:nimtorch:wasm:
   after_script:
     - docker stop docker_aten_wasm-temp
     - docker rm docker_aten_wasm-temp
+    - git clean -x -d -f
   dependencies:
     - build:aten:wasm
   tags:
-    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML, CONDA
+    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML
+
+deploy:nimtorch:
+  stage: deploy
+  script:
+    - git commit -a -m "PyTorch upstream nightly success"
+    - git push
+  dependencies:
+    - test:nimtorch:native
+    - test:nimtorch:cuda
+    - test:nimtorch:wasm
+  tags:
+    - LINUX
+  only:
+    - triggers
+    - schedules
