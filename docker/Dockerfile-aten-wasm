@@ -58,4 +58,5 @@ conda build aten_wasm
 ARG TOKEN
 ARG BRANCH
 
-RUN /root/miniconda3/bin/anaconda -t ${TOKEN} upload -l ${BRANCH} --force /root/miniconda3/conda-bld/linux-64/aten_wasm-*.tar.bz2
+RUN /root/miniconda3/bin/anaconda -t ${TOKEN} remove fragcolor/label/${BRANCH}/aten_wasm
+RUN /root/miniconda3/bin/anaconda -t ${TOKEN} upload -l ${BRANCH} /root/miniconda3/conda-bld/linux-64/aten_wasm-*.tar.bz2
