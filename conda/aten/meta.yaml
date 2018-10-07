@@ -1,0 +1,10 @@
+package:
+  name: aten
+  version: 0.2.0
+
+source:
+  path: ../..
+
+build:
+  script_env:
+    - ATEN

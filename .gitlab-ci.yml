@@ -55,15 +55,19 @@ test:nimtorch:cuda:
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn.nim
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn/init.nim
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn/functional.nim
-    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_autograd.nim    
-    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_xor.nim   
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_autograd.nim
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_xor.nim
+    - export PATH=~/miniconda3/bin:$PATH
+    - cd conda
+    - conda build aten
+    - anaconda -l "$CI_COMMIT_REF_NAME" -t $CONDA_TOKEN upload --force ~/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
   after_script:
     - docker stop docker_aten_cuda-temp
     - docker rm docker_aten_cuda-temp
   dependencies:
     - build:aten:native
   tags:
-    - LINUX, DOCKER, NIM, PYYAML, CUDA
+    - LINUX, DOCKER, NIM, PYYAML, CUDA, CONDA
 
 test:nimtorch:wasm:
   stage: test
@@ -83,10 +87,14 @@ test:nimtorch:wasm:
     - node test.js
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_xor.nim
     - node test.js
+    - export PATH=~/miniconda3/bin:$PATH
+    - cd conda
+    - conda build aten
+    - anaconda -l wasm -l "$CI_COMMIT_REF_NAME" -t $CONDA_TOKEN upload --force ~/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
   after_script:
     - docker stop docker_aten_wasm-temp
     - docker rm docker_aten_wasm-temp
   dependencies:
     - build:aten:wasm
   tags:
-    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML
+    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML, CONDA
