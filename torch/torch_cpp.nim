@@ -82,8 +82,6 @@ elif defined osx:
   {.passC: "-std=c++14".}
 
   {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -lc10".}
-  when defined cuda:
-    {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda".}
   
   # Make sure we allow users to use rpath and be able find ATEN easier
   const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
