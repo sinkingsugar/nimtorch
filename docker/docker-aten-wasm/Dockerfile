@@ -20,7 +20,7 @@ ENV PYTORCH_PYTHON=python3
 
 RUN source /etc/profile.d/emscripten.sh && \
 cd && \
-cd pytorch/aten && \
+cd pytorch && \
 mkdir built && \
 cd built && \
 emcc --version && \
