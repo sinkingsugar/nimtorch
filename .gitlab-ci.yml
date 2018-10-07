@@ -22,15 +22,16 @@ test:nimtorch:native:
     - nimble -y install fragments
     - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
     - rm -rf output || yes
+    - rm -rf nimcache || yes
     - docker cp docker_aten_native-temp:/root/pytorch/built/output output
     - export ATEN=`pwd`/output
-    - nim cpp -r -o:test torch/generator.nim
-    - nim cpp -r -o:test torch
-    - nim cpp -r -o:test torch/nn.nim
-    - nim cpp -r -o:test torch/nn/init.nim
-    - nim cpp -r -o:test torch/nn/functional.nim
-    - nim cpp -r -o:test tests/test_autograd.nim    
-    - nim cpp -r -o:test tests/test_xor.nim   
+    - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
+    - nim cpp -r -o:test --nimcache:./nimcache torch
+    - nim cpp -r -o:test --nimcache:./nimcache torch/nn.nim
+    - nim cpp -r -o:test --nimcache:./nimcache torch/nn/init.nim
+    - nim cpp -r -o:test --nimcache:./nimcache torch/nn/functional.nim
+    - nim cpp -r -o:test --nimcache:./nimcache tests/test_autograd.nim    
+    - nim cpp -r -o:test --nimcache:./nimcache tests/test_xor.nim   
   after_script:
     - docker stop docker_aten_native-temp
     - docker rm docker_aten_native-temp
@@ -45,16 +46,17 @@ test:nimtorch:cuda:
     - nimble -y install fragments
     - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
     - rm -rf output || yes
+    - rm -rf nimcache || yes
     - docker cp docker_aten_native-temp:/root/pytorch/built/output output
     - export ATEN=`pwd`/output
     - export CUDA_INCLUDE=/opt/cuda/include
-    - nim cpp -r -o:test torch/generator.nim
-    - nim cpp -r -o:test -d:cuda torch
-    - nim cpp -r -o:test -d:cuda torch/nn.nim
-    - nim cpp -r -o:test -d:cuda torch/nn/init.nim
-    - nim cpp -r -o:test -d:cuda torch/nn/functional.nim
-    - nim cpp -r -o:test -d:cuda tests/test_autograd.nim    
-    - nim cpp -r -o:test -d:cuda tests/test_xor.nim   
+    - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn.nim
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn/init.nim
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn/functional.nim
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_autograd.nim    
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_xor.nim   
   after_script:
     - docker stop docker_aten_native-temp
     - docker rm docker_aten_native-temp
@@ -69,16 +71,17 @@ test:nimtorch:wasm:
     - nimble -y install fragments
     - docker run --name docker_aten_wasm-temp -d docker_aten_wasm /bin/bash
     - rm -rf output || yes
+    - rm -rf nimcache || yes
     - docker cp docker_aten_wasm-temp:/root/pytorch/built/output output
     - export ATEN=`pwd`/output
-    - nim cpp -r -o:test torch/generator.nim
-    - nim cpp -d:wasm -d:release -o:test.js torch
+    - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
+    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch
     - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js torch/nn.nim
+    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch/nn.nim
     - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js tests/test_autograd.nim
+    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_autograd.nim
     - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js tests/test_xor.nim
+    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_xor.nim
     - node test.js
   after_script:
     - docker stop docker_aten_wasm-temp
