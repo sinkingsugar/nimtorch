@@ -12,11 +12,10 @@ prepare:aten:nightly:
     - rm -rf _pytorch || yes
     - mkdir _pytorch
     - cd _pytorch
-    - git clone --depth=1 -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git
+    - git clone -b fragcolor-devel https://$GITHUB_LOGIN@github.com/fragcolor-xyz/pytorch.git
     - cd pytorch
-    - git submodule init
     - git remote add upstream https://github.com/pytorch/pytorch.git
-    - git pull upstream master
+    - git pull upstream master --no-edit
     - git push
     - git rev-parse HEAD > ../../torch/commit.txt
   tags:
