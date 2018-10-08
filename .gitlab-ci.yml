@@ -25,7 +25,6 @@ prepare:aten:
     - LINUX
   only:
     refs:
-      - nightly
       - schedules
 
 build:aten:native:
@@ -154,5 +153,4 @@ deploy:nimtorch:
     - LINUX
   only:
     refs:
-      - nightly
       - schedules
