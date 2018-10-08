@@ -27,6 +27,13 @@ proc maxMemoryAllocated*(device: cint): uint64 {.importc: "THCCachingAllocator_m
 proc currentMemoryCached*(device: cint): uint64 {.importc: "THCCachingAllocator_currentMemoryCached", header: "THCCachingAllocator.h".}
 proc maxMemoryCached*(device: cint): uint64 {.importc: "THCCachingAllocator_maxMemoryCached", header: "THCCachingAllocator.h".}
 
+when defined(linux) or defined(osx):
+  const nvccPath* = staticExec("which nvcc")
+  when nvccPath[0..4] != "which": # which returns `which: ...` when cannot be found
+    const cudaIncludePath* = nvccPath[0..^9] & "include"
+    static:
+      putEnv("CUDA_INCLUDE", cudaIncludePath)
+
 {.passC: "-I$CUDA_INCLUDE -I$ATEN/include/TH -I$ATEN/include/THC".}
 
 static:
