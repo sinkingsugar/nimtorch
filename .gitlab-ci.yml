@@ -143,17 +143,11 @@ deploy:nimtorch:
     - git stash
     - git checkout $CI_COMMIT_REF_NAME
     - git reset --hard origin/$CI_COMMIT_REF_NAME
-    - git stash pop
+    - git stash pop || true # allow failure
     - git commit --allow-empty -a -m "PyTorch upstream nightly success"
     - git push ssh://git@git.fragcolor.xyz:27030/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
     - git push https://$GITHUB_LOGIN@github.com/fragcolor-xyz/nimtorch.git $CI_COMMIT_REF_NAME
-    - curl -X POST \
-      -F token=$TRIGGER_TOKEN \
-      -F "ref=$CI_COMMIT_REF_NAME" \
-      -F "variables[TRIGGER]=CondaDeploy" \
-      -F "variables[PYTORCH_COMMIT]=`cat torch/commit.txt`" \
-      -F "variables[NIMTORCH_COMMIT]=`git rev-parse HEAD`" \
-      https://git.fragcolor.xyz/api/v4/projects/32/trigger/pipeline
+    - curl -X POST -F token=$TRIGGER_TOKEN -F "ref=$CI_COMMIT_REF_NAME" -F "variables[TRIGGER]=CondaDeploy" -F "variables[PYTORCH_COMMIT]=`cat torch/commit.txt`" -F "variables[NIMTORCH_COMMIT]=`git rev-parse HEAD`" https://git.fragcolor.xyz/api/v4/projects/32/trigger/pipeline
   dependencies:
     - test:nimtorch:native
   tags:
