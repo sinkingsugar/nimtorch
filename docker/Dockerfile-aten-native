@@ -24,7 +24,7 @@ RUN cd && \
 cd pytorch && \
 mkdir built && \
 cd built && \
-cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
+cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
 make -j10 && \
 make install -j10 && \
 make clean && \
