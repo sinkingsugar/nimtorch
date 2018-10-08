@@ -142,7 +142,7 @@ deploy:nimtorch:
   script:
     - git stash
     - git checkout $CI_COMMIT_REF_NAME
-    - git pull
+    - git reset --hard origin/$CI_COMMIT_REF_NAME
     - git stash pop
     - git commit --allow-empty -a -m "PyTorch upstream nightly success"
     - git push ssh://git@git.fragcolor.xyz:27030/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
