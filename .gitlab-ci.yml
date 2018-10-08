@@ -6,7 +6,7 @@ stages:
   - test
   - deploy
 
-prepare:aten: # nightly
+.prepare:aten: # nightly
   stage: prepare
   script:
     - rm -rf _pytorch
@@ -24,10 +24,9 @@ prepare:aten: # nightly
   tags:
     - LINUX
   only:
-    - triggers
     - schedules
 
-build:aten:native:
+.build:aten:native:
   stage: build
   script:
     - cd docker
@@ -41,7 +40,7 @@ build:aten:native:
   tags:
     - LINUX, DOCKER
 
-build:aten:wasm:
+.build:aten:wasm:
   stage: build
   script:
     - cd docker
@@ -52,7 +51,7 @@ build:aten:wasm:
   tags:
     - LINUX, DOCKER
   
-test:nimtorch:native:
+.test:nimtorch:native:
   stage: test
   script:
     - nimble -y install fragments
@@ -80,7 +79,7 @@ test:nimtorch:native:
   tags:
     - LINUX, DOCKER, NIM, PYYAML
 
-test:nimtorch:cuda:
+.test:nimtorch:cuda:
   stage: test
   script:
     - nimble -y install fragments
@@ -106,7 +105,7 @@ test:nimtorch:cuda:
   tags:
     - LINUX, DOCKER, NIM, PYYAML, CUDA
 
-test:nimtorch:wasm:
+.test:nimtorch:wasm:
   stage: test
   script:
     - nimble -y install fragments
@@ -135,14 +134,18 @@ test:nimtorch:wasm:
 
 deploy:nimtorch:
   stage: deploy
+  before_script:
+    - git config --global user.email 'giovanni@fragcolor.xyz'
+    - git config --global user.name 'Giovanni'
   script:
     - git checkout $CI_COMMIT_REF_NAME
-    - git commit -a -m --allow-empty "PyTorch upstream nightly success"
-    - git push
+    - git pull
+    - git commit --allow-empty -a -m "PyTorch upstream nightly success"
+    - git push ssh://git@git.fragcolor.xyz:27030/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
+    - git push https://$GITHUB_LOGIN@github.com/fragcolor-xyz/nimtorch.git $CI_COMMIT_REF_NAME
   dependencies:
     - test:nimtorch:native
   tags:
     - LINUX
   only:
-    - triggers
     - schedules
