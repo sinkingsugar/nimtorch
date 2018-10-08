@@ -6,7 +6,7 @@ stages:
   - test
   - deploy
 
-prepare:aten: # nightly
+prepare:aten:
   stage: prepare
   script:
     - rm -rf _pytorch
@@ -24,13 +24,15 @@ prepare:aten: # nightly
   tags:
     - LINUX
   only:
-    - schedules
+    refs:
+      - nightly
+      - schedules
 
 build:aten:native:
   stage: build
   script:
     - cd docker
-    - sed -i "s/#BRANCH#/$CI_COMMIT_REF_NAME/g" conda/aten/meta.yaml
+    - sed -i "s/#VERSION#/`date +%Y.%m.%d`/g" conda/aten/meta.yaml
     - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten
@@ -44,7 +46,7 @@ build:aten:wasm:
   stage: build
   script:
     - cd docker
-    - sed -i "s/#BRANCH#/$CI_COMMIT_REF_NAME/g" conda/aten_wasm/meta.yaml
+    - sed -i "s/#VERSION#/`date +%Y.%m.%d`/g" conda/aten_wasm/meta.yaml
     - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten
@@ -75,7 +77,7 @@ test:nimtorch:native:
     - build:aten:native
   artifacts:
     paths:
-      - torch/ # used to pass generated stuff to nightly push deploy
+      - torch/
   tags:
     - LINUX, DOCKER, NIM, PYYAML
 
@@ -143,9 +145,18 @@ deploy:nimtorch:
     - git commit --allow-empty -a -m "PyTorch upstream nightly success"
     - git push ssh://git@git.fragcolor.xyz:27030/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
     - git push https://$GITHUB_LOGIN@github.com/fragcolor-xyz/nimtorch.git $CI_COMMIT_REF_NAME
+    - curl -X POST \
+      -F token=$TRIGGER_TOKEN \
+      -F "ref=$CI_COMMIT_REF_NAME" \
+      -F "variables[TRIGGER]=CondaDeploy" \
+      -F "variables[PYTORCH_COMMIT]=`cat torch/commit.txt`" \
+      -F "variables[NIMTORCH_COMMIT]=`git rev-parse HEAD`" \
+      https://git.fragcolor.xyz/api/v4/projects/32/trigger/pipeline
   dependencies:
     - test:nimtorch:native
   tags:
     - LINUX
   only:
-    - schedules
+    refs:
+      - nightly
+      - schedules

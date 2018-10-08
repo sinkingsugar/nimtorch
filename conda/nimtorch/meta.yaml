@@ -1,6 +1,6 @@
 package:
   name: nimtorch
-  version: 0.2.0
+  version: "#VERSION#"
 
 source:
   path: ../..
