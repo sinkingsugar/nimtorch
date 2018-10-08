@@ -9,7 +9,4 @@ requirements:
   run:
     - nim
     - fragments
-
-build:
-  script_env:
-    - ATEN
+    - aten >= "#VERSION#"
