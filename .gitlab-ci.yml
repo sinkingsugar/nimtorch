@@ -6,7 +6,7 @@ stages:
   - test
   - deploy
 
-.prepare:aten: # nightly
+prepare:aten: # nightly
   stage: prepare
   script:
     - rm -rf _pytorch
@@ -26,7 +26,7 @@ stages:
   only:
     - schedules
 
-.build:aten:native:
+build:aten:native:
   stage: build
   script:
     - cd docker
@@ -40,7 +40,7 @@ stages:
   tags:
     - LINUX, DOCKER
 
-.build:aten:wasm:
+build:aten:wasm:
   stage: build
   script:
     - cd docker
@@ -51,7 +51,7 @@ stages:
   tags:
     - LINUX, DOCKER
   
-.test:nimtorch:native:
+test:nimtorch:native:
   stage: test
   script:
     - nimble -y install fragments
@@ -79,7 +79,7 @@ stages:
   tags:
     - LINUX, DOCKER, NIM, PYYAML
 
-.test:nimtorch:cuda:
+test:nimtorch:cuda:
   stage: test
   script:
     - nimble -y install fragments
@@ -105,7 +105,7 @@ stages:
   tags:
     - LINUX, DOCKER, NIM, PYYAML, CUDA
 
-.test:nimtorch:wasm:
+test:nimtorch:wasm:
   stage: test
   script:
     - nimble -y install fragments
