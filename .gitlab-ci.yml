@@ -84,6 +84,7 @@ test:nimtorch:native:
     paths:
       - torch/
       - conda/
+      - docker/
   tags:
     - LINUX, DOCKER, NIM, PYYAML
 
