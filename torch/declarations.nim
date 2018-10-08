@@ -4048,9 +4048,6 @@ proc addmm_inplace*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; a
 proc native_tensor*(ty: TensorType; self_ty: TensorType; size: openarray[int]): Tensor {.inline.} = 
   check: ty[].atenMethod("native_tensor", self_ty, size.toAIntList()).to(ATensor).newTensor()
 
-proc tensor*(ty: TensorType; dtype: TensorType): Tensor {.inline.} = 
-  check: ty[].atenMethod("tensor", dtype).to(ATensor).newTensor()
-
 proc tensor*(ty: TensorType; dtype: TensorType; size: openarray[int]): Tensor {.inline.} = 
   check: ty[].atenMethod("tensor", dtype, size.toAIntList()).to(ATensor).newTensor()
 

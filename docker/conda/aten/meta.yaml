@@ -1,6 +1,6 @@
 package:
   name: aten
-  version: "#VERSION#"
+  version: "2018.10.09"
 
 source:
   path: ./
