@@ -43,7 +43,7 @@ chmod +x Miniconda3-latest-Linux-x86_64.sh && \
 
 ARG UPLOAD_ATEN
 
-RUN test -z "${UPLOAD_ATEN}{"} || /root/miniconda3/bin/conda install conda-build anaconda-client && true
+RUN test -z "${UPLOAD_ATEN}" || /root/miniconda3/bin/conda install conda-build anaconda-client && true
 
 RUN cd && cd conda && \
 export PATH=$PATH:/root/miniconda3/bin && \
