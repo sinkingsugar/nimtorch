@@ -31,7 +31,7 @@ build:aten:native:
   stage: build
   script:
     - cd docker
-    - `date +%Y.%m.%d` > version.txt
+    - date +%Y.%m.%d > version.txt
     - sed -i "s/#VERSION#/`cat version.txt`/g" conda/aten/meta.yaml
     - sed -i "s/#VERSION#/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
