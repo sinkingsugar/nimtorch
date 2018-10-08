@@ -41,15 +41,17 @@ RUN cd && \
 chmod +x Miniconda3-latest-Linux-x86_64.sh && \
 ./Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda3
 
-RUN test -z "$UPLOAD_ATEN" || /root/miniconda3/bin/conda install conda-build anaconda-client && true
+ARG UPLOAD_ATEN
+
+RUN test -z "${UPLOAD_ATEN}{"} || /root/miniconda3/bin/conda install conda-build anaconda-client && true
 
 RUN cd && cd conda && \
 export PATH=$PATH:/root/miniconda3/bin && \
 export ATEN=/root/pytorch/built/output && \
-test -z "$UPLOAD_ATEN" || conda build purge && true && \
-test -z "$UPLOAD_ATEN" || conda build aten && true
+test -z "${UPLOAD_ATEN}" || conda build purge && true && \
+test -z "${UPLOAD_ATEN}" || conda build aten && true
 
 ARG TOKEN
 ARG BRANCH
 
-RUN test -z "$UPLOAD_ATEN" || /root/miniconda3/bin/anaconda -t ${TOKEN} upload --force /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2 && true
+RUN test -z "${UPLOAD_ATEN}" || /root/miniconda3/bin/anaconda -t ${TOKEN} upload --force /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2 && true
