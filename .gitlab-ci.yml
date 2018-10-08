@@ -35,6 +35,9 @@ build:aten:native:
     - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten
+  artifacts:
+    paths:
+      - torch/commit.txt
   tags:
     - LINUX, DOCKER
 
@@ -134,7 +137,7 @@ deploy:nimtorch:
   stage: deploy
   script:
     - git checkout $CI_COMMIT_REF_NAME
-    - git commit -a -m "PyTorch upstream nightly success"
+    - git commit -a -m --allow-empty "PyTorch upstream nightly success"
     - git push
   dependencies:
     - test:nimtorch:native
