@@ -31,13 +31,18 @@ build:aten:native:
   stage: build
   script:
     - cd docker
-    - sed -i "s/#VERSION#/`date +%Y.%m.%d`/g" conda/aten/meta.yaml
+    - `date +%Y.%m.%d` > version.txt
+    - sed -i "s/#VERSION#/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i "s/#VERSION#/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten
   artifacts:
     paths:
       - torch/commit.txt
+      - docker/version.txt
+      - docker/conda/aten/meta.yaml
+      - docker/conda/aten_wasm/meta.yaml
   tags:
     - LINUX, DOCKER
 
@@ -66,8 +71,9 @@ test:nimtorch:native:
     - nim cpp -r -o:test --nimcache:./nimcache torch/nn.nim
     - nim cpp -r -o:test --nimcache:./nimcache torch/nn/init.nim
     - nim cpp -r -o:test --nimcache:./nimcache torch/nn/functional.nim
-    - nim cpp -r -o:test --nimcache:./nimcache tests/test_autograd.nim    
-    - nim cpp -r -o:test --nimcache:./nimcache tests/test_xor.nim   
+    - nim cpp -r -o:test --nimcache:./nimcache tests/test_autograd.nim
+    - nim cpp -r -o:test --nimcache:./nimcache tests/test_xor.nim
+    - sed -i "s/#VERSION#/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # write proper version also in conda nimtorch
   after_script:
     - docker stop docker_aten_native-temp
     - docker rm docker_aten_native-temp
@@ -77,6 +83,7 @@ test:nimtorch:native:
   artifacts:
     paths:
       - torch/
+      - conda/
   tags:
     - LINUX, DOCKER, NIM, PYYAML
 
