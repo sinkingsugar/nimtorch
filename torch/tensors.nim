@@ -106,7 +106,7 @@ proc toIntList(self: AIntList): IntList =
     copyMem(addr result[0], unsafeAddr(self[0]), result.len * sizeof(int64))
   else:
     for i in 0 ..< self.len:
-      result[i] = cast[int64](self[i]).int
+      result[i] = cast[int64](self[i].to(AInt64)).int
 
 proc toAIntList*(self: openarray[int]): AIntList =
   when sizeof(int) == sizeof(int64):
