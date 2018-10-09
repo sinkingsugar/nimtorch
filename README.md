@@ -76,7 +76,7 @@ Also make sure your system is recent (ubuntu 18.04 reference) and you have cuda 
 
 Test with with something like:
 
-`nim cpp $ATEN/dist/nimtorch/tests/test_xor.nim`
+`nim cpp -o:test -r $ATEN/dist/nimtorch/tests/test_xor.nim`
 
 ### Semi manual way
 
@@ -110,7 +110,11 @@ activate aten environment
 
 *finally*
 
-(optional) run self test `nim cpp -r torch.nim`
+run self test `nim cpp -o:test -r torch.nim`
+
+in the case of WASM:
+
+run self test `nim cpp -d:wasm -o:test.js torch.nim && node test.js` (needs node.js)
 
 ### Windows support coming soon (already builds, just needs to be automated to publish with conda)
 
