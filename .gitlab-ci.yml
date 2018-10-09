@@ -71,7 +71,7 @@ test:nimtorch:native:
   script:
     - nimble -y install fragments
     - rm -rf nimcache
-    - $HOME/miniconda3/bin/conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*"`
+    - $HOME/miniconda3/bin/conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*" | sed -r "s/aten /aten/g`
     - source activate nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -r -o:test --nimcache:./nimcache torch
@@ -103,7 +103,7 @@ test:nimtorch:cuda:
   script:
     - nimble -y install fragments
     - rm -rf nimcache
-    - $HOME/miniconda3/bin/conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*"`
+    - $HOME/miniconda3/bin/conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*" | sed -r "s/aten /aten/g`
     - source activate nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch
@@ -130,7 +130,7 @@ test:nimtorch:wasm:
     - nimble -y install fragments
     - rm -rf nimcache
     - export PATH="$PATH:$HOME/miniconda3/bin"
-    - $HOME/miniconda3/bin/conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]* | sed -r "s/aten/aten_wasm/g"`
+    - $HOME/miniconda3/bin/conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]* | sed -r "s/aten /aten_wasm/g"`
     - source activate nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch
