@@ -1,4 +1,3 @@
-ls $ATEN
 mkdir -p $PREFIX/etc/conda/activate.d
 mkdir -p $PREFIX/etc/conda/deactivate.d
 echo "export ATEN=$PREFIX" >> $PREFIX/etc/conda/activate.d/env_vars.sh
