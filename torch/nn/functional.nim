@@ -50,6 +50,29 @@ proc conv_transpose2d*(input, weight, bias: Tensor; stride: openarray[int] = [1,
 proc conv_transpose3d*(input, weight, bias: Tensor; stride: openarray[int] = [1, 1, 1]; padding: openarray[int] = [0, 0, 0]; output_padding: openarray[int] = [0, 0, 0], groups: int = 1, dilation: openarray[int] = [1, 1, 1]): Tensor =
   convolution(input, weight, bias, stride, padding, dilation, true, output_padding, groups)
 
+proc gru_cell*(input, hidden, w_ih, w_hh, b_ih, b_hh: Tensor): Tensor =
+   
+  # Change from PyTorch: We handle additionsl dimension, so stacked models are supported
+  if input.is_cuda() and input.ndimension == 2:
+    let
+      igates = matmul(input, w_ih.t())
+      hgates = matmul(hidden, w_hh.t())
+
+    # Slice off the workspace argument (it's needed only for AD).
+    return thnn_fused_gru_cell_impl(igates, hgates, hidden, b_ih, b_hh)[0]   
+
+  let
+    igates = linear(input, w_ih, b_ih)
+    hgates = linear(hidden, w_hh, b_hh)
+    chunked_igates = igates.chunk(3, -1)
+    chunked_hgates = hgates.chunk(3, -1)
+
+    reset_gate = sigmoid(chunked_igates[0] + chunked_hgates[0])
+    input_gate = sigmoid(chunked_igates[1] + chunked_hgates[1])
+    new_gate = tanh(chunked_igates[2] + reset_gate * chunked_hgates[2])
+
+  return new_gate + input_gate * (hidden - new_gate)
+
 when isMainModule:
   var
     x = tensor([
@@ -69,26 +92,3 @@ when isMainModule:
   
     res = linear(x, w_input)
   res.print()
-
-proc gru_cell*(input, hidden, w_ih, w_hh, b_ih, b_hh: Tensor): Tensor =
-   
-  # Change from PyTorch: Transpose on the last 2 dimensions, so stacked models are supported
-  if input.is_cuda():
-    let
-      igates = matmul(input, w_ih.transpose(-2, -1))
-      hgates = matmul(hidden, w_hh.transpose(-2, -1))
-
-    # Slice off the workspace argument (it's needed only for AD).
-    return thnn_fused_gru_cell_impl(igates, hgates, hidden, b_ih, b_hh)[0]   
-
-  let
-    igates = linear(input, w_ih, b_ih)
-    hgates = linear(hidden, w_hh, b_hh)
-    chunked_igates = igates.chunk(3, -1)
-    chunked_hgates = hgates.chunk(3, -1)
-
-    reset_gate = sigmoid(chunked_igates[0] + chunked_hgates[0])
-    input_gate = sigmoid(chunked_igates[1] + chunked_hgates[1])
-    new_gate = tanh(chunked_igates[2] + reset_gate * chunked_hgates[2])
-
-  return new_gate + input_gate * (hidden - new_gate);

@@ -1,2 +1,2 @@
-import nn/modules, nn/modules/[rnn, convolutions]
-export modules, rnn, convolutions
+import nn/[modules, losses], nn/modules/[rnn, convolutions]
+export modules, losses, rnn, convolutions
