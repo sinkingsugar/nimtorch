@@ -20,10 +20,14 @@ proc init*(self: RNNCellBaseModule; input_size, hidden_size: int; bias: bool; nu
   self.bias = bias
   self.weight_ih = zeros([num_chunks * hidden_size, input_size])
   self.weight_hh = zeros([num_chunks * hidden_size, hidden_size])
+  self.weight_ih.requires_grad = true
+  self.weight_hh.requires_grad = true
 
   if bias:
     self.bias_ih = zeros([num_chunks * hidden_size])
     self.bias_hh = zeros([num_chunks * hidden_size])
+    self.bias_ih.requires_grad = true
+    self.bias_hh.requires_grad = true
 
   self.reset_parameters()
 
