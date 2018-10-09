@@ -67,7 +67,7 @@ test:nimtorch:native:
   stage: test
   before_script:
     - source deactivate || true
-    - conda env remove -n nimtorch_testing || true
+    - $HOME/miniconda3/bin/conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
     - rm -rf nimcache
@@ -83,7 +83,7 @@ test:nimtorch:native:
     - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9]/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # write proper version also in conda nimtorch
   after_script:
     - source deactivate || true
-    - conda env remove -n nimtorch_testing || true
+    - $HOME/miniconda3/bin/conda env remove -n nimtorch_testing || true
     - git clean -x -d -f
   dependencies:
     - build:aten:native
@@ -99,7 +99,7 @@ test:nimtorch:cuda:
   stage: test
   before_script:
     - source deactivate || true
-    - conda env remove -n nimtorch_testing || true
+    - $HOME/miniconda3/bin/conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
     - rm -rf nimcache
@@ -114,7 +114,7 @@ test:nimtorch:cuda:
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_xor.nim
   after_script:
     - source deactivate || true
-    - conda env remove -n nimtorch_testing || true
+    - $HOME/miniconda3/bin/conda env remove -n nimtorch_testing || true
     - git clean -x -d -f
   dependencies:
     - build:aten:native
@@ -125,7 +125,7 @@ test:nimtorch:wasm:
   stage: test
   before_script:
     - source deactivate || true
-    - conda env remove -n nimtorch_testing || true
+    - $HOME/miniconda3/bin/conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
     - rm -rf nimcache
@@ -143,7 +143,7 @@ test:nimtorch:wasm:
     - node test.js
   after_script:
     - source deactivate || true
-    - conda env remove -n nimtorch_testing || true
+    - $HOME/miniconda3/bin/conda env remove -n nimtorch_testing || true
     - git clean -x -d -f
   dependencies:
     - build:aten:wasm
