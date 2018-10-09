@@ -67,13 +67,12 @@ test:nimtorch:native:
   stage: test
   before_script:
     - export PATH="$PATH:$HOME/miniconda3/bin"
-    - source deactivate || true
     - conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
     - rm -rf nimcache
     - conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*" | sed -r "s/aten /aten/g`
-    - source activate nimtorch_testing # agent shell must be set to shell = "bash"
+    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -r -o:test --nimcache:./nimcache torch
     - nim cpp -r -o:test --nimcache:./nimcache torch/nn.nim
@@ -83,7 +82,6 @@ test:nimtorch:native:
     - nim cpp -r -o:test --nimcache:./nimcache tests/test_xor.nim
     - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9]/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # write proper version also in conda nimtorch
   after_script:
-    - source deactivate || true
     - conda env remove -n nimtorch_testing || true
     - git clean -x -d -f
   dependencies:
@@ -100,13 +98,12 @@ test:nimtorch:cuda:
   stage: test
   before_script:
     - export PATH="$PATH:$HOME/miniconda3/bin"
-    - source deactivate || true
     - conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
     - rm -rf nimcache
     - conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*" | sed -r "s/aten /aten/g`
-    - source activate nimtorch_testing # agent shell must be set to shell = "bash"
+    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn.nim
@@ -115,7 +112,6 @@ test:nimtorch:cuda:
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_autograd.nim
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_xor.nim
   after_script:
-    - source deactivate || true
     - conda env remove -n nimtorch_testing || true
     - git clean -x -d -f
   dependencies:
@@ -127,13 +123,12 @@ test:nimtorch:wasm:
   stage: test
   before_script:
     - export PATH="$PATH:$HOME/miniconda3/bin"
-    - source deactivate || true
     - conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
     - rm -rf nimcache
     - conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]* | sed -r "s/aten /aten_wasm/g"`
-    - source activate nimtorch_testing # agent shell must be set to shell = "bash"
+    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch
     - node test.js
@@ -144,7 +139,6 @@ test:nimtorch:wasm:
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_xor.nim
     - node test.js
   after_script:
-    - source deactivate || true
     - conda env remove -n nimtorch_testing || true
     - git clean -x -d -f
   dependencies:
