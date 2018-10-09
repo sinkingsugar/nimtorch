@@ -66,7 +66,8 @@ Also python is a complete mess...
 
 ### Super easy, using conda
 
-`conda install -c fragcolor nimtorch`
+`conda create -n nimtorch -c fragcolor nimtorch`
+`source activate nimtorch`
 
 This will install: nim and ATen binaries, fragments and nimtorch all in one command, nothing else needed.
 
@@ -75,50 +76,42 @@ Make sure you use a recent version of conda and have gcc installed in your syste
 Also make sure your system is recent (ubuntu 18.04 reference) and you have cuda 9.2 at least installed (if you need cuda).
 
 Test with with something like:
-`nim cpp <my conda folder>/dist/nimtorch/tests/test_xor.nim`
+
+`nim cpp $ATEN/dist/nimtorch/tests/test_xor.nim`
 
 ### Semi manual way
 
-[Download ATen binaries](https://github.com/fragcolor-xyz/nimtorch/releases/tag/v0.2.0) or build it (instructions under)
+Check what version of ATen/PyTorch we need in
+`conda/nimtorch/meta.yaml` - should be something like `aten ==2018.10.09`
 
-Make sure you have a recent Nim version and Nimble in your path
-* [Easy option: install nim with choosenim](https://github.com/dom96/choosenim)
-  * `choosenim devel`
+Note the version as you will need it in the next step
 
-`nimble install nimtorch`
+**Linux or OSX**
 
-*or*
+`conda create -n aten -c fragcolor aten==<version>`
 
-1. clone this repo
-2. `cd nimtorch`
-3. `nimble develop`
+or
+
+**WASM on a Linux system**
+
+`conda create -n aten -c fragcolor aten_wasm==<version>`
+
+activate aten environment
+
+`source activate aten`
+
+1. Make sure you have a recent Nim version in your path
+    * [Easy option: install nim with choosenim](https://github.com/dom96/choosenim)
+      * `choosenim devel`
+2. clone this repo
+3. `cd nimtorch`
+4. `nimble develop`
 
 *finally*
 
-1. set `$ATEN` environment variable to point to ATen's folder (see instructions below)
-2. (optional) run self test `nim cpp -r torch.nim`
+(optional) run self test `nim cpp -r torch.nim`
 
-## ATen build instructions
-
-*Windows was tested and works, instructions should be similar to linux.*
-
-**Linux**
-
-### Easy way
-
-*Build ATen libraries, in this example for a native linux system (will work on other distros as well, as long as core libs are up-to-date)*
-
-1. Make sure you have a system with docker installed
-2. `cd docker && cd docker-aten-native`
-3. `docker build -t docker_aten_native .`
-4. `docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash`
-5. `docker cp docker_aten_native-temp:/root/pytorch/aten/built/output output`
-6. `docker rm docker_aten_native-temp`
-7. Retrieve the *output* folder
-  
-### Hard way
-
-1. Check content of dockerfiles for requirements and cmake command
+### Windows support coming soon (already builds, just needs to be automated to publish with conda)
 
 ## Know issues
 
