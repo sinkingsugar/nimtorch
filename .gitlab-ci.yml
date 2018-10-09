@@ -45,6 +45,9 @@ build:aten:native:
       - docker/conda/aten_wasm/meta.yaml
   tags:
     - LINUX, DOCKER
+  only:
+    refs:
+      - schedules
 
 build:aten:wasm:
   stage: build
@@ -56,16 +59,17 @@ build:aten:wasm:
     - prepare:aten
   tags:
     - LINUX, DOCKER
+  only:
+    refs:
+      - schedules
   
 test:nimtorch:native:
   stage: test
   script:
     - nimble -y install fragments
-    - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
-    - rm -rf output
     - rm -rf nimcache
-    - docker cp docker_aten_native-temp:/root/pytorch/built/output output
-    - export ATEN=`pwd`/output
+    - conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*"`
+    - conda activate nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -r -o:test --nimcache:./nimcache torch
     - nim cpp -r -o:test --nimcache:./nimcache torch/nn.nim
@@ -75,8 +79,7 @@ test:nimtorch:native:
     - nim cpp -r -o:test --nimcache:./nimcache tests/test_xor.nim
     - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9]/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # write proper version also in conda nimtorch
   after_script:
-    - docker stop docker_aten_native-temp
-    - docker rm docker_aten_native-temp
+    - conda env remove -n nimtorch_testing || true
     - git clean -x -d -f
   dependencies:
     - build:aten:native
@@ -86,18 +89,15 @@ test:nimtorch:native:
       - conda/
       - docker/
   tags:
-    - LINUX, DOCKER, NIM, PYYAML
+    - LINUX, DOCKER, NIM, PYYAML, CONDA
 
 test:nimtorch:cuda:
   stage: test
   script:
     - nimble -y install fragments
-    - docker run --name docker_aten_cuda-temp -d docker_aten_native /bin/bash
-    - rm -rf output
     - rm -rf nimcache
-    - docker cp docker_aten_cuda-temp:/root/pytorch/built/output output
-    - export ATEN=`pwd`/output
-    - export CUDA_INCLUDE=/opt/cuda/include
+    - conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*"`
+    - conda activate nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn.nim
@@ -106,23 +106,20 @@ test:nimtorch:cuda:
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_autograd.nim
     - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_xor.nim
   after_script:
-    - docker stop docker_aten_cuda-temp
-    - docker rm docker_aten_cuda-temp
+    - conda env remove -n nimtorch_testing || true
     - git clean -x -d -f
   dependencies:
     - build:aten:native
   tags:
-    - LINUX, DOCKER, NIM, PYYAML, CUDA
+    - LINUX, DOCKER, NIM, PYYAML, CUDA, CONDA
 
 test:nimtorch:wasm:
   stage: test
   script:
     - nimble -y install fragments
-    - docker run --name docker_aten_wasm-temp -d docker_aten_wasm /bin/bash
-    - rm -rf output
     - rm -rf nimcache
-    - docker cp docker_aten_wasm-temp:/root/pytorch/built/output output
-    - export ATEN=`pwd`/output
+    - conda create -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]* | sed -r "s/aten/aten_wasm/g"`
+    - conda activate nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch
     - node test.js
@@ -133,13 +130,12 @@ test:nimtorch:wasm:
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_xor.nim
     - node test.js
   after_script:
-    - docker stop docker_aten_wasm-temp
-    - docker rm docker_aten_wasm-temp
+    - conda env remove -n nimtorch_testing || true
     - git clean -x -d -f
   dependencies:
     - build:aten:wasm
   tags:
-    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML
+    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML, CONDA
 
 deploy:nimtorch:
   stage: deploy
