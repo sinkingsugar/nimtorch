@@ -90,6 +90,7 @@ const customNames = [
   "conv_transpose1d",
   "conv_transpose2d",
   "conv_transpose3d",
+  "gru_cell",
 
   # We use our own gradient information
   "detach",

@@ -1,4 +1,4 @@
-import ../../torch, ../nn, functional
+import ../../../torch, ../modules, ../functional
 import math, strformat
 
 type
