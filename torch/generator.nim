@@ -600,6 +600,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           nimLikeStr = nimLikeStr.replacef(peg"'end'", "end_name")
 
           nimLikeStr = nimLikeStr.replace(".type()", ".getType()")
+          nimLikeStr = nimLikeStr.replace(".defined()", ".is_defined()")
 
           # replace any fwd result tuple names with proper prefix if necessary
           if info.returns.len > 1:
