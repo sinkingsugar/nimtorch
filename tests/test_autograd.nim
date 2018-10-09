@@ -11,9 +11,6 @@ var r = ((x + y) * y).sin() + (z - x).tanh()
 r.backward(torch.ones_like(r))
 print(x.grad)
 
-
-
-
 x = torch.tensor([0.9, 0.8, 0.7])
 x.requires_grad = true
 

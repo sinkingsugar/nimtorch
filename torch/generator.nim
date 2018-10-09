@@ -58,7 +58,7 @@ proc toNimType(typeName: string): string =
 
 proc validate(name: string): string =
   case name:
-    of "__add__": return "`+`"
+    of "linear", "bilinear": return name & "_internal"
 
     else:
       const invalidNames = ["div", "var", "end", "result", "to", "from"]
@@ -69,7 +69,7 @@ proc validate(name: string): string =
         result = result.replacef(re"^_*(.*?)_*$", "$1")
         if name.match(re"^__(.*)__$"): result &= "_builtin"
         else:
-          if name.match(re"^_(.*)$"): result &= "_internal"
+          if name.match(re"^_(.*)$"): result &= "_impl"
           if name.match(re"^(.*)_$"): result &= "_inplace"
   
 var generatedProcs = newSeq[ProcInfo]()
@@ -90,6 +90,10 @@ const customNames = [
   "conv_transpose1d",
   "conv_transpose2d",
   "conv_transpose3d",
+
+  # We use our own gradient information
+  "detach",
+  "detach_",
 ]
 
 # add some known procs we created in torch.nim, don't care about args

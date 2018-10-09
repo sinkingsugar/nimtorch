@@ -57,12 +57,12 @@ cpplibpaths(atenPath & """/lib64""")
 when defined wasm:
   type AInt64* = int64
 
-  {.passL: "-lATen_cpu".}
+  {.passL: "-lcaffe2 -lc10".}
 
 elif defined windows:
   type AInt64* = int64
 
-  cpplibs(atenPath & "/lib/ATen_cpu.lib")
+  cpplibs(atenPath & "/lib/caffe2.lib")
   cpplibs(atenPath & "/lib/cpuinfo.lib")
 
   when defined cuda:
@@ -76,12 +76,12 @@ elif defined windows:
 
     cpplibs(cudaLibPath & "/cuda.lib")
 
-else:
-  type AInt64* = clong
+elif defined osx:
+  type AInt64* = int64
 
-  {.passL: "-lATen_cpu -lcpuinfo -lsleef -pthread -fopenmp -lrt".}
-  when defined cuda:
-    {.passL: "-lATen_cuda -Wl,--no-as-needed -lcuda".}
+  {.passC: "-std=c++14".}
+
+  {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -lc10".}
   
   # Make sure we allow users to use rpath and be able find ATEN easier
   const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
@@ -94,4 +94,20 @@ else:
     proc ProfilerStart*(fname: cstring): int {.importc.}
     proc ProfilerStop*() {.importc.}
 
-    
+else:
+  type AInt64* = clong
+
+  {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -fopenmp -lrt -lc10".}
+  when defined cuda:
+    {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda".}
+  
+  # Make sure we allow users to use rpath and be able find ATEN easier
+  const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
+  {.passL: atenEnvRpath.}
+  {.passL: """-Wl,-rpath,'$ORIGIN'""".}
+
+  when defined gperftools:
+    {.passC: "-DWITHGPERFTOOLS -g".}
+    {.passL: "-lprofiler -g".}
+    proc ProfilerStart*(fname: cstring): int {.importc.}
+    proc ProfilerStop*() {.importc.}

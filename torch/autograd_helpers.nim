@@ -71,10 +71,10 @@ proc integer_upcast(self: Tensor; dtype: Option[AScalarType] = AScalarType.none)
   return self.toType(upcast_scalarType)
 
 proc sum*(self: Tensor; dim: openarray[int]; keepdim: bool = false; dtype: Option[AScalarType] = AScalarType.none): Tensor {.inline.} =
-  sum_internal(integer_upcast(self, dtype), dim, keepdim)
+  sum_impl(integer_upcast(self, dtype), dim, keepdim)
 
 proc sum*(self: Tensor; dtype: Option[AScalarType] = AScalarType.none): Tensor {.inline.} =
-  sum_internal(integer_upcast(self, dtype))
+  sum_impl(integer_upcast(self, dtype))
 
 # Sums `tensor` repeatedly to produce a tensor of shape `shape`.
 # Precondition: is_expandable_to(shape, tensor.sizes()) must be true
@@ -93,7 +93,7 @@ proc sum_to*(tensor: Tensor; shape: IntList): Tensor =
 proc mm*(self, mat2: Tensor): Tensor =
   if self.is_sparse:
     return mat2.getType().addmm(zeros([], mat2.getType()), self, mat2, 0.0, 1.0)
-  return mm_internal(self, mat2);
+  return mm_impl(self, mat2);
 
 proc matmul*(tensor1, tensor2: Tensor): Tensor =
   let
@@ -121,7 +121,7 @@ proc matmul*(tensor1, tensor2: Tensor): Tensor =
 
     # fold the batch into the first dimension
     let t1 = tensor1.contiguous().view([-1, size1[size1.len - 1]])
-    return unsafe_view_internal(t1.mm(t2), output_size)
+    return unsafe_view_impl(t1.mm(t2), output_size)
 
   elif (dim_tensor1 >= 1 and dim_tensor2 >= 1) and (dim_tensor1 >= 3 or dim_tensor2 >= 3):
     # We are multiplying b1 x n x m1 by x2 x m2 x p (where b1 can be a list);
@@ -154,7 +154,7 @@ proc matmul*(tensor1, tensor2: Tensor): Tensor =
     if dim_tensor1 > 1: output_shape.add(n)
     if dim_tensor2 > 1: output_shape.add(p)
 
-    return unsafe_view_internal(tensor1_expanded.bmm(tensor2_expanded), output_shape)
+    return unsafe_view_impl(tensor1_expanded.bmm(tensor2_expanded), output_shape)
 
   raise newException(ValueError, fmt"both arguments to matmul need to be at least 1D, but they are {dim_tensor1}D and {dim_tensor2}D")
 

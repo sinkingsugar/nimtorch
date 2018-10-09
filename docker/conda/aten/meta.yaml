@@ -1,0 +1,10 @@
+package:
+  name: aten
+  version: "2018.10.09"
+
+source:
+  path: ./
+
+build:
+  script_env:
+    - ATEN

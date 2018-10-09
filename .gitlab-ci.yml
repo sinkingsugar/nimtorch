@@ -1,86 +1,169 @@
 # used by our internal gitlab server
 
+stages:
+  - prepare
+  - build
+  - test
+  - deploy
+
+prepare:aten:
+  stage: prepare
+  script:
+    - rm -rf _pytorch
+    - mkdir _pytorch
+    - cd _pytorch
+    - git clone -b fragcolor-devel https://$GITHUB_LOGIN@github.com/fragcolor-xyz/pytorch.git
+    - cd pytorch
+    - git remote add upstream https://github.com/pytorch/pytorch.git
+    - git pull upstream master --no-edit
+    - git push
+    - git rev-parse HEAD > ../../torch/commit.txt
+  artifacts:
+    paths:
+      - torch/commit.txt
+  tags:
+    - LINUX
+  only:
+    refs:
+      - schedules
+
 build:aten:native:
   stage: build
   script:
-    - cd docker/docker-aten-native
-    - docker build -t docker_aten_native .
+    - cd docker
+    - date +%Y.%m.%d > version.txt
+    - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9]/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9]/`cat version.txt`/g" conda/aten_wasm/meta.yaml
+    - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+  dependencies:
+    - prepare:aten
+  artifacts:
+    paths:
+      - torch/commit.txt
+      - docker/version.txt
+      - docker/conda/aten/meta.yaml
+      - docker/conda/aten_wasm/meta.yaml
   tags:
     - LINUX, DOCKER
+  only:
+    refs:
+      - schedules
 
 build:aten:wasm:
   stage: build
   script:
-    - cd docker/docker-aten-wasm
-    - docker build -t docker_aten_wasm .
+    - cd docker
+    - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9]/`date +%Y.%m.%d`/g" conda/aten_wasm/meta.yaml
+    - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+  dependencies:
+    - prepare:aten
   tags:
     - LINUX, DOCKER
+  only:
+    refs:
+      - schedules
   
 test:nimtorch:native:
   stage: test
+  before_script:
+    - export PATH="$PATH:$HOME/miniconda3/bin"
+    - conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
-    - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
-    - docker cp docker_aten_native-temp:/root/pytorch/aten/built/output output
-    - export ATEN=`pwd`/output
-    - nim cpp -r -o:test torch/generator.nim
-    - nim cpp -r -o:test torch
-    - nim cpp -r -o:test torch/nn.nim
-    - nim cpp -r -o:test torch/nn/init.nim
-    - nim cpp -r -o:test torch/nn/functional.nim
-    - nim cpp -r -o:test tests/test_autograd.nim    
-    - nim cpp -r -o:test tests/test_xor.nim   
+    - rm -rf nimcache
+    - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*" | sed -r "s/aten /aten/g"`
+    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
+    - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
+    - nim cpp -r -o:test --nimcache:./nimcache torch
+    - nim cpp -r -o:test --nimcache:./nimcache torch/nn.nim
+    - nim cpp -r -o:test --nimcache:./nimcache torch/nn/init.nim
+    - nim cpp -r -o:test --nimcache:./nimcache torch/nn/functional.nim
+    - nim cpp -r -o:test --nimcache:./nimcache tests/test_autograd.nim
+    - nim cpp -r -o:test --nimcache:./nimcache tests/test_xor.nim
+    - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9]/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # write proper version also in conda nimtorch
   after_script:
-    - docker stop docker_aten_native-temp
-    - docker rm docker_aten_native-temp
+    - conda env remove -n nimtorch_testing || true
+    - git clean -x -d -f
   dependencies:
     - build:aten:native
+  artifacts:
+    paths:
+      - torch/
+      - conda/
+      - docker/
   tags:
-    - LINUX, DOCKER, NIM, PYYAML
+    - LINUX, DOCKER, NIM, PYYAML, CONDA
 
 test:nimtorch:cuda:
   stage: test
+  before_script:
+    - export PATH="$PATH:$HOME/miniconda3/bin"
+    - conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
-    - docker run --name docker_aten_native-temp -d docker_aten_native /bin/bash
-    - docker cp docker_aten_native-temp:/root/pytorch/aten/built/output output
-    - export ATEN=`pwd`/output
-    - export CUDA_INCLUDE=/opt/cuda/include
-    - nim cpp -r -o:test torch/generator.nim
-    - nim cpp -r -o:test -d:cuda torch
-    - nim cpp -r -o:test -d:cuda torch/nn.nim
-    - nim cpp -r -o:test -d:cuda torch/nn/init.nim
-    - nim cpp -r -o:test -d:cuda torch/nn/functional.nim
-    - nim cpp -r -o:test -d:cuda tests/test_autograd.nim    
-    - nim cpp -r -o:test -d:cuda tests/test_xor.nim   
+    - rm -rf nimcache
+    - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*" | sed -r "s/aten /aten/g"`
+    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
+    - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn.nim
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn/init.nim
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn/functional.nim
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_autograd.nim
+    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_xor.nim
   after_script:
-    - docker stop docker_aten_native-temp
-    - docker rm docker_aten_native-temp
+    - conda env remove -n nimtorch_testing || true
+    - git clean -x -d -f
   dependencies:
     - build:aten:native
   tags:
-    - LINUX, DOCKER, NIM, PYYAML, CUDA
+    - LINUX, DOCKER, NIM, PYYAML, CUDA, CONDA
 
 test:nimtorch:wasm:
   stage: test
+  before_script:
+    - export PATH="$PATH:$HOME/miniconda3/bin"
+    - conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
-    - docker run --name docker_aten_wasm-temp -d docker_aten_wasm /bin/bash
-    - docker cp docker_aten_wasm-temp:/root/pytorch/aten/built/output output
-    - export ATEN=`pwd`/output
-    - nim cpp -r -o:test torch/generator.nim
-    - nim cpp -d:wasm -d:release -o:test.js torch
+    - rm -rf nimcache
+    - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*" | sed -r "s/aten /aten_wasm/g"`
+    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
+    - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
+    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch
     - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js torch/nn.nim
+    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch/nn.nim
     - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js tests/test_autograd.nim
+    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_autograd.nim
     - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js tests/test_xor.nim
+    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_xor.nim
     - node test.js
   after_script:
-    - docker stop docker_aten_wasm-temp
-    - docker rm docker_aten_wasm-temp
+    - conda env remove -n nimtorch_testing || true
+    - git clean -x -d -f
   dependencies:
     - build:aten:wasm
   tags:
-    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML
+    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML, CONDA
+
+deploy:nimtorch:
+  stage: deploy
+  before_script:
+    - git config --global user.email 'giovanni@fragcolor.xyz'
+    - git config --global user.name 'Giovanni'
+  script:
+    - git stash
+    - git checkout $CI_COMMIT_REF_NAME
+    - git reset --hard origin/$CI_COMMIT_REF_NAME
+    - git stash pop || true # allow failure
+    - git commit --allow-empty -a -m "PyTorch upstream nightly success"
+    - git push ssh://git@git.fragcolor.xyz:27030/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
+    - git push https://$GITHUB_LOGIN@github.com/fragcolor-xyz/nimtorch.git $CI_COMMIT_REF_NAME
+    - curl -X POST -F token=$TRIGGER_TOKEN -F "ref=$CI_COMMIT_REF_NAME" -F "variables[TRIGGER]=CondaDeploy" -F "variables[PYTORCH_COMMIT]=`cat torch/commit.txt`" -F "variables[NIMTORCH_COMMIT]=`git rev-parse HEAD`" https://git.fragcolor.xyz/api/v4/projects/32/trigger/pipeline
+  dependencies:
+    - test:nimtorch:native
+  tags:
+    - LINUX
+  only:
+    refs:
+      - schedules
