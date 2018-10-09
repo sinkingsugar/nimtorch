@@ -58,10 +58,6 @@ let
   hy = newgate + inputgate * (hidden - newgate)
 ```
 
-Also python is a complete mess...
-
-![python mess](https://camo.githubusercontent.com/953249a42e8fe655a8c1fdfe80744a42b4d25723/68747470733a2f2f696d67732e786b63642e636f6d2f636f6d6963732f707974686f6e5f656e7669726f6e6d656e742e706e67)
-
 ## Getting started
 
 ### Super easy, using conda
