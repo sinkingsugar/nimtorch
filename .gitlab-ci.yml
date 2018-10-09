@@ -65,6 +65,9 @@ build:aten:wasm:
   
 test:nimtorch:native:
   stage: test
+  before_script:
+    - source deactivate || true
+    - conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
     - rm -rf nimcache
@@ -94,6 +97,9 @@ test:nimtorch:native:
 
 test:nimtorch:cuda:
   stage: test
+  before_script:
+    - source deactivate || true
+    - conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
     - rm -rf nimcache
@@ -117,6 +123,9 @@ test:nimtorch:cuda:
 
 test:nimtorch:wasm:
   stage: test
+  before_script:
+    - source deactivate || true
+    - conda env remove -n nimtorch_testing || true
   script:
     - nimble -y install fragments
     - rm -rf nimcache
