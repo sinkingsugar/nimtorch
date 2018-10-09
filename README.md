@@ -89,13 +89,13 @@ Note the version as you will need it in the next step
 
 **Linux or macOS**
 
-`conda create -n aten -c fragcolor aten==<version>`
+`conda create -n aten -c fragcolor aten=<version>`
 
 or
 
 **WASM on a Linux system**
 
-`conda create -n aten -c fragcolor aten_wasm==<version>`
+`conda create -n aten -c fragcolor aten_wasm=<version>`
 
 activate aten environment
 
