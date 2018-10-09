@@ -17,7 +17,7 @@ proc MSELoss*(reduction: Reduction = Reduction.ElementwiseMean): LossFunction =
 
 type
   Module* = ref object of RootObj
-    forward: proc(input: varargs[Tensor]): Tensor
+    forward*: proc(input: varargs[Tensor]): Tensor
 
   LinearModuleBase* = ref object of Module
     in_features: int
@@ -38,6 +38,8 @@ method cuda*(m: Module) {.base.} = discard
 
 method parameters*(self: Module): seq[Tensor] {.base.} = discard
 
+method reset_parameters*(m: Module) = discard
+
 proc zero_grad*(self: Module) =
   when not defined inference:
     for param in self.parameters():
@@ -48,7 +50,7 @@ proc zero_grad*(self: Module) =
   else:
     raiseAssert("zero_grad is not supported in inference mode")
 
-method reset_parameters*(m: LinearModuleBase) {.base.} =
+method reset_parameters*(m: LinearModuleBase) =
   m.weight = kaiming_uniform(m.weight, a = math.sqrt(5.float))
   
   if not m.bias.isNil:
