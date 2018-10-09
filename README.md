@@ -67,6 +67,7 @@ Also python is a complete mess...
 ### Super easy, using conda
 
 `conda create -n nimtorch -c fragcolor nimtorch`
+
 `source activate nimtorch`
 
 This will install: nim and ATen binaries, fragments and nimtorch all in one command, nothing else needed.
