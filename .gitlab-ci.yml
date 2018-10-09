@@ -46,7 +46,7 @@ build:aten:native:
   tags:
     - LINUX, DOCKER
 
-.build:aten:wasm:
+build:aten:wasm:
   stage: build
   script:
     - cd docker
@@ -88,7 +88,7 @@ test:nimtorch:native:
   tags:
     - LINUX, DOCKER, NIM, PYYAML
 
-.test:nimtorch:cuda:
+test:nimtorch:cuda:
   stage: test
   script:
     - nimble -y install fragments
@@ -114,7 +114,7 @@ test:nimtorch:native:
   tags:
     - LINUX, DOCKER, NIM, PYYAML, CUDA
 
-.test:nimtorch:wasm:
+test:nimtorch:wasm:
   stage: test
   script:
     - nimble -y install fragments
