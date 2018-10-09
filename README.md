@@ -66,6 +66,8 @@ Also python is a complete mess...
 
 ### Super easy, using conda
 
+*Linux and macOS*
+
 `conda create -n nimtorch -c fragcolor nimtorch`
 
 `source activate nimtorch`
@@ -82,12 +84,14 @@ Test with with something like:
 
 ### Semi manual way
 
+*Linux and macOS*
+
 Check what version of ATen/PyTorch we need in
 `conda/nimtorch/meta.yaml` - should be something like `aten ==2018.10.09`
 
 Note the version as you will need it in the next step
 
-**Linux or OSX**
+**Linux or macOS**
 
 `conda create -n aten -c fragcolor aten==<version>`
 
@@ -101,7 +105,7 @@ activate aten environment
 
 `source activate aten`
 
-1. Make sure you have a recent Nim version in your path
+1. Make sure you have a recent Nim and Nimble version in your path
     * [Easy option: install nim with choosenim](https://github.com/dom96/choosenim)
       * `choosenim devel`
 2. clone this repo
