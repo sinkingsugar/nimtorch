@@ -1931,24 +1931,6 @@ proc acos_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, discardable.}
 proc acos_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
   check: self.tensor.atenMethod("acos_").to(void); self
 
-proc avg_pool1d*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; ceil_mode: bool = false; count_include_pad: bool = true): Tensor {.inline.} = 
-  check: ty[].atenMethod("avg_pool1d", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), ceil_mode, count_include_pad).to(ATensor).newTensor()
-
-proc avg_pool1d*(self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; ceil_mode: bool = false; count_include_pad: bool = true): Tensor {.inline.} = 
-  check: atenFunction("at::avg_pool1d", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), ceil_mode, count_include_pad).to(ATensor).newTensor()
-
-proc adaptive_avg_pool1d*(ty: TensorType; self: Tensor; output_size: openarray[int]): Tensor {.inline.} = 
-  check: ty[].atenMethod("adaptive_avg_pool1d", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
-
-proc adaptive_avg_pool1d*(self: Tensor; output_size: openarray[int]): Tensor {.inline.} = 
-  check: atenFunction("at::adaptive_avg_pool1d", self.tensor, output_size.toAIntList()).to(ATensor).newTensor()
-
-proc adaptive_max_pool1d*(ty: TensorType; self: Tensor; output_size: openarray[int]): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
-  check: ty[].atenMethod("adaptive_max_pool1d", self.tensor, output_size.toAIntList()).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-
-proc adaptive_max_pool1d*(self: Tensor; output_size: openarray[int]): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
-  check: atenFunction("at::adaptive_max_pool1d", self.tensor, output_size.toAIntList()).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-
 proc add*(ty: TensorType; self: Tensor; other: Tensor; alpha: float = 1): Tensor {.inline.}
 
 proc add*(self: Tensor; other: Tensor; alpha: float = 1): Tensor {.inline.}
@@ -3042,18 +3024,6 @@ proc max_values*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false):
 
 proc max_values*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
   check: self.tensor.atenMethod("max_values", dim, keepdim).to(ATensor).newTensor()
-
-proc max_pool1d_with_indices*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
-  check: ty[].atenMethod("max_pool1d_with_indices", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-
-proc max_pool1d_with_indices*(self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
-  check: atenFunction("at::max_pool1d_with_indices", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-
-proc max_pool1d*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("max_pool1d", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(ATensor).newTensor()
-
-proc max_pool1d*(self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): Tensor {.inline.} = 
-  check: atenFunction("at::max_pool1d", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(ATensor).newTensor()
 
 proc max_pool2d*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): Tensor {.inline.} = 
   check: ty[].atenMethod("max_pool2d", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(ATensor).newTensor()

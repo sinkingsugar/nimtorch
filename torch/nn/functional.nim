@@ -50,6 +50,23 @@ proc conv_transpose2d*(input, weight, bias: Tensor; stride: openarray[int] = [1,
 proc conv_transpose3d*(input, weight, bias: Tensor; stride: openarray[int] = [1, 1, 1]; padding: openarray[int] = [0, 0, 0]; output_padding: openarray[int] = [0, 0, 0], groups: int = 1, dilation: openarray[int] = [1, 1, 1]): Tensor =
   convolution(input, weight, bias, stride, padding, dilation, true, output_padding, groups)
 
+proc max_pool1d_with_indices*(input: Tensor; kernel_size: int = 0; stride: int = kernel_size; padding: int = 0; dilation: int = 1; ceil_mode = false): tuple[output, indices: Tensor] =
+  let (output, indices) = max_pool2d_with_indices(input.unsqueeze(2), [1, kernel_size], [1, stride], [0, padding], [1, dilation], ceil_mode)
+  return (output.squeeze(2), indices.squeeze(2))
+ 
+proc max_pool1d*(input: Tensor; kernel_size: int = 0; stride: int = kernel_size; padding: int = 0; dilation: int = 1; ceil_mode = false): Tensor =
+  max_pool1d_with_indices(input, kernel_size, stride, padding, dilation, ceil_mode)[0]
+
+proc adaptive_max_pool1d*(input: Tensor; output_size: int): tuple[output, indices: Tensor] =
+  let (output, indices) = adaptive_max_pool2d(input.unsqueeze(2), [1, output_size])
+  return (output.squeeze(2), indices.squeeze(2))
+
+proc avg_pool1d*(input: Tensor; kernel_size: int = 0; stride: int = kernel_size; padding: int = 0; ceil_mode = false; count_include_pad: bool = true): Tensor =
+  avg_pool2d(input.unsqueeze(2), [1, kernel_size], [1, stride], [0, padding], ceil_mode, count_include_pad)
+
+proc adaptive_avg_pool1d*(input: Tensor; output_size: int): Tensor =
+  adaptive_avg_pool2d(input.unsqueeze(2), [1, output_size])
+  
 proc gru_cell*(input, hidden, w_ih, w_hh, b_ih, b_hh: Tensor): Tensor =
    
   # Change from PyTorch: We handle additionsl dimension, so stacked models are supported
