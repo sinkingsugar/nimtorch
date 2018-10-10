@@ -91,7 +91,7 @@ const customNames = [
   "conv_transpose1d",
   "conv_transpose2d",
   "conv_transpose3d",
-  
+
   "gru_cell",
 
   "max_pool1d",
@@ -99,6 +99,15 @@ const customNames = [
   "adaptive_max_pool1d",
   "avg_pool1d",
   "adaptive_avg_pool1d",
+
+  "dropout",
+  "alpha_dropout",
+  "feature_dropout",
+  "feature_alpha_dropout",
+  "dropout_",
+  "alpha_dropout_",
+  "feature_dropout_",
+  "feature_alpha_dropout_",
 
   # We use our own gradient information
   "detach",
