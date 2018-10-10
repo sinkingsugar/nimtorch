@@ -1,10 +1,19 @@
 FROM base/devel
 
 RUN pacman -Syu --noconfirm
-RUN pacman -S --noconfirm git cmake python python-pip mpfr gmp emscripten
+RUN pacman -S --noconfirm git cmake python python-pip mpfr gmp emscripten wget
 
 RUN pip install pyyaml
 RUN pip install typing
+
+RUN cd && \
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+
+RUN cd && \
+chmod +x Miniconda3-latest-Linux-x86_64.sh && \
+./Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda3
+
+RUN /root/miniconda3/bin/conda install conda-build anaconda-client
 
 ARG PYTORCH_COMMIT
 
@@ -39,18 +48,7 @@ cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
 
 COPY conda /root/conda
 
-RUN pacman -S --noconfirm wget
-
-RUN cd && \
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
-
-RUN cd && \
-chmod +x Miniconda3-latest-Linux-x86_64.sh && \
-./Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda3
-
 ARG UPLOAD_ATEN
-
-RUN test -z "${UPLOAD_ATEN}" || /root/miniconda3/bin/conda install conda-build anaconda-client && true
 
 RUN cd && cd conda && \
 export PATH=$PATH:/root/miniconda3/bin && \
