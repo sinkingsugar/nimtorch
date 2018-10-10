@@ -1861,54 +1861,6 @@ proc masked_scale_impl*(ty: TensorType; self: Tensor; mask: Tensor; scale: float
 proc masked_scale_impl*(self: Tensor; mask: Tensor; scale: float64): Tensor {.inline.} = 
   check: atenFunction("at::_masked_scale", self.tensor, mask.tensor, scale).to(ATensor).newTensor()
 
-proc dropout*(ty: TensorType; input: Tensor; p: float64; train: bool): Tensor {.inline.} = 
-  check: ty[].atenMethod("dropout", input.tensor, p, train).to(ATensor).newTensor()
-
-proc dropout*(input: Tensor; p: float64; train: bool): Tensor {.inline.} = 
-  check: atenFunction("at::dropout", input.tensor, p, train).to(ATensor).newTensor()
-
-proc dropout_inplace*(ty: TensorType; self: Tensor; p: float64; train: bool): Tensor {.inline, discardable.} = 
-  check: ty[].atenMethod("dropout_", self.tensor, p, train).to(void); self
-
-proc dropout_inplace*(self: Tensor; p: float64; train: bool): Tensor {.inline, discardable.} = 
-  check: atenFunction("at::dropout_", self.tensor, p, train).to(void); self
-
-proc feature_dropout*(ty: TensorType; input: Tensor; p: float64; train: bool): Tensor {.inline.} = 
-  check: ty[].atenMethod("feature_dropout", input.tensor, p, train).to(ATensor).newTensor()
-
-proc feature_dropout*(input: Tensor; p: float64; train: bool): Tensor {.inline.} = 
-  check: atenFunction("at::feature_dropout", input.tensor, p, train).to(ATensor).newTensor()
-
-proc feature_dropout_inplace*(ty: TensorType; self: Tensor; p: float64; train: bool): Tensor {.inline, discardable.} = 
-  check: ty[].atenMethod("feature_dropout_", self.tensor, p, train).to(void); self
-
-proc feature_dropout_inplace*(self: Tensor; p: float64; train: bool): Tensor {.inline, discardable.} = 
-  check: atenFunction("at::feature_dropout_", self.tensor, p, train).to(void); self
-
-proc alpha_dropout*(ty: TensorType; input: Tensor; p: float64; train: bool): Tensor {.inline.} = 
-  check: ty[].atenMethod("alpha_dropout", input.tensor, p, train).to(ATensor).newTensor()
-
-proc alpha_dropout*(input: Tensor; p: float64; train: bool): Tensor {.inline.} = 
-  check: atenFunction("at::alpha_dropout", input.tensor, p, train).to(ATensor).newTensor()
-
-proc alpha_dropout_inplace*(ty: TensorType; self: Tensor; p: float64; train: bool): Tensor {.inline, discardable.} = 
-  check: ty[].atenMethod("alpha_dropout_", self.tensor, p, train).to(void); self
-
-proc alpha_dropout_inplace*(self: Tensor; p: float64; train: bool): Tensor {.inline, discardable.} = 
-  check: atenFunction("at::alpha_dropout_", self.tensor, p, train).to(void); self
-
-proc feature_alpha_dropout*(ty: TensorType; input: Tensor; p: float64; train: bool): Tensor {.inline.} = 
-  check: ty[].atenMethod("feature_alpha_dropout", input.tensor, p, train).to(ATensor).newTensor()
-
-proc feature_alpha_dropout*(input: Tensor; p: float64; train: bool): Tensor {.inline.} = 
-  check: atenFunction("at::feature_alpha_dropout", input.tensor, p, train).to(ATensor).newTensor()
-
-proc feature_alpha_dropout_inplace*(ty: TensorType; self: Tensor; p: float64; train: bool): Tensor {.inline, discardable.} = 
-  check: ty[].atenMethod("feature_alpha_dropout_", self.tensor, p, train).to(void); self
-
-proc feature_alpha_dropout_inplace*(self: Tensor; p: float64; train: bool): Tensor {.inline, discardable.} = 
-  check: atenFunction("at::feature_alpha_dropout_", self.tensor, p, train).to(void); self
-
 proc abs*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
 proc abs*(self: Tensor): Tensor {.inline.}
