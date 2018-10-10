@@ -83,7 +83,7 @@ Test with with something like:
 *Linux and macOS*
 
 Check what version of ATen/PyTorch we need in
-`conda/nimtorch/meta.yaml` - should be something like `aten ==2018.10.09`
+`conda/nimtorch/meta.yaml` - should be something like `aten ==2018.10.10`
 
 Note the version as you will need it in the next step
 
