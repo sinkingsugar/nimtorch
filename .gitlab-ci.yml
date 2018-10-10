@@ -78,7 +78,9 @@ build:aten:wasm:
   stage: build
   script:
     - cd docker
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`date +%Y.%m.%d.$CI_PIPELINE_ID`/g" conda/aten_wasm/meta.yaml
+    - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull base/devel
     - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
@@ -86,7 +88,7 @@ build:aten:wasm:
     - prepare:aten
   artifacts:
     paths:
-      - conda/nimtorch/meta.yaml
+      - conda/nimtorch/meta.yaml # only this is needed for wasm build
   tags:
     - LINUX, DOCKER
   only:
