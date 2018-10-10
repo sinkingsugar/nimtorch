@@ -72,7 +72,7 @@ This will install: nim and ATen binaries, fragments and nimtorch all in one comm
 
 Make sure you use a recent version of conda and have gcc installed in your system.
 
-Also make sure your system is recent (ubuntu 18.04 reference) and you have cuda 9.2 at least installed (if you need cuda).
+Also make sure your system is recent (ubuntu 18.04 reference) and you have cuda 9.2 installed (if you need cuda, more cuda versions coming, please open a issue if you need a specific version).
 
 Test with with something like:
 
