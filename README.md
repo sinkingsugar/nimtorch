@@ -102,9 +102,9 @@ activate aten environment
 `source activate aten`
 
 1. Make sure you have a recent Nim and Nimble version in your path
-    * [Easy option: install nim with choosenim](https://github.com/dom96/choosenim)
-      * `choosenim devel`
-2. clone this repo
+  * [Easy option: install nim with choosenim](https://github.com/dom96/choosenim)
+    * `choosenim devel`
+2. clone the **release** branch `git clone -b release https://github.com/fragcolor-xyz/nimtorch.git`
 3. `cd nimtorch`
 4. `nimble develop`
 
