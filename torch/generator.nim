@@ -81,6 +81,7 @@ const customNames = [
   "mm",
   "contiguous",
   "chunk",
+
   "convolution",
   "_convolution",
   "_convolution_nogroup",
@@ -90,7 +91,14 @@ const customNames = [
   "conv_transpose1d",
   "conv_transpose2d",
   "conv_transpose3d",
+  
   "gru_cell",
+
+  "max_pool1d",
+  "max_pool1d_with_indices",
+  "adaptive_max_pool1d",
+  "avg_pool1d",
+  "adaptive_avg_pool1d",
 
   # We use our own gradient information
   "detach",
