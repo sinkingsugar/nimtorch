@@ -74,12 +74,19 @@ test:nimtorch:native:
     - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*" | sed -r "s/aten /aten/g"`
     - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
+    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -r -o:test --nimcache:./nimcache torch
+    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache torch
     - nim cpp -r -o:test --nimcache:./nimcache torch/nn.nim
+    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache torch/nn.nim
     - nim cpp -r -o:test --nimcache:./nimcache torch/nn/init.nim
+    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache torch/nn/init.nim
     - nim cpp -r -o:test --nimcache:./nimcache torch/nn/functional.nim
+    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache torch/nn/functional.nim
     - nim cpp -r -o:test --nimcache:./nimcache tests/test_autograd.nim
+    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache tests/test_autograd.nim
     - nim cpp -r -o:test --nimcache:./nimcache tests/test_xor.nim
+    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache tests/test_xor.nim
     - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9]/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # write proper version also in conda nimtorch
   after_script:
     - conda env remove -n nimtorch_testing || true
@@ -92,7 +99,7 @@ test:nimtorch:native:
       - conda/
       - docker/
   tags:
-    - LINUX, DOCKER, NIM, PYYAML, CONDA
+    - LINUX, DOCKER, NIM, PYYAML, CONDA, CLANG
 
 test:nimtorch:cuda:
   stage: test
