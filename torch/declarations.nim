@@ -823,11 +823,9 @@ proc pow*(ty: TensorType; self: Tensor; exponent: Tensor): Tensor {.inline.}
 
 proc pow*(self: Tensor; exponent: Tensor): Tensor {.inline.}
 
-proc pow*(ty: TensorType; base: float; self: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("pow", base, self.tensor).to(ATensor).newTensor()
+proc pow*(ty: TensorType; base: float; self: Tensor): Tensor {.inline.}
 
-proc pow*(base: float; self: Tensor): Tensor {.inline.} = 
-  check: atenFunction("at::pow", base, self.tensor).to(ATensor).newTensor()
+proc pow*(base: float; self: Tensor): Tensor {.inline.}
 
 proc pow_inplace*(ty: TensorType; self: Tensor; exponent: float): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("pow_", self.tensor, exponent).to(void); self
