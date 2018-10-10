@@ -1,5 +1,5 @@
 import fragments/ffi/cpp as cpp
-import sequtils, strformat, options
+import sequtils, strformat, options, math
 
 proc chunk*(self: Tensor; chunks, dim: int): seq[Tensor] =
   assert(self.dim() > 0, "chunk expects at least a 1-dimensional tensor");
@@ -192,6 +192,9 @@ proc pow_backward_self*(grad, self, exponent: Tensor): Tensor {.inline, noinit.}
 
 proc pow_backward_exponent*(grad, self, exponent: Tensor): Tensor {.inline, noinit.} =
   return grad * pow(self, exponent) * self.log()
+
+proc pow_backward_exponent*(grad: Tensor; self: float; exponent: Tensor): Tensor {.inline, noinit.} =
+  return grad * pow(self, exponent) * ln(self)
 
 proc atan2_backward*(grad, self, other: Tensor; outputMask: StdArray[bool, 2]): (Tensor, Tensor) {.inline, noinit.} =
   let recip = (self * self + other * other).reciprocal()
