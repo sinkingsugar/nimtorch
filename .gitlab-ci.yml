@@ -34,6 +34,7 @@ build:aten:native:
     - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml
     - docker pull nvidia/cuda:9.2-devel-ubuntu18.04
     - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
@@ -44,6 +45,7 @@ build:aten:native:
       - docker/version.txt
       - docker/conda/aten/meta.yaml
       - docker/conda/aten_wasm/meta.yaml
+      - conda/nimtorch/meta.yaml
   tags:
     - LINUX, DOCKER
   only:
@@ -89,7 +91,6 @@ test:nimtorch:native:
     - nim cpp -r --cc:clang -o:test --nimcache:./nimcache tests/test_autograd.nim
     - nim cpp -r -o:test --nimcache:./nimcache tests/test_xor.nim
     - nim cpp -r --cc:clang -o:test --nimcache:./nimcache tests/test_xor.nim
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # write proper version also in conda nimtorch
   after_script:
     - git clean -x -d -f
   dependencies:
