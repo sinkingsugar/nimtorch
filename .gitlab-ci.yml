@@ -14,7 +14,7 @@ prepare:aten:merged:
     - git remote add upstream https://github.com/pytorch/pytorch.git
     - git pull upstream master --no-edit
     - git push
-    - git rev-parse HEAD > ../../torch/commit.txt
+    - git rev-parse HEAD > ../torch/commit.txt
   artifacts:
     paths:
       - torch/commit.txt
@@ -31,7 +31,7 @@ prepare:aten:fast:
   script:
     - git clone -b fragcolor-devel https://$GITHUB_LOGIN@github.com/fragcolor-xyz/pytorch.git
     - cd pytorch
-    - git rev-parse HEAD > ../../torch/commit.txt
+    - git rev-parse HEAD > ../torch/commit.txt
   artifacts:
     paths:
       - torch/commit.txt
