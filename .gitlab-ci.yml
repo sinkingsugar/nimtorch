@@ -32,8 +32,8 @@ build:aten:native:
   script:
     - cd docker
     - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
-    - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
-    - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten
@@ -53,7 +53,7 @@ build:aten:wasm:
   stage: build
   script:
     - cd docker
-    - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`date +%Y.%m.%d.$CI_PIPELINE_ID`/g" conda/aten_wasm/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`date +%Y.%m.%d.$CI_PIPELINE_ID`/g" conda/aten_wasm/meta.yaml
     - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten
@@ -87,7 +87,7 @@ test:nimtorch:native:
     - nim cpp -r --cc:clang -o:test --nimcache:./nimcache tests/test_autograd.nim
     - nim cpp -r -o:test --nimcache:./nimcache tests/test_xor.nim
     - nim cpp -r --cc:clang -o:test --nimcache:./nimcache tests/test_xor.nim
-    - sed -i "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # write proper version also in conda nimtorch
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # write proper version also in conda nimtorch
   after_script:
     - git clean -x -d -f
   dependencies:
