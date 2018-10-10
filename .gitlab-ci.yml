@@ -188,3 +188,6 @@ deploy:nimtorch:
   tags:
     - LINUX
   when: manual
+  except:
+    refs:
+      - schedules
