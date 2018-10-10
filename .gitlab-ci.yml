@@ -6,12 +6,9 @@ stages:
   - test
   - deploy
 
-prepare:aten:
+prepare:aten:merged:
   stage: prepare
   script:
-    - rm -rf _pytorch
-    - mkdir _pytorch
-    - cd _pytorch
     - git clone -b fragcolor-devel https://$GITHUB_LOGIN@github.com/fragcolor-xyz/pytorch.git
     - cd pytorch
     - git remote add upstream https://github.com/pytorch/pytorch.git
@@ -29,12 +26,9 @@ prepare:aten:
     variables:
       - $FETCH_PYTORCH == "true"
 
-prepare:aten:
+prepare:aten:fast:
   stage: prepare
   script:
-    - rm -rf _pytorch
-    - mkdir _pytorch
-    - cd _pytorch
     - git clone -b fragcolor-devel https://$GITHUB_LOGIN@github.com/fragcolor-xyz/pytorch.git
     - cd pytorch
     - git rev-parse HEAD > ../../torch/commit.txt
@@ -60,7 +54,8 @@ build:aten:native:
     - docker pull nvidia/cuda:9.2-devel-ubuntu18.04
     - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
-    - prepare:aten
+    - prepare:aten:merged
+    - prepare:aten:fast
   artifacts:
     paths:
       - torch/commit.txt
@@ -85,7 +80,8 @@ build:aten:wasm:
     - docker pull base/devel
     - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
-    - prepare:aten
+    - prepare:aten:merged
+    - prepare:aten:fast
   artifacts:
     paths:
       - conda/nimtorch/meta.yaml # only this is needed for wasm build
@@ -187,13 +183,21 @@ deploy:nimtorch:
     - git config --global user.email 'giovanni@fragcolor.xyz'
     - git config --global user.name 'Giovanni'
   script:
+    # Merge on current branch
     - git stash
     - git checkout $CI_COMMIT_REF_NAME
     - git reset --hard origin/$CI_COMMIT_REF_NAME
     - git stash pop || true # allow failure
     - git commit --allow-empty -a -m "PyTorch upstream nightly success"
     - git push ssh://git@git.fragcolor.xyz:27030/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
+    # Merge master on release
+    - git checkout release
+    - git reset --hard origin/release
+    - git merge master
+    - git push ssh://git@git.fragcolor.xyz:27030/fragcolor/nimtorch.git release
+    # Also push release on github
     - git push https://$GITHUB_LOGIN@github.com/fragcolor-xyz/nimtorch.git release
+    # Finally trigger conda automations, aka: windows and macOS release builds
     - curl -X POST -F token=$TRIGGER_TOKEN -F "ref=$CI_COMMIT_REF_NAME" -F "variables[TRIGGER]=CondaDeploy" -F "variables[PYTORCH_COMMIT]=`cat torch/commit.txt`" -F "variables[NIMTORCH_COMMIT]=`git rev-parse HEAD`" https://git.fragcolor.xyz/api/v4/projects/32/trigger/pipeline
   dependencies:
     - test:nimtorch:native
