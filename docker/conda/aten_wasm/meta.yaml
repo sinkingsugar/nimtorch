@@ -6,5 +6,6 @@ source:
   path: ./
 
 build:
+  noarch: generic
   script_env:
     - ATEN
