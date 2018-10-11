@@ -72,7 +72,7 @@ This will install: nim and ATen binaries, fragments and nimtorch all in one comm
 
 Make sure you use a recent version of conda and have gcc installed in your system.
 
-Also make sure your system is recent (ubuntu 18.04 reference) and you have cuda 9.2 at least installed (if you need cuda).
+Also make sure your system is recent (ubuntu 18.04 reference) and you have cuda 9.2 installed (if you need cuda, more cuda versions coming, please open a issue if you need a specific version).
 
 Test with with something like:
 
@@ -102,9 +102,9 @@ activate aten environment
 `source activate aten`
 
 1. Make sure you have a recent Nim and Nimble version in your path
-    * [Easy option: install nim with choosenim](https://github.com/dom96/choosenim)
-      * `choosenim devel`
-2. clone this repo
+  * [Easy option: install nim with choosenim](https://github.com/dom96/choosenim)
+    * `choosenim devel`
+2. clone the **release** branch `git clone -b release https://github.com/fragcolor-xyz/nimtorch.git`
 3. `cd nimtorch`
 4. `nimble develop`
 
