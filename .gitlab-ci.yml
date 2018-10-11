@@ -49,6 +49,7 @@ build:aten:cuda9.2:
     - cd docker
     - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull nvidia/cuda:9.2-devel-ubuntu18.04
@@ -61,6 +62,7 @@ build:aten:cuda9.2:
       - torch/commit.txt
       - docker/version.txt
       - docker/conda/aten/meta.yaml
+      - docker/conda/aten_cuda10.0/meta.yaml
       - docker/conda/aten_wasm/meta.yaml
       - conda/nimtorch/meta.yaml
   tags:
@@ -75,6 +77,7 @@ build:aten:cuda10.0:
     - cd docker
     - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull nvidia/cuda:10.0-devel-ubuntu18.04
@@ -94,6 +97,7 @@ build:aten:wasm:
     - cd docker
     - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull base/devel
