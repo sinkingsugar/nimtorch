@@ -1,0 +1,55 @@
+FROM nvidia/cuda:10.0-devel-ubuntu18.04
+
+RUN apt-get update
+RUN apt-get install -y build-essential git cmake python3-pip libmpfr-dev libgmp-dev wget
+
+RUN pip3 install pyyaml
+RUN pip3 install typing
+
+RUN cd && \
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+
+RUN cd && \
+chmod +x Miniconda3-latest-Linux-x86_64.sh && \
+./Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda3
+
+RUN /root/miniconda3/bin/conda install conda-build anaconda-client
+
+ARG PYTORCH_COMMIT
+
+RUN cd && \
+git clone -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git && \
+cd pytorch && \
+git reset --hard ${PYTORCH_COMMIT}
+
+RUN cd && \
+cd pytorch && \
+git submodule init && \
+git submodule update
+
+ENV PYTORCH_PYTHON=python3
+
+RUN cd && \
+cd pytorch && \
+mkdir built && \
+cd built && \
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
+make -j10 && \
+make install -j10 && \
+make clean && \
+cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
+
+COPY conda /root/conda
+
+ARG UPLOAD_ATEN
+
+RUN cd && cd conda && \
+export PATH=$PATH:/root/miniconda3/bin && \
+export ATEN=/root/pytorch/built/output && \
+test -z "${UPLOAD_ATEN}" || conda build purge && true && \
+test -z "${UPLOAD_ATEN}" || conda build aten_cuda10.0 && true
+
+ARG TOKEN
+ARG BRANCH
+
+RUN test -z "${UPLOAD_ATEN}" || /root/miniconda3/bin/anaconda -t ${TOKEN} upload --force /root/miniconda3/conda-bld/linux-64/aten_cuda10.0-*.tar.bz2 && true
