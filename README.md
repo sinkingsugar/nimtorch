@@ -117,6 +117,24 @@ in the case of WASM:
 
 run self test `nim cpp -d:wasm -o:test.js torch.nim && node test.js` (needs node.js)
 
+### Manual way without requiring conda
+**Build ATEN**
+```sh
+pip2 install pyyaml typing
+git clone -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git
+cd pytorch
+git reset --hard <commit hash> # from torch/commit.txt
+git submodule update --init
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
+make -j4
+make install
+```
+**Test the build**
+```
+cd <nimtorch repo>
+ATEN=<installation path of ATEN> nim cpp -r -f -o:/tmp/z01 torch.nim
+```
 ## Know issues
 
 * The commit hash we are using for ATen has some bugs with openmp, if you run in high CPU load issues even if your task is quite easy, try reduce openmp CPU count with this environment variable:
