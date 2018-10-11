@@ -51,7 +51,7 @@ build:aten:native:
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
-    - docker pull nvidia/cuda:9.2-devel-ubuntu18.04
+    - docker pull nvidia/cuda:10.0-devel-ubuntu18.04
     - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten:merged
