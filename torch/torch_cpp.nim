@@ -63,6 +63,8 @@ elif defined windows:
   cpplibs(atenPath & "/lib/caffe2.lib")
   cpplibs(atenPath & "/lib/cpuinfo.lib")
 
+  cppdefines("NOMINMAX")
+
   when defined cuda:
     const cudaPath = getEnv("CUDA_PATH")
     cppincludes(cudaPath & """/include""")
