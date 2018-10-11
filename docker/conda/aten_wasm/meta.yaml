@@ -1,6 +1,6 @@
 package:
   name: aten_wasm
-  version: "2018.10.11.1137"
+  version: "2018.10.11.1148"
 
 source:
   path: ./
