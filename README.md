@@ -70,7 +70,7 @@ let
 
 This will install: nim and ATen binaries, fragments and nimtorch all in one command, nothing else needed.
 
-Make sure you use a recent version of conda and have a compiler installed in your system, also on windows you have to add `--cc:vcc` and be on a developer prompt.
+Make sure you use a recent version of conda and have a compiler installed in your system, on windows you have to add `--cc:vcc` and be on a developer prompt.
 
 Make sure your system is recent (ubuntu 18.04 reference / macOS High Sierra / Windows 10) and you have cuda 9.2 installed (if you need cuda, linux only, more cuda versions coming, please open a issue if you need a specific version).
 
@@ -86,8 +86,7 @@ or on windows... (because dlls need to be side by side)
 
 *Linux, macOS and Windows*
 
-Check what version of ATen/PyTorch we need in
-`conda/nimtorch/meta.yaml` - should be something like `aten ==2018.10.10.1089`
+Check what version of ATen/PyTorch we need in `conda/nimtorch/meta.yaml` - should be something like `aten ==2018.10.10.1089`
 
 Note the version as you will need it in the next step
 
@@ -117,8 +116,6 @@ run self test `nim cpp -o:test -r torch.nim` (use `-o:%ATEN%/lib/test.exe` inste
 in the case of WASM:
 
 run self test `nim cpp -d:wasm -o:test.js torch.nim && node test.js` (needs node.js)
-
-### Windows support coming soon (already builds, just needs to be automated to publish with conda)
 
 ## Know issues
 
