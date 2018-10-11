@@ -43,16 +43,17 @@ prepare:aten:fast:
     variables:
       - $FETCH_PYTORCH == "false"
 
-build:aten:native:
+build:aten:cuda9.2:
   stage: build
   script:
     - cd docker
     - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull nvidia/cuda:9.2-devel-ubuntu18.04
-    - docker build -f Dockerfile-aten-native -t docker_aten_native --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+    - docker build -f Dockerfile-aten-cuda9.2 -t docker_aten_cuda92 --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten:merged
     - prepare:aten:fast
@@ -61,10 +62,31 @@ build:aten:native:
       - torch/commit.txt
       - docker/version.txt
       - docker/conda/aten/meta.yaml
+      - docker/conda/aten_cuda10.0/meta.yaml
       - docker/conda/aten_wasm/meta.yaml
       - conda/nimtorch/meta.yaml
   tags:
-    - LINUX, DOCKER, CUDA
+    - LINUX, DOCKER
+  only:
+    refs:
+      - schedules
+
+build:aten:cuda10.0:
+  stage: build
+  script:
+    - cd docker
+    - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
+    - docker pull nvidia/cuda:10.0-devel-ubuntu18.04
+    - docker build -f Dockerfile-aten-cuda10.0 -t docker_aten_cuda10 --build-arg UPLOAD_ATEN=$UPLOAD_ATEN --build-arg TOKEN=$CONDA_TOKEN --build-arg BRANCH=$CI_COMMIT_REF_NAME --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+  dependencies:
+    - prepare:aten:merged
+    - prepare:aten:fast
+  tags:
+    - LINUX, DOCKER
   only:
     refs:
       - schedules
@@ -75,6 +97,7 @@ build:aten:wasm:
     - cd docker
     - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull base/devel
@@ -118,7 +141,7 @@ test:nimtorch:native:
   after_script:
     - git clean -x -d -f
   dependencies:
-    - build:aten:native
+    - build:aten:cuda9.2
   artifacts:
     paths:
       - torch/
@@ -147,7 +170,7 @@ test:nimtorch:cuda:
   after_script:
     - git clean -x -d -f
   dependencies:
-    - build:aten:native
+    - build:aten:cuda9.2
   tags:
     - LINUX, DOCKER, NIM, PYYAML, CUDA, CONDA
 
