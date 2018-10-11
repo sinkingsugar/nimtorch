@@ -62,32 +62,34 @@ let
 
 ### Super easy, using conda
 
-*Linux and macOS*
+*Linux, macOS and Windows*
 
 `conda create -n nimtorch -c fragcolor nimtorch`
 
-`source activate nimtorch`
+`source activate nimtorch` or on windows: `conda activate nimtorch`
 
 This will install: nim and ATen binaries, fragments and nimtorch all in one command, nothing else needed.
 
-Make sure you use a recent version of conda and have gcc installed in your system.
+Make sure you use a recent version of conda and have a compiler installed in your system, also on windows you have to add `--cc:vcc` and be on a developer prompt.
 
-Also make sure your system is recent (ubuntu 18.04 reference) and you have cuda 9.2 installed (if you need cuda, more cuda versions coming, please open a issue if you need a specific version).
+Make sure your system is recent (ubuntu 18.04 reference / macOS High Sierra / Windows 10) and you have cuda 9.2 installed (if you need cuda, linux only, more cuda versions coming, please open a issue if you need a specific version).
 
 Test with with something like:
 
 `nim cpp -o:test -r $ATEN/dist/nimtorch/tests/test_xor.nim`
 
+or on windows... (because dlls need to be side by side)
+
+`nim cpp -o:%ATEN%/lib/test.exe -r %ATEN%/dist/nimtorch/tests/test_xor.nim`
+
 ### Semi manual way
 
-*Linux and macOS*
+*Linux, macOS and Windows*
 
 Check what version of ATen/PyTorch we need in
 `conda/nimtorch/meta.yaml` - should be something like `aten ==2018.10.10.1089`
 
 Note the version as you will need it in the next step
-
-**Linux or macOS**
 
 `conda create -n aten -c fragcolor aten={version}`
 
@@ -99,7 +101,7 @@ or
 
 activate aten environment
 
-`source activate aten`
+`source activate aten` or on windows: `conda activate aten`
 
 1. Make sure you have a recent Nim and Nimble version in your path
   * [Easy option: install nim with choosenim](https://github.com/dom96/choosenim)
@@ -110,7 +112,7 @@ activate aten environment
 
 *finally*
 
-run self test `nim cpp -o:test -r torch.nim`
+run self test `nim cpp -o:test -r torch.nim` (use `-o:%ATEN%/lib/test.exe` instead on windows because of dll location)
 
 in the case of WASM:
 
