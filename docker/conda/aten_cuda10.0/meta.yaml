@@ -1,5 +1,5 @@
 package:
-  name: aten_cuda10.0
+  name: aten
   version: "2018.10.12.1157"
 
 source:
@@ -8,3 +8,5 @@ source:
 build:
   script_env:
     - ATEN
+  features:
+    - cuda10.0

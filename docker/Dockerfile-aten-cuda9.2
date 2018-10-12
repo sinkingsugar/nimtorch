@@ -41,15 +41,18 @@ cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
 
 COPY conda /root/conda
 
-ARG UPLOAD_ATEN
+RUN cd && cd conda && \
+export PATH=$PATH:/root/miniconda3/bin && \
+export ATEN=/root/pytorch/built/output && \
+conda build cuda10.0 && \
+conda build wasm
 
 RUN cd && cd conda && \
 export PATH=$PATH:/root/miniconda3/bin && \
 export ATEN=/root/pytorch/built/output && \
-test -z "${UPLOAD_ATEN}" || conda build purge && true && \
-test -z "${UPLOAD_ATEN}" || conda build aten && true
+conda build aten
 
 ARG TOKEN
 ARG BRANCH
 
-RUN test -z "${UPLOAD_ATEN}" || /root/miniconda3/bin/anaconda -t ${TOKEN} upload --force /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2 && true
+/root/miniconda3/bin/anaconda -t ${TOKEN} upload /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
