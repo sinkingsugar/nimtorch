@@ -1,11 +1,13 @@
 package:
-  name: aten_wasm
+  name: aten
   version: "2018.10.12.1157"
 
 source:
   path: ./
 
 build:
-  noarch: generic
   script_env:
     - ATEN
+  features:
+    - wasm
+  noarch: generic
