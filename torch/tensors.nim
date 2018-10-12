@@ -103,7 +103,8 @@ proc toIntList(self: AIntList): IntList =
   proc unsafeAddr(self: CppProxy): pointer {.importcpp: "(void*)&(#)".}
   result.setLen(self.len)
   when sizeof(int) == sizeof(int64):
-    copyMem(addr result[0], unsafeAddr(self[0]), result.len * sizeof(int64))
+    if self.len > 0:
+      copyMem(addr result[0], unsafeAddr(self[0]), result.len * sizeof(int64))
   else:
     for i in 0 ..< self.len:
       result[i] = cast[int64](self[i].to(AInt64)).int
