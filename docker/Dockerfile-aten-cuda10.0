@@ -47,6 +47,5 @@ export ATEN=/root/pytorch/built/output && \
 conda build aten_cuda10.0
 
 ARG TOKEN
-ARG BRANCH
 
 RUN /root/miniconda3/bin/anaconda -t ${TOKEN} upload /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
