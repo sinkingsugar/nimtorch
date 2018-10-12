@@ -27,7 +27,7 @@ method cuda*(m: Module) {.base.} = discard
 
 method parameters*(self: Module): seq[Tensor] {.base.} = discard
 
-method reset_parameters*(m: Module) = discard
+method reset_parameters*(m: Module) {.base.} = discard
 
 proc zero_grad*(self: Module) =
   when not defined inference:
