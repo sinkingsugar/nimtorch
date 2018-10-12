@@ -114,7 +114,7 @@ proc Bilinear*(in1_features, in2_features, out_features: int; bias: bool = true)
 
 when isMainModule:
   let
-    m = nn.Linear(2, 10)
+    m = Linear(2, 10)
     inputs = tensor([[1.0, 2.0]])
     res = m(inputs)
   print(res)
