@@ -8,6 +8,9 @@ stages:
 
 prepare:aten:merged:
   stage: prepare
+  before_script:
+    - git config --global user.email 'giovanni@fragcolor.xyz'
+    - git config --global user.name 'Giovanni'
   script:
     - git clone -b fragcolor-devel https://$GITHUB_LOGIN@github.com/fragcolor-xyz/pytorch.git
     - cd pytorch
@@ -28,6 +31,9 @@ prepare:aten:merged:
 
 prepare:aten:fast:
   stage: prepare
+  before_script:
+    - git config --global user.email 'giovanni@fragcolor.xyz'
+    - git config --global user.name 'Giovanni'
   script:
     - git clone -b fragcolor-devel https://$GITHUB_LOGIN@github.com/fragcolor-xyz/pytorch.git
     - cd pytorch
