@@ -100,9 +100,9 @@ iterator items*(ints: AIntList): AInt64 {.inline.} =
     yield ints[i].to(AInt64)
 
 proc toIntList(self: AIntList): IntList =
-  proc unsafeAddr(self: CppProxy): pointer {.importcpp: "(void*)&(#)".}
   result.setLen(self.len)
   when sizeof(int) == sizeof(int64):
+    proc unsafeAddr(self: CppProxy): pointer {.importcpp: "(void*)&(#)".}
     if self.len > 0:
       copyMem(addr result[0], unsafeAddr(self[0]), result.len * sizeof(int64))
   else:
