@@ -124,8 +124,8 @@ test:nimtorch:native:
   stage: test
   script:
     - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test-cuda9.2 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - docker run --rm -t -u`id -u`:`id -g` -v `pwd`:/home/tester/nimtorch nimtorch-test-cuda9.2:latest nimble test
-    - docker run --rm -t -u`id -u`:`id -g` -v `pwd`:/home/tester/nimtorch nimtorch-test-cuda9.2:latest nimble test_clang
+    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test
+    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_clang
   after_script:
     - git clean -x -d -f
   dependencies:
@@ -143,12 +143,12 @@ test:nimtorch:cuda:
   script:
     # Cuda 9.2
     - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test-cuda9.2 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` -v `pwd`:/home/tester/nimtorch nimtorch-test-cuda9.2:latest nimble test_cuda
-    - docker run --runtime=nvidia--rm -t -u`id -u`:`id -g` -v `pwd`:/home/tester/nimtorch nimtorch-test-cuda9.2:latest nimble test_cuda_clang
+    - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_cuda
+    - docker run --runtime=nvidia--rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_cuda_clang
     # Cuda 10.0
     - docker build -f docker/Dockerfile-tests-cuda10.0 -t nimtorch-test-cuda10.0 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` -v `pwd`:/home/tester/nimtorch nimtorch-test-cuda10.0:latest nimble test_cuda
-    - docker run --runtime=nvidia--rm -t -u`id -u`:`id -g` -v `pwd`:/home/tester/nimtorch nimtorch-test-cuda10.0:latest nimble test_cuda_clang
+    - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` nimtorch-test-cuda10.0:latest nimble test_cuda
+    - docker run --runtime=nvidia--rm -t -u`id -u`:`id -g` nimtorch-test-cuda10.0:latest nimble test_cuda_clang
   after_script:
     - git clean -x -d -f
   dependencies:
