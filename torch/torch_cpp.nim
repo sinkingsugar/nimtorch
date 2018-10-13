@@ -54,7 +54,7 @@ cppincludes(atenPath & """/include""")
 cpplibpaths(atenPath & """/lib""")
 cpplibpaths(atenPath & """/lib64""")
 
-type AInt64* {.importcpp: "int64_t".} = object
+type AInt64* {.importcpp: "int64_t", header: "<stdint.h>".} = object
 
 when defined wasm:
   {.passL: "-lcaffe2 -lc10".}
