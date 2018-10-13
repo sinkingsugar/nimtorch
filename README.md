@@ -64,7 +64,7 @@ let
 
 *Linux, macOS and Windows*
 
-`conda create -n nimtorch -c fragcolor nimtorch`
+`conda create -n nimtorch -c fragcolor nimtorch` (add `cuda10.0` for cuda 10 linux only or add `wasm` for wasm version)
 
 `source activate nimtorch` or on windows: `conda activate nimtorch`
 
@@ -94,9 +94,13 @@ Note the version as you will need it in the next step
 
 or
 
-**WASM on a Linux system**
+**WASM**
 
-`conda create -n aten -c fragcolor aten_wasm={version}`
+`conda create -n aten -c fragcolor aten wasm`
+
+or Cuda 10.0 (linux only)
+
+`conda create -n aten -c fragcolor aten cuda10.0`
 
 activate aten environment
 
