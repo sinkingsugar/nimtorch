@@ -122,29 +122,10 @@ build:aten:wasm:
   
 test:nimtorch:native:
   stage: test
-  before_script:
-    - export PATH="$PATH:$HOME/miniconda3/bin"
-    - conda env remove -n nimtorch_testing || true
   script:
-    # - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - nimble -y install fragments
-    - rm -rf nimcache
-    - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"`
-    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
-    - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
-    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache torch/generator.nim
-    - nim cpp -r -o:test --nimcache:./nimcache torch
-    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache torch
-    - nim cpp -r -o:test --nimcache:./nimcache torch/nn.nim
-    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache torch/nn.nim
-    - nim cpp -r -o:test --nimcache:./nimcache torch/nn/init.nim
-    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache torch/nn/init.nim
-    - nim cpp -r -o:test --nimcache:./nimcache torch/nn/functional.nim
-    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache torch/nn/functional.nim
-    - nim cpp -r -o:test --nimcache:./nimcache tests/test_autograd.nim
-    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache tests/test_autograd.nim
-    - nim cpp -r -o:test --nimcache:./nimcache tests/test_xor.nim
-    - nim cpp -r --cc:clang -o:test --nimcache:./nimcache tests/test_xor.nim
+    - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test-cuda9.2 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
+    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test
+    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_clang
   after_script:
     - git clean -x -d -f
   dependencies:
@@ -155,59 +136,38 @@ test:nimtorch:native:
       - conda/
       - docker/
   tags:
-    - LINUX, DOCKER, NIM, PYYAML, CONDA, CLANG
+    - LINUX, DOCKER
 
 test:nimtorch:cuda:
   stage: test
-  before_script:
-    - export PATH="$PATH:$HOME/miniconda3/bin"
-    - conda env remove -n nimtorch_testing || true
   script:
-    - nimble -y install fragments
-    - rm -rf nimcache
-    - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"`
-    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
-    - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
-    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch
-    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn.nim
-    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn/init.nim
-    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda torch/nn/functional.nim
-    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_autograd.nim
-    - nim cpp -r -o:test --nimcache:./nimcache -d:cuda tests/test_xor.nim
+    # Cuda 9.2
+    - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test-cuda9.2 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
+    - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_cuda
+    - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_clang_cuda
+    # Cuda 10.0
+    - docker build -f docker/Dockerfile-tests-cuda10.0 -t nimtorch-test-cuda10.0 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
+    - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` nimtorch-test-cuda10.0:latest nimble test_cuda
+    - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` nimtorch-test-cuda10.0:latest nimble test_clang_cuda
   after_script:
     - git clean -x -d -f
   dependencies:
     - build:aten:cuda9.2
+    - build:aten:cuda10.0
   tags:
-    - LINUX, DOCKER, NIM, PYYAML, CUDA, CONDA
+    - LINUX, DOCKER, DOCKERNVIDIA
 
 test:nimtorch:wasm:
   stage: test
-  before_script:
-    - export PATH="$PATH:$HOME/miniconda3/bin"
-    - conda env remove -n nimtorch_testing || true
   script:
-    - nimble -y install fragments
-    - rm -rf nimcache
-    - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` wasm
-    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
-    - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
-    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch
-    - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch/nn.nim
-    - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch/nn/init.nim
-    - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_autograd.nim
-    - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_xor.nim
-    - node test.js
+    - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test-wasm --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
+    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-wasm:latest nimble test_wasm
   after_script:
     - git clean -x -d -f
   dependencies:
     - build:aten:wasm
   tags:
-    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML, CONDA
+    - LINUX, DOCKER
 
 deploy:nimtorch:
   stage: deploy
