@@ -52,6 +52,11 @@ prepare:aten:fast:
 build:aten:cuda9.2:
   stage: build
   script:
+    # Clean up docker - make sure we got space
+    - docker rm $(docker ps -q -f status=exited) || true
+    - docker volume rm $(docker volume ls -qf dangling=true) || true
+    - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
+    # Build
     - cd docker
     - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
@@ -80,6 +85,11 @@ build:aten:cuda9.2:
 build:aten:cuda10.0:
   stage: build
   script:
+    # Clean up docker - make sure we got space
+    - docker rm $(docker ps -q -f status=exited) || true
+    - docker volume rm $(docker volume ls -qf dangling=true) || true
+    - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
+    # Build
     - cd docker
     - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
@@ -100,6 +110,11 @@ build:aten:cuda10.0:
 build:aten:wasm:
   stage: build
   script:
+    # Clean up docker - make sure we got space
+    - docker rm $(docker ps -q -f status=exited) || true
+    - docker volume rm $(docker volume ls -qf dangling=true) || true
+    - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
+    # Build
     - cd docker
     - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
