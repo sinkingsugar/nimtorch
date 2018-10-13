@@ -33,3 +33,6 @@ COPY --chown=tester ./ /home/tester/nimtorch
 WORKDIR /home/tester/nimtorch
 
 ENV HOME=/home/tester
+
+# needed to init wasm
+RUN source /etc/profile.d/emscripten.sh && emcc --version && touch emcc.nim && nim cpp -d:wasm -o:emcc.js emcc.nim && rm emcc.js emcc.nim
