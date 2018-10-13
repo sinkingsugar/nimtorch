@@ -85,7 +85,7 @@ proc ConvTranspose3d*(in_channels, out_channels: int;
 
 when isMainModule:
   let
-    m = nn.Conv1d(1, 2, 5)
+    m = Conv1d(1, 2, 5)
     inputs = ones([1, 1, 10])
     res = m(inputs)
   print(res)
