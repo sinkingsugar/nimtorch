@@ -11,6 +11,8 @@ ARG GROUP_ID
 
 RUN useradd -ms /bin/bash -u ${USER_ID} tester
 
+RUN apt-get install -y clang
+
 USER tester
 
 WORKDIR /home/tester
