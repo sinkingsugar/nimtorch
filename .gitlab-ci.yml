@@ -188,7 +188,7 @@ test:nimtorch:wasm:
   script:
     - nimble -y install fragments
     - rm -rf nimcache
-    - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten_wasm/g"`
+    - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` wasm
     - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
     - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch
