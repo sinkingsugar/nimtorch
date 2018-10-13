@@ -124,6 +124,7 @@ test:nimtorch:native:
   stage: test
   script:
     - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
+    - docker run --rm -t -u`id -u`:`id -g` -v `pwd`:/home/tester/nimtorch nimtorch-test:latest ls
     - docker run --rm -t -u`id -u`:`id -g` -v `pwd`:/home/tester/nimtorch nimtorch-test:latest nimble test
     - docker run --rm -t -u`id -u`:`id -g` -v `pwd`:/home/tester/nimtorch nimtorch-test:latest nimble test_clang
   after_script:
