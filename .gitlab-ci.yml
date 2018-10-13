@@ -22,7 +22,7 @@ prepare:aten:merged:
     paths:
       - torch/commit.txt
   tags:
-    - LINUX
+    - LINUX, DEPLOY
   only:
     refs:
       - schedules
@@ -231,7 +231,7 @@ deploy:nimtorch:
   dependencies:
     - test:nimtorch:native
   tags:
-    - LINUX
+    - LINUX, DEPLOY
   only:
     refs:
       - schedules
