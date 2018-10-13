@@ -3,7 +3,7 @@ import macros
 
 {.experimental: "implicitDeref".}
 
-include torch/declarations
+include declarations
 
 proc zeros*[T: int](size: varargs[T]): Tensor =
   var opts: TensorOptions
@@ -116,9 +116,9 @@ proc `+=`*(a: var Tensor; b: Tensor) {.inline.} = a = a + b
 
 proc `-=`*(a: var Tensor; b: Tensor) {.inline.} = a = a - b
 
-include torch/autograd_helpers
-include torch/native/convolutions
-include torch/derivatives
+include autograd_helpers
+include native/convolutions
+include derivatives
 
 proc detach*(self: Tensor): Tensor =
   # Create a new reference to the same tensor, discarding grad_fn, etc.

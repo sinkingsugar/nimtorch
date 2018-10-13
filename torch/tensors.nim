@@ -1,5 +1,5 @@
 import fragments/ffi/cpp
-import torch/torch_cpp
+import torch_cpp
 import macros, sequtils, math, sets, strformat, options
 
 {.experimental: "implicitDeref".}

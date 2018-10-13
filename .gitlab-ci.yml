@@ -126,6 +126,7 @@ test:nimtorch:native:
     - export PATH="$PATH:$HOME/miniconda3/bin"
     - conda env remove -n nimtorch_testing || true
   script:
+    # - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
     - nimble -y install fragments
     - rm -rf nimcache
     - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"`

@@ -1,5 +1,5 @@
-import torch
-import torch/[nn, optim]
+import ../torch
+import ../torch/[nn, optim]
 
 let inputs = torch.tensor([
   [0.0, 0.0],
