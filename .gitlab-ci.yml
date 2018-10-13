@@ -157,33 +157,17 @@ test:nimtorch:cuda:
   tags:
     - LINUX, DOCKER, DOCKERNVIDIA
 
-.test:nimtorch:wasm:
+test:nimtorch:wasm:
   stage: test
-  before_script:
-    - export PATH="$PATH:$HOME/miniconda3/bin"
-    - conda env remove -n nimtorch_testing || true
   script:
-    - nimble -y install fragments
-    - rm -rf nimcache
-    - conda create -c fragcolor -n nimtorch_testing `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` wasm
-    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
-    - nim cpp -r -o:test --nimcache:./nimcache torch/generator.nim
-    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch
-    - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch/nn.nim
-    - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch/nn/init.nim
-    - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_autograd.nim
-    - node test.js
-    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_xor.nim
-    - node test.js
+    - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test-wasm --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
+    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-wasm:latest nimble test_wasm
   after_script:
     - git clean -x -d -f
   dependencies:
     - build:aten:wasm
   tags:
-    - LINUX, DOCKER, NIM, EMSCRIPTEN, PYYAML, CONDA
+    - LINUX, DOCKER
 
 deploy:nimtorch:
   stage: deploy
