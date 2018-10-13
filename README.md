@@ -96,11 +96,11 @@ or
 
 **WASM**
 
-`conda create -n aten -c fragcolor aten wasm`
+`conda create -n aten -c fragcolor aten={version} wasm`
 
 or Cuda 10.0 (linux only)
 
-`conda create -n aten -c fragcolor aten cuda10.0`
+`conda create -n aten -c fragcolor aten={version} cuda10.0`
 
 activate aten environment
 
