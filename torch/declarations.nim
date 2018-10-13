@@ -2105,6 +2105,18 @@ proc bilinear_internal*(ty: TensorType; input1: Tensor; input2: Tensor; weight: 
 proc bilinear_internal*(input1: Tensor; input2: Tensor; weight: Tensor; bias: Tensor): Tensor {.inline.} = 
   check: atenFunction("at::bilinear", input1.tensor, input2.tensor, weight.tensor, bias.tensor).to(ATensor).newTensor()
 
+proc binary_cross_entropy_with_logits*(ty: TensorType; self: Tensor; target: Tensor; weight: Tensor; pos_weight: Tensor; reduction: int): Tensor {.inline.} = 
+  check: ty[].atenMethod("binary_cross_entropy_with_logits", self.tensor, target.tensor, weight.tensor, pos_weight.tensor, reduction).to(ATensor).newTensor()
+
+proc binary_cross_entropy_with_logits*(self: Tensor; target: Tensor; weight: Tensor; pos_weight: Tensor; reduction: int): Tensor {.inline.} = 
+  check: atenFunction("at::binary_cross_entropy_with_logits", self.tensor, target.tensor, weight.tensor, pos_weight.tensor, reduction).to(ATensor).newTensor()
+
+proc binary_cross_entropy_with_logits_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; target: Tensor; weight: Tensor; pos_weight: Tensor; reduction: int): Tensor {.inline.} = 
+  check: ty[].atenMethod("binary_cross_entropy_with_logits_backward", grad_output.tensor, self.tensor, target.tensor, weight.tensor, pos_weight.tensor, reduction).to(ATensor).newTensor()
+
+proc binary_cross_entropy_with_logits_backward*(grad_output: Tensor; self: Tensor; target: Tensor; weight: Tensor; pos_weight: Tensor; reduction: int): Tensor {.inline.} = 
+  check: atenFunction("at::binary_cross_entropy_with_logits_backward", grad_output.tensor, self.tensor, target.tensor, weight.tensor, pos_weight.tensor, reduction).to(ATensor).newTensor()
+
 proc bincount*(ty: TensorType; self: Tensor; weights: Tensor; minlength: int = 0): Tensor {.inline.} = 
   check: ty[].atenMethod("bincount", self.tensor, weights.tensor, minlength).to(ATensor).newTensor()
 
@@ -2146,6 +2158,12 @@ proc ceil_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, discardable.}
 
 proc ceil_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
   check: self.tensor.atenMethod("ceil_").to(void); self
+
+proc chain_matmul*(ty: TensorType; matrices: openarray[Tensor]): Tensor {.inline.} = 
+  check: ty[].atenMethod("chain_matmul", matrices.toATensors()).to(ATensor).newTensor()
+
+proc chain_matmul*(matrices: openarray[Tensor]): Tensor {.inline.} = 
+  check: atenFunction("at::chain_matmul", matrices.toATensors()).to(ATensor).newTensor()
 
 proc clamp*(ty: TensorType; self: Tensor; min: float; max: float): Tensor {.inline.} = 
   check: ty[].atenMethod("clamp", self.tensor, min, max).to(ATensor).newTensor()
@@ -4133,17 +4151,17 @@ proc get_device*(ty: TensorType; self: Tensor): int {.inline.} =
 proc get_device*(self: Tensor): int {.inline.} = 
   check: self.tensor.atenMethod("get_device").to(int)
 
-proc to_name*(ty: TensorType; self: Tensor; dtype: AScalarType; non_blocking: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("to", self.tensor, dtype, non_blocking).to(ATensor).newTensor()
+proc to_name*(ty: TensorType; self: Tensor; dtype: AScalarType; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
+  check: ty[].atenMethod("to", self.tensor, dtype, non_blocking, copy).to(ATensor).newTensor()
 
-proc to_name*(self: Tensor; dtype: AScalarType; non_blocking: bool = false): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("to", dtype, non_blocking).to(ATensor).newTensor()
+proc to_name*(self: Tensor; dtype: AScalarType; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("to", dtype, non_blocking, copy).to(ATensor).newTensor()
 
-proc to_name*(ty: TensorType; self: Tensor; other: Tensor; non_blocking: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("to", self.tensor, other.tensor, non_blocking).to(ATensor).newTensor()
+proc to_name*(ty: TensorType; self: Tensor; other: Tensor; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
+  check: ty[].atenMethod("to", self.tensor, other.tensor, non_blocking, copy).to(ATensor).newTensor()
 
-proc to_name*(self: Tensor; other: Tensor; non_blocking: bool = false): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("to", other.tensor, non_blocking).to(ATensor).newTensor()
+proc to_name*(self: Tensor; other: Tensor; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("to", other.tensor, non_blocking, copy).to(ATensor).newTensor()
 
 proc meshgrid*(ty: TensorType; tensors: openarray[Tensor]): TensorList {.inline.} = 
   check: ty[].atenMethod("meshgrid", tensors.toATensors()).to(ATensors).newTensors()
