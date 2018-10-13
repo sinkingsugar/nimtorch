@@ -195,6 +195,8 @@ test:nimtorch:wasm:
     - node test.js
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch/nn.nim
     - node test.js
+    - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache torch/nn/init.nim
+    - node test.js
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_autograd.nim
     - node test.js
     - nim cpp -d:wasm -d:release -o:test.js --nimcache:./nimcache tests/test_xor.nim
