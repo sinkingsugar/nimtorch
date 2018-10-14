@@ -152,6 +152,7 @@ test:nimtorch:native:
   after_script:
     - git clean -x -d -f
     # Recycle space - should keep latest pkg on branch
+    - export PATH="$PATH:$HOME/miniconda3/bin"
     - conda clean -y --all
   dependencies:
     - build:aten:cuda9.2
