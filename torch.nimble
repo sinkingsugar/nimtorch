@@ -1,6 +1,6 @@
 # Package
 
-version     = "0.2.0"
+version     = "0.2.1"
 author      = "Giovanni Petrantoni"
 description = "A nim flavor of pytorch"
 license     = "MIT"
@@ -9,8 +9,8 @@ skipFiles   = @[".gitlab-ci.yml"]
 
 # Deps
 
-requires "nim >= 0.18.1"
-requires "fragments >= 0.1.20"
+requires "nim >= 0.19.1"
+requires "fragments >= 0.1.22"
 
 task test, "Run cpu tests":
   exec """nim cpp -r -o:test torch/generator.nim"""
