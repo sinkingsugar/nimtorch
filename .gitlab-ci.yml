@@ -73,6 +73,7 @@ build:aten:cuda9.2:
     - prepare:aten:fast
   artifacts:
     paths:
+      # Notice files from docker won't be passed, specially cos Docker in Docker
       - torch/commit.txt
       - docker/version.txt
       - docker/conda/aten/meta.yaml
@@ -135,15 +136,24 @@ build:aten:wasm:
   only:
     refs:
       - schedules
-  
+
 test:nimtorch:native:
   stage: test
+  before_script:
+    - export PATH="$PATH:$HOME/miniconda3/bin"
+    - export ENVNAME=nimtorch_testing
+    - conda env remove -n $ENVNAME || true
   script:
-    - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test-cuda9.2 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test
-    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_clang
+    # Not on docker, we need results of this operations
+    - conda create -n $ENVNAME -c fragcolor pyyaml `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"`
+    - export ATEN=$HOME/miniconda3/envs/$ENVNAME
+    - export PATH="$PATH:$HOME/miniconda3/envs/$ENVNAME/bin"
+    - nimble test
   after_script:
     - git clean -x -d -f
+    # Recycle space - should keep latest pkg on branch
+    - export PATH="$PATH:$HOME/miniconda3/bin"
+    - conda clean -y --all
   dependencies:
     - build:aten:cuda9.2
   artifacts:
@@ -152,9 +162,9 @@ test:nimtorch:native:
       - conda/
       - docker/
   tags:
-    - LINUX, DOCKER
+    - LINUX, CONDA
 
-test:nimtorch:cuda:
+.test:nimtorch:cuda:
   stage: test
   script:
     # Cuda 9.2
@@ -173,7 +183,7 @@ test:nimtorch:cuda:
   tags:
     - LINUX, DOCKER, DOCKERNVIDIA
 
-test:nimtorch:wasm:
+.test:nimtorch:wasm:
   stage: test
   script:
     - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test-wasm --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
