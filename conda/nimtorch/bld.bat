@@ -1,3 +1,2 @@
-mkdir %PREFIX%\dist\nimtorch
-xcopy . %PREFIX%\dist\nimtorch /s /e
-copy conda\nimtorch\.nimtorch-post-link.bat %PREFIX%\Scripts\
+mkdir %PREFIX%\dist\pkgs\nimtorch-#head
+xcopy . %PREFIX%\dist\pkgs\nimtorch-#head /s /e

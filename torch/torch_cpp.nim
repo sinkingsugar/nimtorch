@@ -43,8 +43,8 @@ var BackendCUDA* {.importcpp: "at::Backend::CUDA", nodecl.}: cint
 var DeviceTypeCPU* {.importcpp: "at::DeviceType::CPU", nodecl.}: cint
 var DeviceTypeCUDA* {.importcpp: "at::DeviceType::CUDA", nodecl.}: cint
 
-when getEnv("ATEN") == "" and defined(atenPath):
-  const atenPath {.strdefine.} = ""   
+when getEnv("ATEN") == "" and defined(ANACONDA):
+  const atenPath = currentSourcePath()[0..^14] & "../../../../"
 else:
   const atenPath = getEnv("ATEN")
   when atenPath == "":
