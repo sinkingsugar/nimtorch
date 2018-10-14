@@ -24,7 +24,7 @@ prepare:aten:merged:
       - torch/commit.txt
       - docker/version.txt
   tags:
-    - LINUX, DEPLOY
+    - LINUX
   only:
     refs:
       - schedules
@@ -210,7 +210,7 @@ deploy:nimtorch:
   dependencies:
     - test:nimtorch:native
   tags:
-    - LINUX, DEPLOY
+    - DEPLOY
   only:
     refs:
       - schedules
