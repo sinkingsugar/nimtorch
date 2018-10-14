@@ -7,6 +7,6 @@ source:
 
 requirements:
   run:
-    - nim
-    - fragments
+    - nim ==0.19.1
+    - fragments ==0.1.22
     - aten ==2018.10.14.1236
