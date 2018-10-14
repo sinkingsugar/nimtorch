@@ -135,13 +135,16 @@ build:aten:wasm:
   only:
     refs:
       - schedules
-  
+
 test:nimtorch:native:
   stage: test
+  before_script:
+    - conda env remove -n nimtorch_testing || true
   script:
-    - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test-cuda9.2 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test
-    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_clang
+    - conda create -n nimtorch_testing -c fragcolor pyyaml `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"`
+    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
+    - export PATH="$PATH:$HOME/miniconda3/envs/nimtorch_testing/bin"
+    - nimble test
   after_script:
     - git clean -x -d -f
   dependencies:
@@ -152,7 +155,7 @@ test:nimtorch:native:
       - conda/
       - docker/
   tags:
-    - LINUX, DOCKER
+    - LINUX, CONDA
 
 test:nimtorch:cuda:
   stage: test
