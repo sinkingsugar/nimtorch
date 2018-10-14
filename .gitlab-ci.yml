@@ -141,8 +141,7 @@ test:nimtorch:native:
   stage: test
   before_script:
     - export PATH="$PATH:$HOME/miniconda3/bin"
-    # unique name per branch to keep cached
-    - export ENVNAME=nimtorch_testing_$CI_COMMIT_REF_SLUG
+    - export ENVNAME=nimtorch_testing
     - conda env remove -n $ENVNAME || true
   script:
     # Not on docker, we need results of this operations
