@@ -92,6 +92,24 @@ elif defined osx:
     proc ProfilerStart*(fname: cstring): int {.importc.}
     proc ProfilerStop*() {.importc.}
 
+elif defined ios:
+  import fragments/ffi/ios
+
+  {.passC: "-std=c++14".}
+
+  {.passL: "-lcaffe2 -lcpuinfo -pthread -lc10".}
+  
+  # Make sure we allow users to use rpath and be able find ATEN easier
+  const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
+  {.passL: atenEnvRpath.}
+  {.passL: """-Wl,-rpath,'$ORIGIN'""".}
+
+  when defined gperftools:
+    {.passC: "-DWITHGPERFTOOLS -g".}
+    {.passL: "-lprofiler -g".}
+    proc ProfilerStart*(fname: cstring): int {.importc.}
+    proc ProfilerStop*() {.importc.}
+
 else:
   {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -fopenmp -lrt -lc10".}
   when defined cuda:
