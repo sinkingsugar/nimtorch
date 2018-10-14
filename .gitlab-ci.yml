@@ -18,9 +18,11 @@ prepare:aten:merged:
     - git pull upstream master --no-edit
     - git push
     - git rev-parse HEAD > ../torch/commit.txt
+    - date +%Y.%m.%d.$CI_PIPELINE_ID > ../docker/version.txt
   artifacts:
     paths:
       - torch/commit.txt
+      - docker/version.txt
   tags:
     - LINUX, DEPLOY
   only:
@@ -38,9 +40,11 @@ prepare:aten:fast:
     - git clone -b fragcolor-devel https://$GITHUB_LOGIN@github.com/fragcolor-xyz/pytorch.git
     - cd pytorch
     - git rev-parse HEAD > ../torch/commit.txt
+    - date +%Y.%m.%d.$CI_PIPELINE_ID > ../docker/version.txt
   artifacts:
     paths:
       - torch/commit.txt
+      - docker/version.txt
   tags:
     - LINUX
   only:
@@ -58,7 +62,6 @@ build:aten:cuda9.2:
     - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
     # Build
     - cd docker
-    - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
@@ -91,7 +94,6 @@ build:aten:cuda10.0:
     - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
     # Build
     - cd docker
-    - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
@@ -116,7 +118,6 @@ build:aten:wasm:
     - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
     # Build
     - cd docker
-    - date +%Y.%m.%d.$CI_PIPELINE_ID > version.txt
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
