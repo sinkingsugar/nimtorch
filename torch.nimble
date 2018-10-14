@@ -29,6 +29,7 @@ task test, "Run cpu tests":
   exec """nim cpp -d:release -r -o:test tests/test_xor.nim"""
 
 task test_wasm, "Run wasm tests":
+  exec """nim cpp -r -o:test torch/generator.nim"""
   exec """nim cpp -d:release -d:wasm -o:test.js torch && node test.js"""
   exec """nim cpp -d:release -d:wasm -o:test.js torch/nn.nim && node test.js"""
   exec """nim cpp -d:release -d:wasm -o:test.js torch/nn/init.nim && node test.js"""
@@ -37,6 +38,7 @@ task test_wasm, "Run wasm tests":
   exec """nim cpp -d:release -d:wasm -o:test.js tests/test_xor.nim && node test.js"""
 
 task test_cuda, "Run cuda gpu tests":
+  exec """nim cpp -r -o:test torch/generator.nim"""
   exec """nim cpp -r -o:test -d:cuda torch"""
   exec """nim cpp -d:release -r -o:test -d:cuda torch"""
   exec """nim cpp -r -o:test -d:cuda torch/nn.nim"""
@@ -51,6 +53,7 @@ task test_cuda, "Run cuda gpu tests":
   exec """nim cpp -d:release -r -o:test -d:cuda tests/test_xor.nim"""
 
 task test_clang, "Run clang tests":
+  exec """nim cpp -r -o:test torch/generator.nim"""
   exec """nim cpp --cc:clang -r -o:test torch"""
   exec """nim cpp -d:release --cc:clang -r -o:test torch"""
   exec """nim cpp --cc:clang -r -o:test torch/nn.nim"""
@@ -65,6 +68,7 @@ task test_clang, "Run clang tests":
   exec """nim cpp -d:release --cc:clang -r -o:test tests/test_xor.nim"""
 
 task test_clang_cuda, "Run clang cuda gpu tests":
+  exec """nim cpp -r -o:test torch/generator.nim"""
   exec """nim cpp --cc:clang -r -o:test -d:cuda torch"""
   exec """nim cpp -d:release --cc:clang -r -o:test -d:cuda torch"""
   exec """nim cpp --cc:clang -r -o:test -d:cuda torch/nn.nim"""
