@@ -158,7 +158,7 @@ test:nimtorch:native:
   tags:
     - LINUX, DOCKER
 
-test:nimtorch:cuda:
+.test:nimtorch:cuda:
   stage: test
   script:
     # Cuda 9.2
@@ -177,7 +177,7 @@ test:nimtorch:cuda:
   tags:
     - LINUX, DOCKER, DOCKERNVIDIA
 
-test:nimtorch:wasm:
+.test:nimtorch:wasm:
   stage: test
   script:
     - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test-wasm --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
