@@ -1,7 +1,6 @@
 FROM nvidia/cuda:10.0-devel-ubuntu18.04
 
-RUN apt-get update
-RUN apt-get install -y build-essential git cmake python3-pip libmpfr-dev libgmp-dev libblas-dev liblapack-dev wget
+RUN apt-get update && apt-get install -y build-essential git cmake python3-pip libmpfr-dev libgmp-dev libblas-dev liblapack-dev wget
 
 RUN pip3 install pyyaml
 RUN pip3 install typing

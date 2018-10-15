@@ -1,7 +1,6 @@
 FROM base/devel
 
-RUN pacman -Syu --noconfirm
-RUN pacman -S --noconfirm git cmake python python-pip mpfr gmp emscripten wget
+RUN pacman -Syu --noconfirm && pacman -S --noconfirm git cmake python python-pip mpfr gmp emscripten wget
 
 RUN pip install pyyaml
 RUN pip install typing
