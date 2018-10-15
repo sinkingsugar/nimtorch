@@ -111,7 +111,7 @@ elif defined ios:
     proc ProfilerStop*() {.importc.}
 
 else:
-  {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -fopenmp -lrt -lc10".}
+  {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -fopenmp -lrt -lc10 -llapack -lblas".}
   when defined cuda:
     {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda".}
   
