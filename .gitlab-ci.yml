@@ -143,9 +143,10 @@ test:nimtorch:native:
     - export PATH="$PATH:$HOME/miniconda3/bin"
     - export ENVNAME=nimtorch_testing
     - conda env remove -n $ENVNAME || true
+    - conda update -y conda
   script:
     # Not on docker, we need results of this operations
-    - conda create -n $ENVNAME -c fragcolor `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"`
+    - conda create -n $ENVNAME -c fragcolor pyyaml `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"`
     - export ATEN=$HOME/miniconda3/envs/$ENVNAME
     - export PATH="$PATH:$HOME/miniconda3/envs/$ENVNAME/bin"
     - nimble test
@@ -162,7 +163,7 @@ test:nimtorch:native:
       - conda/
       - docker/
   tags:
-    - LINUX, PYTHON, PYYAML, CONDA
+    - LINUX, CONDA
 
 test:nimtorch:cuda:
   stage: test
