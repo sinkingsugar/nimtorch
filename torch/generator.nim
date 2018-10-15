@@ -82,6 +82,9 @@ const customNames = [
   "contiguous",
   "chunk",
 
+  "softmax",
+  "log_softmax",
+
   "convolution",
   "_convolution",
   "_convolution_nogroup",

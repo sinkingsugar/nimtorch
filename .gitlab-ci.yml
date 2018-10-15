@@ -201,6 +201,13 @@ deploy:nimtorch:
     - git checkout $CI_COMMIT_REF_NAME
     - git reset --hard origin/$CI_COMMIT_REF_NAME
     - git stash pop || true # allow failure
+    # Notify if we have changes in declarations
+    - export DIFF=`git diff --exit-code torch/declarations.nim`
+    - test -z "$DIFF" || curl -X POST -H "Content-Type&#58; application/json" -d "{\"value1\":\"Changes in declarations.nim\",\"value2\":\"$CI_COMMIT_SHA\",\"value3\":\"$DIFF\"}" https://maker.ifttt.com/trigger/trello_works_notify/with/key/$IFTTT_KEY && true
+    # Notify if we have changes in derivatives
+    - export DIFF=`git diff --exit-code torch/derivatives.nim`
+    - test -z "$DIFF" || curl -X POST -H "Content-Type&#58; application/json" -d "{\"value1\":\"Changes in derivatives.nim\",\"value2\":\"$CI_COMMIT_SHA\",\"value3\":\"$DIFF\"}" https://maker.ifttt.com/trigger/trello_works_notify/with/key/$IFTTT_KEY && true
+    # Commit and push on this branch
     - git commit --allow-empty -a -m "PyTorch upstream nightly success"
     - git push ssh://git@git.fragcolor.xyz:27030/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
     # Merge master on release
