@@ -2941,18 +2941,6 @@ proc logspace*(ty: TensorType; start: float; end_name: float; steps: int; option
 proc logspace*(start: float; end_name: float; steps: int; options: TensorOptions): Tensor {.inline.} = 
   check: atenFunction("at::logspace", start, end_name, steps, options).to(ATensor).newTensor()
 
-proc log_softmax*(ty: TensorType; self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
-  check: ty[].atenMethod("log_softmax", self.tensor, dim, dtype).to(ATensor).newTensor()
-
-proc log_softmax*(self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("log_softmax", dim, dtype).to(ATensor).newTensor()
-
-proc log_softmax*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.} = 
-  check: ty[].atenMethod("log_softmax", self.tensor, dim).to(ATensor).newTensor()
-
-proc log_softmax*(self: Tensor; dim: int): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("log_softmax", dim).to(ATensor).newTensor()
-
 proc log_softmax_impl*(ty: TensorType; self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.}
 
 proc log_softmax_impl*(self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.}
@@ -3552,18 +3540,6 @@ proc smm*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor {.inline.} =
 
 proc smm*(self: Tensor; mat2: Tensor): Tensor {.inline.} = 
   check: self.tensor.atenMethod("smm", mat2.tensor).to(ATensor).newTensor()
-
-proc softmax*(ty: TensorType; self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
-  check: ty[].atenMethod("softmax", self.tensor, dim, dtype).to(ATensor).newTensor()
-
-proc softmax*(self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("softmax", dim, dtype).to(ATensor).newTensor()
-
-proc softmax*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.} = 
-  check: ty[].atenMethod("softmax", self.tensor, dim).to(ATensor).newTensor()
-
-proc softmax*(self: Tensor; dim: int): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("softmax", dim).to(ATensor).newTensor()
 
 proc softmax_impl*(ty: TensorType; self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.}
 

@@ -294,3 +294,21 @@ proc to_args_sizes(tensors: openarray[Tensor]): seq[seq[int]] =
   result.setLen(tensors.len)
   for i, tensor in tensors:
     result[i] = tensor.sizes()
+
+proc softmax*(input: Tensor; dim: int): Tensor =
+  softmax_impl(input, dim, false)
+
+proc softmax*(input: Tensor; dim: int; dtype: AScalarType): Tensor =
+  if input.is_cuda() and input.getType().scalarType() == ATkHalf and dtype == ATkFloat:
+    return softmax_impl(input, dim, true);
+  else:
+    return softmax_impl(input.toType(dtype), dim, false)
+
+proc log_softmax*(input: Tensor; dim: int): Tensor =
+  log_softmax_impl(input, dim, false)
+
+proc log_softmax*(input: Tensor; dim: int; dtype: AScalarType): Tensor =
+  if input.is_cuda() and input.getType().scalarType() == ATkHalf and dtype == ATkFloat:
+    return log_softmax_impl(input, dim, true);
+  else:
+    return log_softmax_impl(input.toType(dtype), dim, false)
