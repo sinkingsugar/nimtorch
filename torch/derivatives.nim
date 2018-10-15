@@ -2021,15 +2021,15 @@ autograd log2:
     check: self.tensor.atenMethod("log2").to(ATensor).newTensor()
   self: firstOrSelf(grad / (self * 0.6931471805599453))
 
-autograd log_softmax:
-  proc forward*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.} = 
-    check: ty[].atenMethod("log_softmax", self.tensor, dim).to(ATensor).newTensor()
-  self: firstOrSelf(log_softmax_backward_data(grad, fwd_result, dim, self))
+autograd log_softmax_impl:
+  proc forward*(ty: TensorType; self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.} = 
+    check: ty[].atenMethod("_log_softmax", self.tensor, dim, half_to_float).to(ATensor).newTensor()
+  self: firstOrSelf(log_softmax_backward_data_impl(grad, fwd_result, dim, self))
 
-autograd log_softmax:
-  proc forward*(self: Tensor; dim: int): Tensor {.inline.} = 
-    check: self.tensor.atenMethod("log_softmax", dim).to(ATensor).newTensor()
-  self: firstOrSelf(log_softmax_backward_data(grad, fwd_result, dim, self))
+autograd log_softmax_impl:
+  proc forward*(self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.} = 
+    check: atenFunction("at::_log_softmax", self.tensor, dim, half_to_float).to(ATensor).newTensor()
+  self: firstOrSelf(log_softmax_backward_data_impl(grad, fwd_result, dim, self))
 
 autograd mean:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
@@ -2237,15 +2237,15 @@ autograd slice:
     check: self.tensor.atenMethod("slice", dim, start, end_name, step).to(ATensor).newTensor()
   self: firstOrSelf(slice_backward(grad, self.sizes(), dim, start, end_name, step))
 
-autograd softmax:
-  proc forward*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.} = 
-    check: ty[].atenMethod("softmax", self.tensor, dim).to(ATensor).newTensor()
-  self: firstOrSelf(softmax_backward_data(grad, fwd_result, dim, self))
+autograd softmax_impl:
+  proc forward*(ty: TensorType; self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.} = 
+    check: ty[].atenMethod("_softmax", self.tensor, dim, half_to_float).to(ATensor).newTensor()
+  self: firstOrSelf(softmax_backward_data_impl(grad, fwd_result, dim, self))
 
-autograd softmax:
-  proc forward*(self: Tensor; dim: int): Tensor {.inline.} = 
-    check: self.tensor.atenMethod("softmax", dim).to(ATensor).newTensor()
-  self: firstOrSelf(softmax_backward_data(grad, fwd_result, dim, self))
+autograd softmax_impl:
+  proc forward*(self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.} = 
+    check: atenFunction("at::_softmax", self.tensor, dim, half_to_float).to(ATensor).newTensor()
+  self: firstOrSelf(softmax_backward_data_impl(grad, fwd_result, dim, self))
 
 autograd split:
   proc forward*(ty: TensorType; self: Tensor; split_size: int; dim: int = 0): TensorList {.inline.} = 

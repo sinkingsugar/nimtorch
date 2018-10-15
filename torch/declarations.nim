@@ -2941,15 +2941,27 @@ proc logspace*(ty: TensorType; start: float; end_name: float; steps: int; option
 proc logspace*(start: float; end_name: float; steps: int; options: TensorOptions): Tensor {.inline.} = 
   check: atenFunction("at::logspace", start, end_name, steps, options).to(ATensor).newTensor()
 
-proc log_softmax*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.}
+proc log_softmax*(ty: TensorType; self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+  check: ty[].atenMethod("log_softmax", self.tensor, dim, dtype).to(ATensor).newTensor()
 
-proc log_softmax*(self: Tensor; dim: int): Tensor {.inline.}
+proc log_softmax*(self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("log_softmax", dim, dtype).to(ATensor).newTensor()
 
-proc log_softmax_backward_data*(ty: TensorType; grad_output: Tensor; output: Tensor; dim: int; self: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("log_softmax_backward_data", grad_output.tensor, output.tensor, dim, self.tensor).to(ATensor).newTensor()
+proc log_softmax*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.} = 
+  check: ty[].atenMethod("log_softmax", self.tensor, dim).to(ATensor).newTensor()
 
-proc log_softmax_backward_data*(grad_output: Tensor; output: Tensor; dim: int; self: Tensor): Tensor {.inline.} = 
-  check: atenFunction("at::log_softmax_backward_data", grad_output.tensor, output.tensor, dim, self.tensor).to(ATensor).newTensor()
+proc log_softmax*(self: Tensor; dim: int): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("log_softmax", dim).to(ATensor).newTensor()
+
+proc log_softmax_impl*(ty: TensorType; self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.}
+
+proc log_softmax_impl*(self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.}
+
+proc log_softmax_backward_data_impl*(ty: TensorType; grad_output: Tensor; output: Tensor; dim: int; self: Tensor): Tensor {.inline.} = 
+  check: ty[].atenMethod("_log_softmax_backward_data", grad_output.tensor, output.tensor, dim, self.tensor).to(ATensor).newTensor()
+
+proc log_softmax_backward_data_impl*(grad_output: Tensor; output: Tensor; dim: int; self: Tensor): Tensor {.inline.} = 
+  check: atenFunction("at::_log_softmax_backward_data", grad_output.tensor, output.tensor, dim, self.tensor).to(ATensor).newTensor()
 
 proc logsumexp*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
   check: ty[].atenMethod("logsumexp", self.tensor, dim, keepdim).to(ATensor).newTensor()
@@ -3541,15 +3553,27 @@ proc smm*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor {.inline.} =
 proc smm*(self: Tensor; mat2: Tensor): Tensor {.inline.} = 
   check: self.tensor.atenMethod("smm", mat2.tensor).to(ATensor).newTensor()
 
-proc softmax*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.}
+proc softmax*(ty: TensorType; self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+  check: ty[].atenMethod("softmax", self.tensor, dim, dtype).to(ATensor).newTensor()
 
-proc softmax*(self: Tensor; dim: int): Tensor {.inline.}
+proc softmax*(self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("softmax", dim, dtype).to(ATensor).newTensor()
 
-proc softmax_backward_data*(ty: TensorType; grad_output: Tensor; output: Tensor; dim: int; self: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("softmax_backward_data", grad_output.tensor, output.tensor, dim, self.tensor).to(ATensor).newTensor()
+proc softmax*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.} = 
+  check: ty[].atenMethod("softmax", self.tensor, dim).to(ATensor).newTensor()
 
-proc softmax_backward_data*(grad_output: Tensor; output: Tensor; dim: int; self: Tensor): Tensor {.inline.} = 
-  check: atenFunction("at::softmax_backward_data", grad_output.tensor, output.tensor, dim, self.tensor).to(ATensor).newTensor()
+proc softmax*(self: Tensor; dim: int): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("softmax", dim).to(ATensor).newTensor()
+
+proc softmax_impl*(ty: TensorType; self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.}
+
+proc softmax_impl*(self: Tensor; dim: int; half_to_float: bool): Tensor {.inline.}
+
+proc softmax_backward_data_impl*(ty: TensorType; grad_output: Tensor; output: Tensor; dim: int; self: Tensor): Tensor {.inline.} = 
+  check: ty[].atenMethod("_softmax_backward_data", grad_output.tensor, output.tensor, dim, self.tensor).to(ATensor).newTensor()
+
+proc softmax_backward_data_impl*(grad_output: Tensor; output: Tensor; dim: int; self: Tensor): Tensor {.inline.} = 
+  check: atenFunction("at::_softmax_backward_data", grad_output.tensor, output.tensor, dim, self.tensor).to(ATensor).newTensor()
 
 proc split*(ty: TensorType; self: Tensor; split_size: int; dim: int = 0): TensorList {.inline.}
 
