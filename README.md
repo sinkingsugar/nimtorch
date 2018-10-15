@@ -60,6 +60,10 @@ let
 
 ## Getting started
 
+### Requirements
+
+**Linux**: blas and lapack libraries (if you have numpy, pytorch etc you most likely already have those)
+
 ### Super easy, using conda
 
 *Linux, macOS and Windows*
