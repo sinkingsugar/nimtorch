@@ -76,11 +76,11 @@ Make sure your system is recent (ubuntu 18.04 reference / macOS High Sierra / Wi
 
 Test with with something like:
 
-`nim cpp -o:test -r $ATEN/dist/nimtorch/tests/test_xor.nim`
+`nim cpp -o:test -r $ATEN/dist/pkgs/nimtorch-\#head/tests/test_xor.nim`
 
 or on windows... (because dlls need to be side by side)
 
-`nim cpp -o:%ATEN%/lib/test.exe -r %ATEN%/dist/nimtorch/tests/test_xor.nim`
+`nim cpp -o:%ATEN%/lib/test.exe -r %ATEN%/dist/pkgs/nimtorch-#head/tests/test_xor.nim`
 
 ### Semi manual way
 
