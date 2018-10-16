@@ -1,14 +1,14 @@
 package:
   name: aten
-  version: "2018.10.15.1306"
+  version: "2018.10.16.1338"
 
 source:
   path: ./
 
 requirements:
   run:
-    - mkl # [linux]
-    - mkl-include # [linux]
+    - mkl
+    - mkl-include
 
 build:
   script_env:
