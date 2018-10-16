@@ -589,6 +589,16 @@ autograd addcdiv:
   tensor1: firstOrSelf(grad * value / tensor2)
   tensor2: firstOrSelf(-grad * value * tensor1 / (tensor2 * tensor2))
 
+autograd symeig:
+  proc forward*(ty: TensorType; self: Tensor; eigenvectors: bool = false; upper: bool = true): tuple[res1: Tensor, res2: Tensor] {.inline.} = 
+    check: ty[].atenMethod("symeig", self.tensor, eigenvectors, upper).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+  self: firstOrSelf(symeig_backward(grads, self, eigenvectors, upper, fwd_result.res1, fwd_result.res2))
+
+autograd symeig:
+  proc forward*(self: Tensor; eigenvectors: bool = false; upper: bool = true): tuple[res1: Tensor, res2: Tensor] {.inline.} = 
+    check: self.tensor.atenMethod("symeig", eigenvectors, upper).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+  self: firstOrSelf(symeig_backward(grads, self, eigenvectors, upper, fwd_result.res1, fwd_result.res2))
+
 autograd random_inplace:
   proc forward*(ty: TensorType; self: Tensor; from_name: int; to_name: int; generator: Generator = nil): Tensor {.inline, discardable.} = 
     check: ty[].atenMethod("random_", self.tensor, from_name, to_name, generator).to(void); self

@@ -81,6 +81,7 @@ const customNames = [
   "mm",
   "contiguous",
   "chunk",
+  "expand_as",
 
   "softmax",
   "log_softmax",
@@ -126,6 +127,7 @@ const knownNames = [
   "pow_backward_self",
   "pow_backward_exponent",
   "atan2_backward",
+  "symeig_backward",
   "slice_backward",
   "split_backward",
   "split_with_sizes_backward",

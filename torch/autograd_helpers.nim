@@ -312,3 +312,35 @@ proc log_softmax*(input: Tensor; dim: int; dtype: ScalarType): Tensor =
     return log_softmax_impl(input, dim, true);
   else:
     return log_softmax_impl(input.toType(dtype), dim, false)
+
+proc expand_as*(self, other: Tensor): Tensor =
+  self.expand(other.sizes())
+
+proc symeig_backward*(grads: openarray[Tensor]; self: Tensor; eigenvectors, upper: bool; lambda, v: Tensor): Tensor =
+  assert(eigenvectors,
+    """symeig_backward: Setting eigenvectors to false in torch.symeig doesn't compute eigenvectors
+    and hence we cannot compute backward. Please use torch.symeig(eigenvectors=True)""")
+
+  let
+    glambda = grads[0]
+    gv = grads[1]
+    vt = v.t()
+
+  if gv.is_defined():
+    let F = lambda.unsqueeze(0).expand_as(self).clone()
+    F.sub_inplace(lambda.unsqueeze(1))
+    F.diagonal().fill_inplace(Inf)
+    F.pow_inplace(-1)
+
+    F.mul_inplace(vt.mm(gv))
+    result = v.mm(F.mm(vt))
+  else:
+    result = zeros_like(self)  
+
+  if glambda.is_defined():
+    result.add_inplace((v * glambda).mm(vt))
+
+  if upper:
+    result = triu(result) + triu(result.t(), 1)
+  else:
+    result = tril(result) + tril(result.t(), -1)

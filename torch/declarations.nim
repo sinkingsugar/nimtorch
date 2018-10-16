@@ -1121,11 +1121,9 @@ proc trtrs*(ty: TensorType; self: Tensor; A: Tensor; upper: bool = true; transpo
 proc trtrs*(self: Tensor; A: Tensor; upper: bool = true; transpose: bool = false; unitriangular: bool = false): tuple[res1: Tensor, res2: Tensor] {.inline.} = 
   check: self.tensor.atenMethod("trtrs", A.tensor, upper, transpose, unitriangular).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
 
-proc symeig*(ty: TensorType; self: Tensor; eigenvectors: bool = false; upper: bool = true): tuple[res1: Tensor, res2: Tensor] {.inline.} = 
-  check: ty[].atenMethod("symeig", self.tensor, eigenvectors, upper).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+proc symeig*(ty: TensorType; self: Tensor; eigenvectors: bool = false; upper: bool = true): tuple[res1: Tensor, res2: Tensor] {.inline.}
 
-proc symeig*(self: Tensor; eigenvectors: bool = false; upper: bool = true): tuple[res1: Tensor, res2: Tensor] {.inline.} = 
-  check: self.tensor.atenMethod("symeig", eigenvectors, upper).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+proc symeig*(self: Tensor; eigenvectors: bool = false; upper: bool = true): tuple[res1: Tensor, res2: Tensor] {.inline.}
 
 proc eig*(ty: TensorType; self: Tensor; eigenvectors: bool = false): tuple[res1: Tensor, res2: Tensor] {.inline.} = 
   check: ty[].atenMethod("eig", self.tensor, eigenvectors).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
@@ -2548,12 +2546,6 @@ proc expm1_inplace*(self: Tensor): Tensor {.inline, discardable.} =
 proc expand*(ty: TensorType; self: Tensor; size: openarray[int]; implicit: bool = false): Tensor {.inline.}
 
 proc expand*(self: Tensor; size: openarray[int]; implicit: bool = false): Tensor {.inline.}
-
-proc expand_as*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("expand_as", self.tensor, other.tensor).to(ATensor).newTensor()
-
-proc expand_as*(self: Tensor; other: Tensor): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("expand_as", other.tensor).to(ATensor).newTensor()
 
 proc eye*(ty: TensorType; n: int; options: TensorOptions): Tensor {.inline.} = 
   check: ty[].atenMethod("eye", n, options).to(ATensor).newTensor()
