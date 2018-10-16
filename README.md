@@ -143,3 +143,7 @@ make install
 cd <nimtorch repo>
 ATEN=<installation path of ATEN> nim cpp -r -f -o:/tmp/z01 torch.nim
 ```
+
+## Notes
+
+* We suggest setting `OMP_WAIT_POLICY` environment variable to `PASSIVE` when running on CPU.
