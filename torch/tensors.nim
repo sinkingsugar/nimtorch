@@ -324,7 +324,12 @@ proc internalManualSeed(seed: int) =
 
 proc manual_seed*(seed: int) = internalManualSeed(seed)
 
-proc set_num_threads*(num: int) {.importcpp: "at::set_num_threads(#)", header: "ATen/ATen.h".}
+proc aten_set_num_threads(num: int) {.importcpp: "at::set_num_threads(#)", header: "ATen/ATen.h".}
+proc th_set_num_threads(num: int) {.importcpp: "THSetNumThreads(#)", header: "TH/THGeneral.h".}
+
+proc set_num_threads*(num: int) =
+  aten_set_num_threads(num)
+  th_set_num_threads(num)
 
 proc get_num_threads*(): int {.importcpp: "at::get_num_threads()".}
 
