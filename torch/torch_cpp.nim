@@ -57,7 +57,7 @@ cpplibpaths(atenPath & """/lib64""")
 
 type AInt64* {.importcpp: "int64_t", header: "<stdint.h>".} = object
 
-when defined wasm:
+when defined wasm:  
   {.passL: "-lcaffe2 -lc10".}
 
 elif defined windows:
@@ -98,6 +98,8 @@ elif defined osx:
     proc ProfilerStop*() {.importc.}
 
 else:
+  {.passC: "-std=c++14".}
+
   {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -fopenmp -lrt -lc10".}
   when defined cuda:
     {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda".}
