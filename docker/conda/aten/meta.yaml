@@ -7,8 +7,8 @@ source:
 
 requirements:
   run:
-    - mkl # [linux]
-    - mkl-include # [linux]
+    - mkl
+    - mkl-include
 
 build:
   script_env:
