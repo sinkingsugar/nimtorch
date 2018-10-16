@@ -81,4 +81,3 @@ task test_clang_cuda, "Run clang cuda gpu tests":
   exec """nim cpp -d:release --cc:clang -r -o:test -d:cuda tests/test_autograd.nim"""
   exec """nim cpp --cc:clang -r -o:test -d:cuda tests/test_xor.nim"""
   exec """nim cpp -d:release --cc:clang -r -o:test -d:cuda tests/test_xor.nim"""
-  exec """nim cpp -r -o:test -d:nvcc tests/test_cuda_lltm.nim"""
