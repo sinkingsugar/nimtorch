@@ -175,15 +175,11 @@ macro `[]=`*(a: Tensor; args: varargs[int]; value: Tensor | SomeNumber): untyped
         `resSym` = `resSym`.select(`dimSkip`, `arg`)
 
   result.add quote do:
+    # `arange` doesn't produce the right tensor type
+    let indexTensor = arange(0.float, `resSym`.size(0).float, LongTensor).toType(ATkLong)
     when type(`value`) is Tensor:
-      let
-        sizeOne = `resSym`.sizes()[0] - 1
-        indexTensor = range(0.float, sizeOne.float, LongTensor)
       `resSym`.index_put_inplace([indexTensor], `value`)
     else:
-      let
-        sizeOne = `resSym`.sizes()[0] - 1
-        indexTensor = range(0.float, sizeOne.float, LongTensor)
       `resSym`.index_put_inplace([indexTensor], full_like(`resSym`, `value`.float, `resSym`.options()))
 
 macro chunk*(self: Tensor; chunks: static int; dim: int): untyped =
