@@ -100,7 +100,7 @@ elif defined osx:
 else:
   {.passC: "-std=c++14".}
 
-  {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -fopenmp -lrt -lc10".}
+  {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -fopenmp=libgomp -lrt -lc10".}
   when defined cuda:
     {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda".}
   
