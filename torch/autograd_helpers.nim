@@ -51,29 +51,29 @@ proc toType*(self: Tensor; t: TensorType; non_blocking: bool = false): Tensor =
     return self
   return t.copy(self, non_blocking)
 
-proc toScalarType(t: TensorType; s: AScalarType): TensorType {.importcpp: "&(#->toScalarType(#))".}
+proc toScalarType(t: TensorType; s: ScalarType): TensorType {.importcpp: "&(#->toScalarType(#))".}
 
-proc scalarType(t: TensorType): AScalarType {.importcpp: "#->scalarType()".}
+proc scalarType(t: TensorType): ScalarType {.importcpp: "#->scalarType()".}
 
-proc isIntegralType(dtype: AScalarType): bool {.importcpp: "at::isIntegralType(#)".}
+proc isIntegralType(dtype: ScalarType): bool {.importcpp: "at::isIntegralType(#)".}
 
-proc toType*(self: Tensor; t: AScalarType; non_blocking: bool = false): Tensor =
+proc toType*(self: Tensor; t: ScalarType; non_blocking: bool = false): Tensor =
   self.toType(self.getType().toScalarType(t))
 
-proc integer_upcast(self: Tensor; dtype: Option[AScalarType] = AScalarType.none): Tensor =
+proc integer_upcast(self: Tensor; dtype: Option[ScalarType] = ScalarType.none): Tensor =
   let 
     scalarType = self.getType().scalarType
     upcast_scalarType =
       if dtype.isSome: dtype.get()
-      elif scalarType.isIntegralType(): ATkLong
+      elif scalarType.isIntegralType(): ScalarType.kLong
       else: scalarType
 
   return self.toType(upcast_scalarType)
 
-proc sum*(self: Tensor; dim: openarray[int]; keepdim: bool = false; dtype: Option[AScalarType] = AScalarType.none): Tensor {.inline.} =
+proc sum*(self: Tensor; dim: openarray[int]; keepdim: bool = false; dtype: Option[ScalarType] = ScalarType.none): Tensor {.inline.} =
   sum_impl(integer_upcast(self, dtype), dim, keepdim)
 
-proc sum*(self: Tensor; dtype: Option[AScalarType] = AScalarType.none): Tensor {.inline.} =
+proc sum*(self: Tensor; dtype: Option[ScalarType] = ScalarType.none): Tensor {.inline.} =
   sum_impl(integer_upcast(self, dtype))
 
 # Sums `tensor` repeatedly to produce a tensor of shape `shape`.
@@ -298,8 +298,8 @@ proc to_args_sizes(tensors: openarray[Tensor]): seq[seq[int]] =
 proc softmax*(input: Tensor; dim: int): Tensor =
   softmax_impl(input, dim, false)
 
-proc softmax*(input: Tensor; dim: int; dtype: AScalarType): Tensor =
-  if input.is_cuda() and input.getType().scalarType() == ATkHalf and dtype == ATkFloat:
+proc softmax*(input: Tensor; dim: int; dtype: ScalarType): Tensor =
+  if input.is_cuda() and input.getType().scalarType() == ScalarType.kHalf and dtype == ScalarType.kFloat:
     return softmax_impl(input, dim, true);
   else:
     return softmax_impl(input.toType(dtype), dim, false)
@@ -307,8 +307,8 @@ proc softmax*(input: Tensor; dim: int; dtype: AScalarType): Tensor =
 proc log_softmax*(input: Tensor; dim: int): Tensor =
   log_softmax_impl(input, dim, false)
 
-proc log_softmax*(input: Tensor; dim: int; dtype: AScalarType): Tensor =
-  if input.is_cuda() and input.getType().scalarType() == ATkHalf and dtype == ATkFloat:
+proc log_softmax*(input: Tensor; dim: int; dtype: ScalarType): Tensor =
+  if input.is_cuda() and input.getType().scalarType() == ScalarType.kHalf and dtype == ScalarType.kFloat:
     return log_softmax_impl(input, dim, true);
   else:
     return log_softmax_impl(input.toType(dtype), dim, false)

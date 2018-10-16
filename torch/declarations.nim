@@ -2331,10 +2331,10 @@ proc cudnn_grid_sampler_backward*(ty: TensorType; self: Tensor; grid: Tensor; gr
 proc cudnn_grid_sampler_backward*(self: Tensor; grid: Tensor; grad_output: Tensor): tuple[self: Tensor, grid: Tensor] {.inline.} = 
   check: atenFunction("at::cudnn_grid_sampler_backward", self.tensor, grid.tensor, grad_output.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
 
-proc cumsum*(ty: TensorType; self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+proc cumsum*(ty: TensorType; self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("cumsum", self.tensor, dim, dtype).to(ATensor).newTensor()
 
-proc cumsum*(self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+proc cumsum*(self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
   check: self.tensor.atenMethod("cumsum", dim, dtype).to(ATensor).newTensor()
 
 proc cumsum*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.} = 
@@ -2343,10 +2343,10 @@ proc cumsum*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.} =
 proc cumsum*(self: Tensor; dim: int): Tensor {.inline.} = 
   check: self.tensor.atenMethod("cumsum", dim).to(ATensor).newTensor()
 
-proc cumprod*(ty: TensorType; self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+proc cumprod*(ty: TensorType; self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("cumprod", self.tensor, dim, dtype).to(ATensor).newTensor()
 
-proc cumprod*(self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+proc cumprod*(self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
   check: self.tensor.atenMethod("cumprod", dim, dtype).to(ATensor).newTensor()
 
 proc cumprod*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.} = 
@@ -3005,20 +3005,20 @@ proc max_pool3d*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stri
 proc max_pool3d*(self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): Tensor {.inline.} = 
   check: atenFunction("at::max_pool3d", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(ATensor).newTensor()
 
-proc mean*(ty: TensorType; self: Tensor; dtype: AScalarType): Tensor {.inline.} = 
+proc mean*(ty: TensorType; self: Tensor; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("mean", self.tensor, dtype).to(ATensor).newTensor()
 
-proc mean*(self: Tensor; dtype: AScalarType): Tensor {.inline.} = 
+proc mean*(self: Tensor; dtype: ScalarType): Tensor {.inline.} = 
   check: self.tensor.atenMethod("mean", dtype).to(ATensor).newTensor()
 
 proc mean*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
 proc mean*(self: Tensor): Tensor {.inline.}
 
-proc mean*(ty: TensorType; self: Tensor; dim: int; keepdim: bool; dtype: AScalarType): Tensor {.inline.} = 
+proc mean*(ty: TensorType; self: Tensor; dim: int; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("mean", self.tensor, dim, keepdim, dtype).to(ATensor).newTensor()
 
-proc mean*(self: Tensor; dim: int; keepdim: bool; dtype: AScalarType): Tensor {.inline.} = 
+proc mean*(self: Tensor; dim: int; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
   check: self.tensor.atenMethod("mean", dim, keepdim, dtype).to(ATensor).newTensor()
 
 proc mean*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
@@ -3027,10 +3027,10 @@ proc mean*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tenso
 proc mean*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
   check: self.tensor.atenMethod("mean", dim, keepdim).to(ATensor).newTensor()
 
-proc mean*(ty: TensorType; self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+proc mean*(ty: TensorType; self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("mean", self.tensor, dim, dtype).to(ATensor).newTensor()
 
-proc mean*(self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+proc mean*(self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
   check: self.tensor.atenMethod("mean", dim, dtype).to(ATensor).newTensor()
 
 proc median*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
@@ -3627,10 +3627,10 @@ proc std*(ty: TensorType; self: Tensor; dim: int; unbiased: bool = true; keepdim
 proc std*(self: Tensor; dim: int; unbiased: bool = true; keepdim: bool = false): Tensor {.inline.} = 
   check: self.tensor.atenMethod("std", dim, unbiased, keepdim).to(ATensor).newTensor()
 
-proc prod*(ty: TensorType; self: Tensor; dtype: AScalarType): Tensor {.inline.} = 
+proc prod*(ty: TensorType; self: Tensor; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("prod", self.tensor, dtype).to(ATensor).newTensor()
 
-proc prod*(self: Tensor; dtype: AScalarType): Tensor {.inline.} = 
+proc prod*(self: Tensor; dtype: ScalarType): Tensor {.inline.} = 
   check: self.tensor.atenMethod("prod", dtype).to(ATensor).newTensor()
 
 proc prod*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
@@ -3645,10 +3645,10 @@ proc prod_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} =
 proc prod_impl*(self: Tensor): Tensor {.inline.} = 
   check: atenFunction("at::_prod", self.tensor).to(ATensor).newTensor()
 
-proc prod*(ty: TensorType; self: Tensor; dim: int; keepdim: bool; dtype: AScalarType): Tensor {.inline.} = 
+proc prod*(ty: TensorType; self: Tensor; dim: int; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("prod", self.tensor, dim, keepdim, dtype).to(ATensor).newTensor()
 
-proc prod*(self: Tensor; dim: int; keepdim: bool; dtype: AScalarType): Tensor {.inline.} = 
+proc prod*(self: Tensor; dim: int; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
   check: self.tensor.atenMethod("prod", dim, keepdim, dtype).to(ATensor).newTensor()
 
 proc prod*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
@@ -3657,10 +3657,10 @@ proc prod*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tenso
 proc prod*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
   check: self.tensor.atenMethod("prod", dim, keepdim).to(ATensor).newTensor()
 
-proc prod*(ty: TensorType; self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+proc prod*(ty: TensorType; self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("prod", self.tensor, dim, dtype).to(ATensor).newTensor()
 
-proc prod*(self: Tensor; dim: int; dtype: AScalarType): Tensor {.inline.} = 
+proc prod*(self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
   check: self.tensor.atenMethod("prod", dim, dtype).to(ATensor).newTensor()
 
 proc prod_impl*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
@@ -4151,10 +4151,10 @@ proc get_device*(ty: TensorType; self: Tensor): int {.inline.} =
 proc get_device*(self: Tensor): int {.inline.} = 
   check: self.tensor.atenMethod("get_device").to(int)
 
-proc to_name*(ty: TensorType; self: Tensor; dtype: AScalarType; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
+proc to_name*(ty: TensorType; self: Tensor; dtype: ScalarType; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
   check: ty[].atenMethod("to", self.tensor, dtype, non_blocking, copy).to(ATensor).newTensor()
 
-proc to_name*(self: Tensor; dtype: AScalarType; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
+proc to_name*(self: Tensor; dtype: ScalarType; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
   check: self.tensor.atenMethod("to", dtype, non_blocking, copy).to(ATensor).newTensor()
 
 proc to_name*(ty: TensorType; self: Tensor; other: Tensor; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 

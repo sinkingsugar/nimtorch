@@ -8,34 +8,35 @@ defineCppType(AStorage, "at::Storage", "ATen/ATen.h")
 defineCppType(ASparseTensorRef, "at::SparseTensorRef", "ATen/ATen.h")
 defineCppType(ATensorOptions, "at::TensorOptions", "ATen/ATen.h")
 defineCppType(AScalar, "at::Scalar", "ATen/ATen.h")
-defineCppType(AScalarType, "at::ScalarType", "ATen/ATen.h")
 defineCppType(AIntList, "at::IntList", "ATen/ATen.h")
 defineCppType(AGenerator, "at::Generator", "ATen/ATen.h")
 defineCppType(AContext, "at::Context", "ATen/ATen.h")
 defineCppType(ATensors, "std::vector<at::Tensor>", "vector")
 defineCppType(OStringStream, "std::ostringstream", "sstream")
 
-var ATkByte* {.importcpp: "at::kByte", nodecl.}: AScalarType
-var ATkChar* {.importcpp: "at::kChar", nodecl.}: AScalarType
-var ATkShort* {.importcpp: "at::kShort", nodecl.}: AScalarType
-var ATkInt* {.importcpp: "at::kInt", nodecl.}: AScalarType
-var ATkLong* {.importcpp: "at::kLong", nodecl.}: AScalarType
-var ATkHalf* {.importcpp: "at::kHalf", nodecl.}: AScalarType
-var ATkFloat* {.importcpp: "at::kFloat", nodecl.}: AScalarType
-var ATkDouble* {.importcpp: "at::kDouble", nodecl.}: AScalarType
+type
+  ScalarType* {.pure, importcpp: "at::ScalarType", header: "ATen/ATen.h".} = enum
+    kByte
+    kChar
+    kShort
+    kInt
+    kLong
+    kHalf
+    kFloat
+    kDouble
 
-proc toATenType*(nimType: typedesc[byte]): AScalarType {.inline.} = ATkByte
-proc toATenType*(nimType: typedesc[char]): AScalarType {.inline.} = ATkChar
-proc toATenType*(nimType: typedesc[int16]): AScalarType {.inline.} = ATkShort
-proc toATenType*(nimType: typedesc[int32]): AScalarType {.inline.} = ATkInt
-proc toATenType*(nimType: typedesc[int64]): AScalarType {.inline.} = ATkLong
-proc toATenType*(nimType: typedesc[float32]): AScalarType {.inline.} = ATkFloat
-proc toATenType*(nimType: typedesc[float64]): AScalarType {.inline.} = ATkDouble
+proc toATenType*(nimType: typedesc[byte]): ScalarType {.inline.} = ScalarType.kByte
+proc toATenType*(nimType: typedesc[char]): ScalarType {.inline.} = ScalarType.kChar
+proc toATenType*(nimType: typedesc[int16]): ScalarType {.inline.} = ScalarType.kShort
+proc toATenType*(nimType: typedesc[int32]): ScalarType {.inline.} = ScalarType.kInt
+proc toATenType*(nimType: typedesc[int64]): ScalarType {.inline.} = ScalarType.kLong
+proc toATenType*(nimType: typedesc[float32]): ScalarType {.inline.} = ScalarType.kFloat
+proc toATenType*(nimType: typedesc[float64]): ScalarType {.inline.} = ScalarType.kDouble
 
 proc ACPU*(): CppProxy {.importcpp: "at::CPU(at::kFloat)".}
 proc ACUDA*(): CppProxy {.importcpp: "at::CUDA(at::kFloat)".}
-proc ACPU*(dtype: AScalarType): CppProxy {.importcpp: "at::CPU(#)".}
-proc ACUDA*(dtype: AScalarType): CppProxy {.importcpp: "at::CUDA(#)".}
+proc ACPU*(dtype: ScalarType): CppProxy {.importcpp: "at::CPU(#)".}
+proc ACUDA*(dtype: ScalarType): CppProxy {.importcpp: "at::CUDA(#)".}
 proc printTensor*(t: ATensor) {.importcpp: "at::print(#)".}
 proc globalContext*(): AContext {.importcpp: "at::globalContext()".}
 var BackendCPU* {.importcpp: "at::Backend::CPU", nodecl.}: cint

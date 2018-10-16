@@ -148,16 +148,16 @@ proc is_cuda*(self: TensorType): bool =
   else:
     return false
 
-proc toATenType*(kind: TensorKind): AScalarType {.inline.} =
+proc toATenType*(kind: TensorKind): ScalarType {.inline.} =
   case kind
-  of FloatTensor: return ATkFloat
-  of DoubleTensor: return ATkDouble
-  of HalfTensor: return ATkHalf
-  of ByteTensor: return ATkByte
-  of CharTensor: return ATkChar
-  of ShortTensor: return ATkShort
-  of IntTensor: return ATkInt
-  of LongTensor: return ATkLong
+  of FloatTensor: return ScalarType.kFloat
+  of DoubleTensor: return ScalarType.kDouble
+  of HalfTensor: return ScalarType.kHalf
+  of ByteTensor: return ScalarType.kByte
+  of CharTensor: return ScalarType.kChar
+  of ShortTensor: return ScalarType.kShort
+  of IntTensor: return ScalarType.kInt
+  of LongTensor: return ScalarType.kLong
   else: raiseAssert("Unknown type")
 
 proc device*(deviceName: string): Device {.inline.} =
