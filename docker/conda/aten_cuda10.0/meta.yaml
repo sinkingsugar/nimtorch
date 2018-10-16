@@ -5,6 +5,11 @@ package:
 source:
   path: ./
 
+requirements:
+  run:
+    - mkl # [linux]
+    - mkl-include # [linux]
+
 build:
   script_env:
     - ATEN

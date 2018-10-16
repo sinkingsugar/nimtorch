@@ -1,6 +1,6 @@
-FROM nvidia/cuda:9.2-devel-ubuntu18.04
+FROM nvidia/cuda:9.2-cudnn7-devel-ubuntu18.04
 
-RUN apt-get update && apt-get install -y build-essential git cmake python3-pip libmpfr-dev libgmp-dev libblas-dev liblapack-dev wget
+RUN apt-get update && apt-get install -y build-essential git cmake python3-pip libmpfr-dev libgmp-dev wget
 
 RUN pip3 install pyyaml
 RUN pip3 install typing
@@ -13,6 +13,9 @@ chmod +x Miniconda3-latest-Linux-x86_64.sh && \
 ./Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda3
 
 RUN /root/miniconda3/bin/conda install conda-build anaconda-client
+
+SHELL ["/bin/bash", "-c"]
+ENV PATH /root/miniconda3/bin:$PATH
 
 ARG PYTORCH_COMMIT
 
@@ -28,11 +31,14 @@ git submodule update
 
 ENV PYTORCH_PYTHON=python3
 
+RUN conda create -n deps mkl mkl-include
+
 RUN cd && \
 cd pytorch && \
 mkdir built && \
 cd built && \
-cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
+source activate deps && \
+cmake -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
 make -j10 && \
 make install -j10 && \
 make clean && \
@@ -43,17 +49,19 @@ COPY conda /root/conda
 ARG TOKEN
 
 RUN cd && cd conda && \
+source activate deps && \
 export PATH=$PATH:/root/miniconda3/bin && \
 export ATEN=/root/pytorch/built/output && \
 conda build cuda10.0 && \
 conda build wasm
 
-RUN /root/miniconda3/bin/anaconda -t ${TOKEN} upload --skip-existing /root/miniconda3/conda-bld/linux-64/wasm-*.tar.bz2
-RUN /root/miniconda3/bin/anaconda -t ${TOKEN} upload --skip-existing /root/miniconda3/conda-bld/linux-64/cuda10.0-*.tar.bz2
+RUN source activate deps && anaconda -t ${TOKEN} upload --skip-existing /root/miniconda3/conda-bld/linux-64/wasm-*.tar.bz2
+RUN source activate deps && anaconda -t ${TOKEN} upload --skip-existing /root/miniconda3/conda-bld/linux-64/cuda10.0-*.tar.bz2
 
 RUN cd && cd conda && \
+source activate deps && \
 export PATH=$PATH:/root/miniconda3/bin && \
 export ATEN=/root/pytorch/built/output && \
 conda build aten
 
-RUN /root/miniconda3/bin/anaconda -t ${TOKEN} upload /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
+RUN source activate deps && anaconda -t ${TOKEN} upload /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
