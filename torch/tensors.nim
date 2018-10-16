@@ -1,6 +1,6 @@
 import fragments/ffi/cpp
 import torch_cpp
-import macros, sequtils, math, sets, strformat, options, os
+import macros, sequtils, math, sets, strformat, options
 
 {.experimental: "implicitDeref".}
 
@@ -330,9 +330,6 @@ proc th_set_num_threads(num: int) {.importcpp: "THSetNumThreads(#)", header: "TH
 proc set_num_threads*(num: int) =
   aten_set_num_threads(num)
   th_set_num_threads(num)
-
-# Also set OMP_WAIT_POLICY as passive by default
-putEnv("OMP_WAIT_POLICY", "PASSIVE")
 
 proc get_num_threads*(): int {.importcpp: "at::get_num_threads()".}
 
