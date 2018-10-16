@@ -3013,11 +3013,9 @@ proc mean*(ty: TensorType; self: Tensor; dim: int; keepdim: bool; dtype: ScalarT
 proc mean*(self: Tensor; dim: int; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
   check: self.tensor.atenMethod("mean", dim, keepdim, dtype).to(ATensor).newTensor()
 
-proc mean*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("mean", self.tensor, dim, keepdim).to(ATensor).newTensor()
+proc mean*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.}
 
-proc mean*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("mean", dim, keepdim).to(ATensor).newTensor()
+proc mean*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.}
 
 proc mean*(ty: TensorType; self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("mean", self.tensor, dim, dtype).to(ATensor).newTensor()

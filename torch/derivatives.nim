@@ -2051,6 +2051,16 @@ autograd mean:
     check: self.tensor.atenMethod("mean").to(ATensor).newTensor()
   self: firstOrSelf(grad.expand(self.sizes()) / self.numel())
 
+autograd mean:
+  proc forward*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
+    check: ty[].atenMethod("mean", self.tensor, dim, keepdim).to(ATensor).newTensor()
+  self: firstOrSelf(sum_backward(grad, self.sizes(), dim, keepdim) / safe_size_impl(self.sizes(), dim))
+
+autograd mean:
+  proc forward*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
+    check: self.tensor.atenMethod("mean", dim, keepdim).to(ATensor).newTensor()
+  self: firstOrSelf(sum_backward(grad, self.sizes(), dim, keepdim) / safe_size_impl(self.sizes(), dim))
+
 autograd mkldnn_convolution:
   proc forward*(ty: TensorType; self: Tensor; weight: Tensor; bias: Tensor; padding: openarray[int]; stride: openarray[int]; dilation: openarray[int]; groups: int): Tensor {.inline.} = 
     check: ty[].atenMethod("mkldnn_convolution", self.tensor, weight.tensor, bias.tensor, padding.toAIntList(), stride.toAIntList(), dilation.toAIntList(), groups).to(ATensor).newTensor()

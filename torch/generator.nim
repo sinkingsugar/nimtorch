@@ -136,6 +136,7 @@ const knownNames = [
   "unsqueeze_to",
   "sum_to",
   "to_args_sizes",
+  "_safe_size",
   "sizes",
   "strides",
   "type",
@@ -623,6 +624,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
 
           nimLikeStr = nimLikeStr.replace(".type()", ".getType()")
           nimLikeStr = nimLikeStr.replace(".defined()", ".is_defined()")
+          nimLikeStr = nimLikeStr.replace("_safe_size", "safe_size_impl")
 
           # replace any fwd result tuple names with proper prefix if necessary
           if info.returns.len > 1:

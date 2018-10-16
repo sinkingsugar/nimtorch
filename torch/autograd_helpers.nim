@@ -206,6 +206,10 @@ proc atan2_backward*(grad, self, other: Tensor; outputMask: StdArray[bool, 2]): 
 proc maybe_wrap_dim(dim, size: int): int {.inline.} =
   return dynamicCCall("at::maybe_wrap_dim", dim, size).to(int)
 
+proc safe_size_impl*(sizes: openarray[int]; dim: int): int =
+  let dim = maybe_wrap_dim(dim, sizes.len)
+  return if sizes.len != 0: sizes[dim] else: 1
+
 proc split_with_sizes_backward*(grads: openarray[Tensor]; split_sizes: openarray[int]; dim: int; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
   let ndim = maybe_wrap_dim(dim, sizes.len())
   var allDefinedList: TensorList
@@ -268,6 +272,9 @@ proc sum_backward(grad: Tensor; sizes: openarray[int]; dims: openarray[int]; kee
       result = result.expand(sizes)
   else:
     return grad.expand(sizes)
+
+proc sum_backward*(grad: Tensor; sizes: openarray[int]; dim: int; keepdim: bool): Tensor {.inline.}=
+  grad.sum_backward(sizes, [dim], keepdim)
 
 proc legacy_cat_wrap_dim(dim: int; tensor_sizes: seq[seq[int]]): int =
   for sizes in tensor_sizes:
