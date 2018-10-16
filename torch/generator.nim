@@ -99,6 +99,8 @@ const customNames = [
   "gru_cell",
 
   "max_pool1d",
+  "max_pool2d",
+  "max_pool3d",
   "max_pool1d_with_indices",
   "adaptive_max_pool1d",
   "avg_pool1d",

@@ -57,6 +57,12 @@ proc max_pool1d_with_indices*(input: Tensor; kernel_size: int = 0; stride: int =
 proc max_pool1d*(input: Tensor; kernel_size: int = 0; stride: int = kernel_size; padding: int = 0; dilation: int = 1; ceil_mode = false): Tensor {.inline.} =
   max_pool1d_with_indices(input, kernel_size, stride, padding, dilation, ceil_mode)[0]
 
+proc max_pool2d*(input: Tensor; kernel_size: openarray[int] = [0, 0]; stride: openarray[int] = kernel_size; padding: openarray[int] = [0, 0]; dilation: openarray[int] = [1, 1]; ceil_mode = false): Tensor {.inline.} =
+  max_pool2d_with_indices(input, kernel_size, stride, padding, dilation, ceil_mode)[0]
+
+proc max_pool3d*(input: Tensor; kernel_size: openarray[int] = [0, 0, 0]; stride: openarray[int] = kernel_size; padding: openarray[int] = [0, 0, 0]; dilation: openarray[int] = [1, 1, 1]; ceil_mode = false): Tensor {.inline.} =
+  max_pool3d_with_indices(input, kernel_size, stride, padding, dilation, ceil_mode)[0]
+
 proc adaptive_max_pool1d*(input: Tensor; output_size: int): tuple[output, indices: Tensor] {.inline.} =
   let (output, indices) = adaptive_max_pool2d(input.unsqueeze(2), [1, output_size])
   return (output.squeeze(2), indices.squeeze(2))
@@ -66,7 +72,7 @@ proc avg_pool1d*(input: Tensor; kernel_size: int = 0; stride: int = kernel_size;
 
 proc adaptive_avg_pool1d*(input: Tensor; output_size: int): Tensor {.inline.} =
   adaptive_avg_pool2d(input.unsqueeze(2), [1, output_size])
-  
+
 proc make_feature_noise(input: Tensor): Tensor =
   assert(input.dim() >= 2, "Feature dropout requires at least 2 dimensions in the input")
   var sizes = input.sizes()

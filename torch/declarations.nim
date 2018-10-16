@@ -2985,18 +2985,6 @@ proc max_values*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false):
 proc max_values*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
   check: self.tensor.atenMethod("max_values", dim, keepdim).to(ATensor).newTensor()
 
-proc max_pool2d*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("max_pool2d", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(ATensor).newTensor()
-
-proc max_pool2d*(self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): Tensor {.inline.} = 
-  check: atenFunction("at::max_pool2d", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(ATensor).newTensor()
-
-proc max_pool3d*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("max_pool3d", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(ATensor).newTensor()
-
-proc max_pool3d*(self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): Tensor {.inline.} = 
-  check: atenFunction("at::max_pool3d", self.tensor, kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).to(ATensor).newTensor()
-
 proc mean*(ty: TensorType; self: Tensor; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("mean", self.tensor, dtype).to(ATensor).newTensor()
 
