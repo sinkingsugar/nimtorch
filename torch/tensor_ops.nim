@@ -176,7 +176,7 @@ macro `[]=`*(a: Tensor; args: varargs[int]; value: Tensor | SomeNumber): untyped
 
   result.add quote do:
     # `arange` doesn't produce the right tensor type
-    let indexTensor = arange(0.float, `resSym`.size(0).float, LongTensor).toType(ATkLong)
+    let indexTensor = arange(0.float, `resSym`.size(0).float, LongTensor).toType(ScalarType.kLong)
     when type(`value`) is Tensor:
       `resSym`.index_put_inplace([indexTensor], `value`)
     else:

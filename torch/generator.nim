@@ -50,7 +50,7 @@ proc toNimType(typeName: string): string =
   of "std::array<bool,2>": return "StdArray[bool, 2]"
   of "std::array<bool,3>": return "StdArray[bool, 3]"
   of "std::array<bool,4>": return "StdArray[bool, 4]"
-  of "ScalarType": return "AScalarType"
+  of "ScalarType": return "ScalarType"
   of "std::string": return "StdString"
   of "Type": return "TensorType"
   of "SparseTensorRef": return "ASparseTensorRef"
