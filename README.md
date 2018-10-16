@@ -143,7 +143,3 @@ make install
 cd <nimtorch repo>
 ATEN=<installation path of ATEN> nim cpp -r -f -o:/tmp/z01 torch.nim
 ```
-## Know issues
-
-* The commit hash we are using for ATen has some bugs with openmp, if you run in high CPU load issues even if your task is quite easy, try reduce openmp CPU count with this environment variable:
-`export OMP_NUM_THREADS=1`
