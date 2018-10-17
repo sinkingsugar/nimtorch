@@ -54,4 +54,4 @@ conda build aten_cuda10.0
 
 ARG TOKEN
 
-RUN anaconda -t ${TOKEN} upload --force /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
+RUN anaconda -t ${TOKEN} upload /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2

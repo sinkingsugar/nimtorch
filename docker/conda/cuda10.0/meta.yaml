@@ -8,3 +8,4 @@ package:
 build:
   track_features:
     - cuda10.0
+  noarch: generic

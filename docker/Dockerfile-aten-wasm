@@ -54,4 +54,4 @@ conda build aten_wasm
 
 ARG TOKEN
 
-RUN /root/miniconda3/bin/anaconda -t ${TOKEN} upload --force /root/miniconda3/conda-bld/noarch/aten-*.tar.bz2
+RUN /root/miniconda3/bin/anaconda -t ${TOKEN} upload /root/miniconda3/conda-bld/noarch/aten-*.tar.bz2
