@@ -15,26 +15,11 @@ matrix:
     env:
     - CONTAINER=Dockerfile-tests-cuda9.2
     - TEST=test_clang
-  - name: "CUDA 9.2 GCC Tests"
+  - name: "WASM Tests"
     language: generic
     env:
-    - CONTAINER=Dockerfile-tests-cuda9.2
-    - TEST=test_cuda
-  - name: "CUDA 9.2 clang Tests"
-    language: generic
-    env:
-    - CONTAINER=Dockerfile-tests-cuda9.2
-    - TEST=test_clang_cuda
-  - name: "CUDA 10.0 GCC Tests"
-    language: generic
-    env:
-    - CONTAINER=Dockerfile-tests-cuda10.0
-    - TEST=test_cuda
-  - name: "CUDA 10.0 clang Tests"
-    language: generic
-    env:
-    - CONTAINER=Dockerfile-tests-cuda10.0
-    - TEST=test_clang_cuda
+    - CONTAINER=Dockerfile-tests-wasm
+    - TEST=test_wasm
 
 script:
 - docker build -f docker/$CONTAINER -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
