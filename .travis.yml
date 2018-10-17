@@ -5,16 +5,66 @@ services:
 
 language: generic
 
+cache:
+  directories:
+  - $HOME/.nimtorch/
+
 matrix:
   include:
+  - stage: prepare
+    if: type = cron
+    if: branch = master
+    script:
+    - git config --global user.email 'giovanni@fragcolor.xyz'
+    - git config --global user.name 'Giovanni'
+    - git clone -b fragcolor-devel https://$GITHUB_LOGIN@github.com/fragcolor-xyz/pytorch.git
+    - cd pytorch
+    - git remote add upstream https://github.com/pytorch/pytorch.git
+    - git pull upstream master --no-edit
+    - git push
+    - git rev-parse HEAD > $HOME/.nimtorch/commit.txt
+    - date +%Y.%m.%d.$TRAVIS_BUILD_NUMBER > $HOME/.nimtorch/version.txt
+  - stage: build
+    if: type = cron
+    if: branch = master
+    script:
+    - cd docker
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_cuda10.0/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_wasm/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
+    - docker pull nvidia/cuda:9.2-devel-ubuntu18.04
+    - docker build -f Dockerfile-aten-cuda9.2 -t docker_aten_cuda92 --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat $HOME/.nimtorch/commit.txt` .
+  - stage: build
+    if: type = cron
+    if: branch = master
+    script:
+    - cd docker
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_cuda10.0/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_wasm/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
+    - docker pull nvidia/cuda:10.0-devel-ubuntu18.04
+    - docker build -f Dockerfile-aten-cuda10.0 -t docker_aten_cuda10 --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat $HOME/.nimtorch/commit.txt` .
+  - stage: build
+    if: type = cron
+    if: branch = master
+    script:
+    - cd docker
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_cuda10.0/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_wasm/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
+    - docker pull base/devel
+    - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat $HOME/.nimtorch/commit.txt` .
   - stage: test
     name: "CPU Tests"
     script:
     - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - docker run --name test_nimtorch -t -u`id -u`:`id -g` nimtorch-test:latest nimble test
-    - docker run --name test_nimtorch -t -u`id -u`:`id -g` nimtorch-test:latest nimble test_clang
+    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test:latest nimble test
+    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test:latest nimble test_clang
   - stage: test
     name: "WASM Tests"
     script:
     - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - docker run --name test_nimtorch -t -u`id -u`:`id -g` nimtorch-test:latest nimble test_wasm
+    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test:latest nimble test_wasm
