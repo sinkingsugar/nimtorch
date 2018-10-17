@@ -55,8 +55,8 @@ export ATEN=/root/pytorch/built/output && \
 conda build cuda10.0 && \
 conda build wasm
 
-RUN source activate deps && anaconda -t ${TOKEN} upload --skip-existing /root/miniconda3/conda-bld/linux-64/wasm-*.tar.bz2
-RUN source activate deps && anaconda -t ${TOKEN} upload --skip-existing /root/miniconda3/conda-bld/linux-64/cuda10.0-*.tar.bz2
+RUN anaconda -t ${TOKEN} upload --skip-existing /root/miniconda3/conda-bld/linux-64/wasm-*.tar.bz2
+RUN anaconda -t ${TOKEN} upload --skip-existing /root/miniconda3/conda-bld/linux-64/cuda10.0-*.tar.bz2
 
 RUN cd && cd conda && \
 source activate deps && \
@@ -64,4 +64,4 @@ export PATH=$PATH:/root/miniconda3/bin && \
 export ATEN=/root/pytorch/built/output && \
 conda build aten
 
-RUN source activate deps && anaconda -t ${TOKEN} upload /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
+RUN anaconda -t ${TOKEN} upload /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
