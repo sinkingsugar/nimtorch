@@ -6,26 +6,32 @@ services:
 matrix:
   include:
     - name: "CPU Only GCC Tests"
+    - language: generic
       env:
         - CONTAINER=Dockerfile-tests-cuda9.2
         - TEST=test
     - name: "CPU Only clang Tests"
+    - language: generic
       env:
         - CONTAINER=Dockerfile-tests-cuda9.2
         - TEST=test_clang
     - name: "CUDA 9.2 GCC Tests"
+    - language: generic
       env:
         - CONTAINER=Dockerfile-tests-cuda9.2
         - TEST=test_cuda
     - name: "CUDA 9.2 clang Tests"
+    - language: generic
       env:
         - CONTAINER=Dockerfile-tests-cuda9.2
         - TEST=test_clang_cuda
     - name: "CUDA 10.0 GCC Tests"
+    - language: generic
       env:
         - CONTAINER=Dockerfile-tests-cuda10.0
         - TEST=test_cuda
     - name: "CUDA 10.0 clang Tests"
+    - language: generic
       env:
         - CONTAINER=Dockerfile-tests-cuda10.0
         - TEST=test_clang_cuda
