@@ -3,17 +3,17 @@ sudo: required
 services:
   - docker
 
+language: generic
+
 matrix:
   include:
   - stage: test
-  - name: "CPU Tests"
-    language: generic
+    name: "CPU Tests"
     script:
     - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
     - docker run --name test_nimtorch -t -u`id -u`:`id -g` nimtorch-test:latest nimble test
     - docker run --name test_nimtorch -t -u`id -u`:`id -g` nimtorch-test:latest nimble test_clang
-  - name: "WASM Tests"
-    language: generic
+    name: "WASM Tests"
     script:
     - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
     - docker run --name test_nimtorch -t -u`id -u`:`id -g` nimtorch-test:latest nimble test_wasm
