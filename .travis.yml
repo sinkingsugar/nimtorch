@@ -8,12 +8,13 @@ language: generic
 cache:
   directories:
   - $HOME/.nimtorch/
+  - $HOME/.torch-folder/
+  - $HOME/.conda/
 
 matrix:
   include:
   - stage: prepare
-    if: type = cron
-    if: branch = master
+    if: type = cron AND branch = master
     script:
     - git config --global user.email 'giovanni@fragcolor.xyz'
     - git config --global user.name 'Giovanni'
@@ -25,46 +26,50 @@ matrix:
     - git rev-parse HEAD > $HOME/.nimtorch/commit.txt
     - date +%Y.%m.%d.$TRAVIS_BUILD_NUMBER > $HOME/.nimtorch/version.txt
   - stage: build
-    if: type = cron
-    if: branch = master
+    if: type = cron AND branch = master
     script:
     - cd docker
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_wasm/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull nvidia/cuda:9.2-devel-ubuntu18.04
     - docker build -f Dockerfile-aten-cuda9.2 -t docker_aten_cuda92 --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat $HOME/.nimtorch/commit.txt` .
   - stage: build
-    if: type = cron
-    if: branch = master
+    if: type = cron AND branch = master
     script:
     - cd docker
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_wasm/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull nvidia/cuda:10.0-devel-ubuntu18.04
     - docker build -f Dockerfile-aten-cuda10.0 -t docker_aten_cuda10 --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat $HOME/.nimtorch/commit.txt` .
   - stage: build
-    if: type = cron
-    if: branch = master
+    if: type = cron AND branch = master
     script:
     - cd docker
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/aten_wasm/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull base/devel
     - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat $HOME/.nimtorch/commit.txt` .
+  - stage: bump # Aten build was a success, bump versions
+    if: type = cron AND branch = master
+    script:
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat $HOME/.nimtorch/version.txt`/g" conda/nimtorch/meta.yaml
+    - cp conda/nimtorch/meta.yaml $HOME/.conda/
+  - stage: bump # Pass old version
+    if: type != cron
+    script:
+    - cp conda/nimtorch/meta.yaml $HOME/.conda/
   - stage: test
     name: "CPU Tests"
     script:
-    - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test:latest nimble test
+    - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat $HOME/.conda/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
+    - docker run --name test_nimtorch_native -t -u`id -u`:`id -g` nimtorch-test:latest nimble test
+    - docker cp test_nimtorch_native:/home/tester/nimtorch/torch $HOME/.torch-folder/ # copy any new artifact from generator.nim
     - docker run --rm -t -u`id -u`:`id -g` nimtorch-test:latest nimble test_clang
   - stage: test
     name: "WASM Tests"
     script:
-    - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
+    - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat $HOME/.conda/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
     - docker run --rm -t -u`id -u`:`id -g` nimtorch-test:latest nimble test_wasm
