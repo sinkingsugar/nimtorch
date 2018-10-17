@@ -11,6 +11,10 @@ cache:
   - $HOME/.torch-folder/
   - $HOME/.conda/
 
+notifications:
+  slack:
+    secure: GboTdvcsbPacYBE9XArFxryJdKwCXGPWGDDkgu1KgOc9R0rVvXfbPZ8WR4qEY/yeR/Dr7xphNazxB5mEfiloUjSbUeMTrdUafTQhXqNWJrSd88ZZ1DYN4EFmGCu3NXA1EjFdrP3zk2JOmldJtuAAg/Y4Th7kvmNyw2afR8LsCNEa2bVRZkJkTBhq9SJ9wNkhh4COlG0DMQK1sKPk613GuiTxB2tJNWWoueWv9tHoa+ZfRoG6PJKgumWl8uu3B5z6hSXc1byq9R6wya3CNOPcDmMFpM87D0fNWjg2+KxRfUEX6EQewG/PcUe2Wt54RYDzORMsv66N6sxi9Gv4mK8EKm3octTO330oWnyQflPfw2csPeYQ01d9+X2PmXXWiCf8SGNTqE5/BWCBxM5N5OVzTsrU9vL7LVecirtGPXWX1JshHVin7isi8i3uhAR7R6zddhHsMJesHj6Uqj79bBDPPZ5yWDoCtVsvGnclulc/uIGZmg96LX9v103iyGNWIyGvKj5oPeoxQQgnm+/APo1hJ53g/AHcmvBZhAgJs7SufWGq0ttacPFXWqNynKHSqY/Mu93LoZkgJUi5UDRjx7VyzREFHMTAj36hQPZvm8n/BmecoCwdUVVUu/RhmbzhGHhtNb+9o5cXpEJdqnz8k26wra/zFpFx2xlaSzk/4ZoIP10=
+
 matrix:
   include:
   - stage: prepare
