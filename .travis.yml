@@ -5,6 +5,10 @@ services:
 
 language: generic
 
+os:
+  - linux
+  - osx
+
 cache:
   directories:
   - $HOME/.nimtorch/
@@ -24,14 +28,41 @@ matrix:
     - set -e
     - cp conda/nimtorch/meta.yaml $HOME/.conda/
   - stage: test
-    name: "CPU Tests"
+    name: "CPU Linux Tests"
+    os: linux
     script:
     - set -e
     - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat $HOME/.conda/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
     - docker run --name test_nimtorch_native -t -u`id -u`:`id -g` nimtorch-test:latest nimble test
     - docker run --rm -t -u`id -u`:`id -g` nimtorch-test:latest nimble test_clang
   - stage: test
+    name: "CPU macOS Tests"
+    os: osx
+    script:
+    - set -e
+    - sudo apt-get update
+    # We do this conditionally because it saves us some downloading if the
+    # version is the same.
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+        wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+      else
+        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      fi
+    - bash miniconda.sh -b -p $HOME/miniconda
+    - export PATH="$HOME/miniconda/bin:$PATH"
+    - hash -r
+    - conda config --set always_yes yes --set changeps1 no
+    - conda update -q conda
+    # Useful for debugging any issues with conda
+    - conda info -a
+    - export MACOSX_DEPLOYMENT_TARGET=10.13
+    - conda create -n nimtorch_testing -c fragcolor nim=0.19.1 fragments=0.1.22 `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -E "s/aten /aten/g"`
+    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
+    - export PATH="$PATH:$HOME/miniconda3/envs/nimtorch_testing/bin"
+    - nimble test --nimcache:./nimcache
+  - stage: test
     name: "WASM Tests"
+    os: linux
     script:
     - set -e
     - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat $HOME/.conda/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
