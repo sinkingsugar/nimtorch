@@ -124,7 +124,7 @@ proc detach*(self: Tensor): Tensor =
   # Create a new reference to the same tensor, discarding grad_fn, etc.
   result = newTensor(self.tensor)
 
-proc toSeq*(a: Tensor; T: typedesc): seq[T] =
+proc toSeq*[T](a: Tensor): seq[T] {.inline, noinit.} =
   let elements = a.numel()
   result = newSeq[T](elements)
 
@@ -133,6 +133,8 @@ proc toSeq*(a: Tensor; T: typedesc): seq[T] =
     copyMem(addr(result[0]), tmp.data_ptr(), sizeof(T) * elements)
   else:
     copyMem(addr(result[0]), a.data_ptr(), sizeof(T) * elements)
+
+proc toSeq*(a: Tensor; T: typedesc): seq[T] = toSeq[T](a)
 
 converter toFloat32*(a: Tensor): float32 {.inline, noinit.} =
   doAssert(a.numel() == 1, "Trying to call converter toFloat32 on a multi element tensor")
