@@ -823,9 +823,9 @@ proc pow*(ty: TensorType; self: Tensor; exponent: Tensor): Tensor {.inline.}
 
 proc pow*(self: Tensor; exponent: Tensor): Tensor {.inline.}
 
-proc pow*(ty: TensorType; base: float; self: Tensor): Tensor {.inline.}
+proc pow*(ty: TensorType; self: float; exponent: Tensor): Tensor {.inline.}
 
-proc pow*(base: float; self: Tensor): Tensor {.inline.}
+proc pow*(self: float; exponent: Tensor): Tensor {.inline.}
 
 proc pow_inplace*(ty: TensorType; self: Tensor; exponent: float): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("pow_", self.tensor, exponent).to(void); self
@@ -1131,11 +1131,11 @@ proc eig*(ty: TensorType; self: Tensor; eigenvectors: bool = false): tuple[res1:
 proc eig*(self: Tensor; eigenvectors: bool = false): tuple[res1: Tensor, res2: Tensor] {.inline.} = 
   check: self.tensor.atenMethod("eig", eigenvectors).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
 
-proc svd*(ty: TensorType; self: Tensor; some: bool = true): tuple[res1: Tensor, res2: Tensor, res3: Tensor] {.inline.} = 
-  check: ty[].atenMethod("svd", self.tensor, some).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc svd*(ty: TensorType; self: Tensor; some: bool = true; compute_uv: bool = true): tuple[res1: Tensor, res2: Tensor, res3: Tensor] {.inline.} = 
+  check: ty[].atenMethod("svd", self.tensor, some, compute_uv).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc svd*(self: Tensor; some: bool = true): tuple[res1: Tensor, res2: Tensor, res3: Tensor] {.inline.} = 
-  check: self.tensor.atenMethod("svd", some).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc svd*(self: Tensor; some: bool = true; compute_uv: bool = true): tuple[res1: Tensor, res2: Tensor, res3: Tensor] {.inline.} = 
+  check: self.tensor.atenMethod("svd", some, compute_uv).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
 proc getri_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_getri", self.tensor).to(ATensor).newTensor()
@@ -1841,11 +1841,11 @@ proc cudnn_rnn_backward_impl*(ty: TensorType; input: Tensor; weight: openarray[T
 proc cudnn_rnn_backward_impl*(input: Tensor; weight: openarray[Tensor]; weight_stride0: int; weight_buf: Tensor; hx: Tensor; cx: Tensor; output: Tensor; grad_output: Tensor; grad_hy: Tensor; grad_cy: Tensor; mode: int; hidden_size: int; num_layers: int; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[int]; dropout_state: Tensor; reserve: Tensor; output_mask: StdArray[bool, 4]): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: TensorList] {.inline.} = 
   check: atenFunction("at::_cudnn_rnn_backward", input.tensor, weight.toATensors(), weight_stride0, weight_buf.tensor, hx.tensor, cx.tensor, output.tensor, grad_output.tensor, grad_hy.tensor, grad_cy.tensor, mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes.toAIntList(), dropout_state.tensor, reserve.tensor, output_mask).to(StdTuple4[ATensor, ATensor, ATensor, ATensors]).toNimTuple().newTensors()
 
-proc cudnn_init_dropout_state_impl*(ty: TensorType; self_ty: TensorType; dropout: float64; train: bool; dropout_seed: int): Tensor {.inline.} = 
-  check: ty[].atenMethod("_cudnn_init_dropout_state", self_ty, dropout, train, dropout_seed).to(ATensor).newTensor()
+proc cudnn_init_dropout_state_impl*(ty: TensorType; dropout: float64; train: bool; dropout_seed: int; options: TensorOptions): Tensor {.inline.} = 
+  check: ty[].atenMethod("_cudnn_init_dropout_state", dropout, train, dropout_seed, options).to(ATensor).newTensor()
 
-proc cudnn_init_dropout_state_impl*(self_ty: TensorType; dropout: float64; train: bool; dropout_seed: int): Tensor {.inline.} = 
-  check: atenFunction("at::_cudnn_init_dropout_state", self_ty, dropout, train, dropout_seed).to(ATensor).newTensor()
+proc cudnn_init_dropout_state_impl*(dropout: float64; train: bool; dropout_seed: int; options: TensorOptions): Tensor {.inline.} = 
+  check: atenFunction("at::_cudnn_init_dropout_state", dropout, train, dropout_seed, options).to(ATensor).newTensor()
 
 proc fused_dropout_impl*(ty: TensorType; self: Tensor; p: float64; generator: Generator = nil): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
   check: ty[].atenMethod("_fused_dropout", self.tensor, p, generator).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
@@ -3961,14 +3961,8 @@ proc addmm_inplace*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; be
 proc addmm_inplace*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline, discardable.} = 
   check: self.tensor.atenMethod("addmm_", mat1.tensor, mat2.tensor, beta, alpha).to(void); self
 
-proc native_tensor*(ty: TensorType; self_ty: TensorType; size: openarray[int]): Tensor {.inline.} = 
-  check: ty[].atenMethod("native_tensor", self_ty, size.toAIntList()).to(ATensor).newTensor()
-
-proc tensor*(ty: TensorType; dtype: TensorType; size: openarray[int]): Tensor {.inline.} = 
-  check: ty[].atenMethod("tensor", dtype, size.toAIntList()).to(ATensor).newTensor()
-
-proc native_sparse_coo_tensor*(ty: TensorType; self_ty: TensorType; size: openarray[int]): Tensor {.inline.} = 
-  check: ty[].atenMethod("native_sparse_coo_tensor", self_ty, size.toAIntList()).to(ATensor).newTensor()
+proc native_sparse_coo_tensor*(ty: TensorType; size: openarray[int]; options: TensorOptions): Tensor {.inline.} = 
+  check: ty[].atenMethod("native_sparse_coo_tensor", size.toAIntList(), options).to(ATensor).newTensor()
 
 proc native_sparse_coo_tensor*(ty: TensorType; indices: Tensor; values: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("native_sparse_coo_tensor", indices.tensor, values.tensor).to(ATensor).newTensor()
