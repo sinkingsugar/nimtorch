@@ -124,7 +124,7 @@ proc detach*(self: Tensor): Tensor =
   # Create a new reference to the same tensor, discarding grad_fn, etc.
   result = newTensor(self.tensor)
 
-proc toSeq*[T](a: Tensor): seq[T] {.inline, noinit.} =
+proc toSeq*(a: Tensor; T: typedesc): seq[T] =
   let elements = a.numel()
   result = newSeq[T](elements)
 
