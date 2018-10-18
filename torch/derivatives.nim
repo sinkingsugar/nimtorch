@@ -402,14 +402,14 @@ autograd pow:
   exponent: firstOrSelf(pow_backward_exponent(grad, self, exponent))
 
 autograd pow:
-  proc forward*(ty: TensorType; base: float; self: Tensor): Tensor {.inline.} = 
-    check: ty[].atenMethod("pow", base, self.tensor).to(ATensor).newTensor()
-  self: firstOrSelf(pow_backward_exponent(grad, base, self))
+  proc forward*(ty: TensorType; self: float; exponent: Tensor): Tensor {.inline.} = 
+    check: ty[].atenMethod("pow", self, exponent.tensor).to(ATensor).newTensor()
+  exponent: firstOrSelf(pow_backward_exponent(grad, self, exponent))
 
 autograd pow:
-  proc forward*(base: float; self: Tensor): Tensor {.inline.} = 
-    check: atenFunction("at::pow", base, self.tensor).to(ATensor).newTensor()
-  self: firstOrSelf(pow_backward_exponent(grad, base, self))
+  proc forward*(self: float; exponent: Tensor): Tensor {.inline.} = 
+    check: atenFunction("at::pow", self, exponent.tensor).to(ATensor).newTensor()
+  exponent: firstOrSelf(pow_backward_exponent(grad, self, exponent))
 
 autograd sign:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
