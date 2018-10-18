@@ -143,6 +143,49 @@ build:aten:wasm:
     variables:
       - $BUILD_PYTORCH == "true"
 
+build:aten:macos:
+  stage: build
+  cache:
+    key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
+    untracked: true
+    paths:
+      - pytorch/
+  script:
+    # Fix up versions
+    - export PYTORCH_COMMIT=`cat torch/commit.txt`
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
+    - export MACOSX_DEPLOYMENT_TARGET=10.13
+    - export PYTORCH=https://github.com/fragcolor-xyz/pytorch.git
+    # Use cache
+    - git clone -b fragcolor-devel "$PYTORCH" "pytorch" 2> /dev/null || (cd "pytorch"; git reset --hard HEAD; git clean -x -d -f; git pull)
+    - cd pytorch
+    - git reset --hard $PYTORCH_COMMIT
+    - git submodule init
+    - git submodule update
+    - mkdir built || true
+    - cd built
+    - cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
+    - make
+    - make install
+    - make clean
+    - cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
+    - cd ../..
+    - export ATEN=`pwd`/pytorch/built/output
+    - cd docker/conda
+    - conda build purge-all
+    - conda build aten
+    - anaconda -t $CONDA_TOKEN upload ~/miniconda3/conda-bld/osx-64/aten-*.tar.bz2
+  dependencies:
+    - prepare:aten:merged
+    - prepare:aten:fast
+  artifacts:
+    paths:
+      - conda/nimtorch/meta.yaml
+  tags:
+    - MACOS, CMAKE, PYTHON, PYYAML, CONDA
+
 test:nimtorch:native:
   stage: test
   script:
@@ -194,6 +237,24 @@ test:nimtorch:wasm:
     - build:aten:wasm
   tags:
     - LINUX, DOCKER
+
+test:nimtorch:macos:
+  stage: test
+  before_script:
+    - conda env remove -n nimtorch_testing || true
+  script:
+    - export MACOSX_DEPLOYMENT_TARGET=10.13
+    - conda create -n nimtorch_testing -c fragcolor `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"`
+    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
+    - export PATH="$PATH:$HOME/miniconda3/envs/nimtorch_testing/bin"
+    - nimble test --nimcache:./nimcache
+  after_script:
+    # Recycle space - should keep latest pkg on branch
+    - conda clean -y --all
+  dependencies:
+    - build:aten:macos
+  tags:
+    - MACOS, CMAKE, PYTHON, PYYAML, CONDA
 
 deploy:nimtorch:
   stage: deploy
