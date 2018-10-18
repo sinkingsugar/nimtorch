@@ -44,8 +44,8 @@ matrix:
     - conda info -a
     - export MACOSX_DEPLOYMENT_TARGET=10.13
     - conda create -n nimtorch_testing -c fragcolor nim=0.19.1 fragments=0.1.22 `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -E "s/aten /aten/g"`
-    - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
-    - export PATH="$PATH:$HOME/miniconda3/envs/nimtorch_testing/bin"
+    - export ATEN=$HOME/miniconda/envs/nimtorch_testing
+    - export PATH="$PATH:$HOME/miniconda/envs/nimtorch_testing/bin"
     - nimble test --nimcache:./nimcache
   - stage: test
     name: "WASM Tests"
