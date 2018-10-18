@@ -153,9 +153,9 @@ build:aten:macos:
   script:
     # Fix up versions
     - export PYTORCH_COMMIT=`cat torch/commit.txt`
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
+    - sed -i -E "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -E "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
+    - sed -i -E "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - export MACOSX_DEPLOYMENT_TARGET=10.13
     - export PYTORCH=https://github.com/fragcolor-xyz/pytorch.git
     # Use cache
@@ -249,7 +249,7 @@ test:nimtorch:macos:
     - conda env remove -n nimtorch_testing || true
   script:
     - export MACOSX_DEPLOYMENT_TARGET=10.13
-    - conda create -n nimtorch_testing -c fragcolor `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"`
+    - conda create -n nimtorch_testing -c fragcolor `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -E "s/aten /aten/g"`
     - export ATEN=$HOME/miniconda3/envs/nimtorch_testing
     - export PATH="$PATH:$HOME/miniconda3/envs/nimtorch_testing/bin"
     - nimble test --nimcache:./nimcache
