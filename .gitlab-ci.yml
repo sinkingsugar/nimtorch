@@ -185,6 +185,11 @@ build:aten:macos:
       - conda/nimtorch/meta.yaml
   tags:
     - MACOS, CMAKE, PYTHON, PYYAML, CONDA
+  only:
+    refs:
+      - schedules
+    variables:
+      - $BUILD_PYTORCH == "true"
 
 test:nimtorch:native:
   stage: test
