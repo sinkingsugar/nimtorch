@@ -153,9 +153,9 @@ build:aten:macos:
   script:
     # Fix up versions
     - export PYTORCH_COMMIT=`cat torch/commit.txt`
-    - sed -i -E "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten/meta.yaml
-    - sed -i -E "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten_cuda10.0/meta.yaml
-    - sed -i -E "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten_wasm/meta.yaml
+    - sed -E -i bak "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten/meta.yaml
+    - sed -E -i bak "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten_cuda10.0/meta.yaml
+    - sed -E -i bak "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten_wasm/meta.yaml
     - export MACOSX_DEPLOYMENT_TARGET=10.13
     - export PYTORCH=https://github.com/fragcolor-xyz/pytorch.git
     # Use cache
