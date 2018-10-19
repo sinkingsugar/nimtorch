@@ -1859,6 +1859,18 @@ proc masked_scale_impl*(ty: TensorType; self: Tensor; mask: Tensor; scale: float
 proc masked_scale_impl*(self: Tensor; mask: Tensor; scale: float64): Tensor {.inline.} = 
   check: atenFunction("at::_masked_scale", self.tensor, mask.tensor, scale).to(ATensor).newTensor()
 
+proc reshape_from_tensor_impl*(ty: TensorType; self: Tensor; shape: Tensor): Tensor {.inline.} = 
+  check: ty[].atenMethod("_reshape_from_tensor", self.tensor, shape.tensor).to(ATensor).newTensor()
+
+proc reshape_from_tensor_impl*(self: Tensor; shape: Tensor): Tensor {.inline.} = 
+  check: atenFunction("at::_reshape_from_tensor", self.tensor, shape.tensor).to(ATensor).newTensor()
+
+proc shape_as_tensor_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
+  check: ty[].atenMethod("_shape_as_tensor", self.tensor).to(ATensor).newTensor()
+
+proc shape_as_tensor_impl*(self: Tensor): Tensor {.inline.} = 
+  check: atenFunction("at::_shape_as_tensor", self.tensor).to(ATensor).newTensor()
+
 proc abs*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
 proc abs*(self: Tensor): Tensor {.inline.}
