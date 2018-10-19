@@ -4,6 +4,8 @@ import os
 
 const version* = "2018.10.19.1424"
 
+cppdefines("ATEN_VERSION=" & version)
+
 defineCppType(AType, "at::Type", "ATen/ATen.h")
 defineCppType(ATensor, "at::Tensor", "ATen/ATen.h")
 defineCppType(AStorage, "at::Storage", "ATen/ATen.h")
