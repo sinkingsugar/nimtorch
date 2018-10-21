@@ -65,8 +65,11 @@ when defined wasm:
   {.passL: "-lcaffe2 -lc10".}
 
 elif defined windows:
-  cpplibs(atenPath & "/lib/caffe2.lib")
-  cpplibs(atenPath & "/lib/cpuinfo.lib")
+  cpplibs(
+    atenPath & "/lib/c10.lib",
+    atenPath & "/lib/caffe2.lib",
+    atenPath & "/lib/cpuinfo.lib"
+  )
 
   cppdefines("NOMINMAX")
 
