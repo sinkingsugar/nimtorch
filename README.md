@@ -67,9 +67,9 @@ let
 
 **Linux**: A recent distribution on par with ubuntu 18.04 in terms of libc and basic libraries, gcc compiler
 
-**macOS**: We compile with 10.13 min version flags but might work even on lower versions
+**macOS**: We compile with 10.13 min version flags but might work even on lower versions, XCode for the compilers
 
-**Windows**: Windows 10 and Visual Studio Runtime 2017
+**Windows**: Windows 10, Visual Studio Runtime 2017 and Visual Studio 2017 (any edition)
 
 **WASM**: Latest Emscripten compiler and tools
 
