@@ -144,7 +144,7 @@ make install
 **Test the build**
 ```
 cd <nimtorch repo>
-ATEN=<installation path of ATEN> nim cpp -r -f -o:/tmp/z01 torch.nim
+ATEN=<installation path of ATEN> nim cpp -r -f -o:/tmp/z01 torch.nim # for eg: ATEN=pathto/pytorch/build/output/
 ```
 
 ## Notes
