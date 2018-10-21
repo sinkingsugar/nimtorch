@@ -140,7 +140,12 @@ mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
 make -j4
 make install
+
+# also copy derivatives if we want to run generator.nim or nimble test
+# notice generator.nim might need python3 and pyyaml
+cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
 ```
+
 **Test the build**
 ```
 cd <nimtorch repo>
