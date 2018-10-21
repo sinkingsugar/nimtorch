@@ -66,8 +66,11 @@ let
 ### Requirements
 
 **Linux**: A recent distribution on par with ubuntu 18.04 in terms of libc and basic libraries, gcc compiler
+
 **macOS**: We compile with 10.13 min version flags but might work even on lower versions
+
 **Windows**: Windows 10 and Visual Studio Runtime 2017
+
 **WASM**: Latest Emscripten compiler and tools
 
 ### Super easy, using conda
