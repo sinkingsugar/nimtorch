@@ -111,7 +111,7 @@ else:
   when defined cuda:
     const hasMagma = staticExec("[ -f '" & atenPath & "/lib/libmagma.so" & "' ] && echo 'true' || echo 'false'")
     when hasMagma == "true":
-      {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda -lmagma".}
+      {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda -lmagma -lcublas".}
     else:
       {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda".}
   
