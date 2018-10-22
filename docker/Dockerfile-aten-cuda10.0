@@ -31,7 +31,7 @@ git submodule update
 
 ENV PYTORCH_PYTHON=python3
 
-RUN conda create -n deps mkl mkl-include
+RUN conda create -n deps mkl mkl-include intel-openmp
 
 RUN apt-get install -y curl
 # download magma 2.4.0 pre built using same docker images
@@ -43,7 +43,7 @@ cd pytorch && \
 mkdir built && \
 cd built && \
 source activate deps && \
-cmake -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
+cmake -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DUSE_MKL=ON -DBLAS=MKL -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
 make install -j10 && \
 make clean && \
 cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
