@@ -33,16 +33,23 @@ ENV PYTORCH_PYTHON=python3
 
 RUN conda create -n deps mkl mkl-include
 
+RUN apt-get install -y curl
+# download magma 2.4.0 pre built using same docker images
+RUN cd && curl -L -o magmalib.tar.gz "https://drive.google.com/uc?export=download&id=1ABrWQxC9FxVSxa9tBx340jhsfg-4etjJ" && tar xzf magmalib.tar.gz
+ENV MAGMA_HOME=/root/output
+
 RUN cd && \
 cd pytorch && \
 mkdir built && \
 cd built && \
 source activate deps && \
 cmake -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
-make -j10 && \
 make install -j10 && \
 make clean && \
 cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
+
+# merge with magma lib
+RUN cp -r /root/output/* /root/pytorch/built/output/
 
 COPY conda /root/conda
 

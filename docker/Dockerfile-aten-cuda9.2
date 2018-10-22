@@ -39,7 +39,6 @@ mkdir built && \
 cd built && \
 source activate deps && \
 cmake -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
-make -j10 && \
 make install -j10 && \
 make clean && \
 cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
