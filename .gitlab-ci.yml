@@ -116,6 +116,32 @@ build:aten:cuda10.0:
     variables:
       - $BUILD_PYTORCH == "true"
 
+build:aten:lite:
+  stage: build
+  script:
+    # Clean up docker - make sure we got space
+    - docker rm $(docker ps -q -f status=exited) || true
+    - docker volume rm $(docker volume ls -qf dangling=true) || true
+    - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
+    # Build
+    - cd docker
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
+    - docker pull ubuntu:16.04
+    - docker build -f Dockerfile-aten-lite -t docker_aten_lite --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+  dependencies:
+    - prepare:aten:merged
+    - prepare:aten:fast
+  tags:
+    - LINUX, DOCKER
+  only:
+    refs:
+      - schedules
+    variables:
+      - $BUILD_PYTORCH == "true"
+
 build:aten:wasm:
   stage: build
   script:
@@ -129,7 +155,7 @@ build:aten:wasm:
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
-    - docker pull base/devel
+    - docker pull base/devel:latest
     - docker build -f Dockerfile-aten-wasm -t docker_aten_wasm --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten:merged

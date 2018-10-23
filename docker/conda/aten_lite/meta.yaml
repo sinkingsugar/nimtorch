@@ -1,0 +1,16 @@
+package:
+  name: aten
+  version: "2018.10.23.1506"
+
+source:
+  path: ./
+
+requirements:
+  run:
+    - openblas # [linux]
+
+build:
+  script_env:
+    - ATEN
+  features:
+    - lite
