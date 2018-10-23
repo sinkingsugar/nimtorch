@@ -107,7 +107,7 @@ elif defined osx:
 else:
   {.passC: "-std=c++14".}
 
-  {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -fopenmp -lrt -lc10".}
+  {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -lrt -lc10".}
   when defined cuda:
     const hasMagma = staticExec("[ -f '" & atenPath & "/lib/libmagma.so" & "' ] && echo 'true' || echo 'false'")
     when hasMagma == "true":
