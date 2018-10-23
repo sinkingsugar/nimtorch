@@ -162,9 +162,6 @@ build:aten:macos:
     - sed -E -i bak "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten_cuda10.0/meta.yaml
     - sed -E -i bak "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten_wasm/meta.yaml
     - sed -E -i bak "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # always needed by the next step
-    # Setup conda
-    - conda create -n aten_build mkl mkl-include intel-openmp
-    - export DEPS=$HOME/miniconda3/envs/aten_build
     # Use cache
     - export MACOSX_DEPLOYMENT_TARGET=10.13
     - export PYTORCH=https://github.com/fragcolor-xyz/pytorch.git
@@ -175,7 +172,7 @@ build:aten:macos:
     - git submodule update
     - mkdir built || true
     - cd built
-    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INCLUDE_PATH=$DEPS/include -DCMAKE_LIBRARY_PATH=$DEPS/lib -DUSE_MKL=ON -DBLAS=MKL -DUSE_OPENMP=ON -DUSE_CUDA=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
+    - cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
     - make
     - make install
     - make clean
