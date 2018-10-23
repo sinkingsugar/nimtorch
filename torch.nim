@@ -1,6 +1,10 @@
 import fragments/ffi/cpp, torch/torch_cpp
 export cpp, torch_cpp
 
+when defined cuda:
+  import torch/torch_cuda_cpp
+  export torch_cuda_cpp
+
 import torch/[
   tensors,
   tensor_ops,

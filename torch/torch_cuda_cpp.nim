@@ -21,7 +21,6 @@ type cudaStream_t {.importc: "cudaStream_t".} = object
 proc cudaDeviceSynchronize*() {.importc, dynlib: "libcudart.so".}
 proc cudaStreamSynchronize*(stream: cudaStream_t) {.importc, dynlib: "libcudart.so".}
 
-
 proc currentMemoryAllocated*(device: cint): uint64 {.importc: "THCCachingAllocator_currentMemoryAllocated", header: "THCCachingAllocator.h".}
 proc maxMemoryAllocated*(device: cint): uint64 {.importc: "THCCachingAllocator_maxMemoryAllocated", header: "THCCachingAllocator.h".}
 proc currentMemoryCached*(device: cint): uint64 {.importc: "THCCachingAllocator_currentMemoryCached", header: "THCCachingAllocator.h".}
@@ -30,11 +29,19 @@ proc maxMemoryCached*(device: cint): uint64 {.importc: "THCCachingAllocator_maxM
 when defined(linux) or defined(osx):
   const nvccPath* = staticExec("which nvcc")
   when nvccPath[0..4] != "which": # which returns `which: ...` when cannot be found
-    const cudaIncludePath* = nvccPath[0..^9] & "include"
+    const cudaPath* = nvccPath[0..^9]
+    const cudaIncludePath* = cudaPath & "include"
+    const cudaLibPath* = cudaPath & "lib"
     static:
       putEnv("CUDA_INCLUDE", cudaIncludePath)
+      putEnv("CUDA_LIB", cudaLibPath)
+
+static:
+  putEnv("CUDA_LIB64", getEnv("CUDA_LIB") & "64")
 
 {.passC: "-I$CUDA_INCLUDE -I$ATEN/include/TH -I$ATEN/include/THC".}
+{.passL: "-L$CUDA_LIB -L$CUDA_LIB64".}
 
 static:
   doAssert(getenv("CUDA_INCLUDE") != "", "Please add $CUDA_INCLUDE variable specifying cuda include folder to the environment")
+  doAssert(getenv("CUDA_LIB") != "", "Please add $CUDA_LIB variable specifying cuda lib folder to the environment")
