@@ -65,6 +65,7 @@ build:aten:cuda9.2:
     - sed -i -r "s/const version\* = "'"'"[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+"'"'"/const version* = "'"'"`cat version.txt`"'"'"/g" ../torch/torch_cpp.nim
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_lite/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull nvidia/cuda:9.2-devel-ubuntu18.04
@@ -99,10 +100,7 @@ build:aten:cuda10.0:
     - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
     # Build
     - cd docker
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull nvidia/cuda:10.0-devel-ubuntu18.04
     - docker build -f Dockerfile-aten-cuda10.0 -t docker_aten_cuda10 --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
@@ -125,10 +123,7 @@ build:aten:lite:
     - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
     # Build
     - cd docker
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_lite/meta.yaml
     - docker pull ubuntu:14.04
     - docker build -f Dockerfile-aten-lite -t docker_aten_lite --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
@@ -151,8 +146,6 @@ build:aten:wasm:
     - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
     # Build
     - cd docker
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull base/devel:latest
@@ -185,8 +178,6 @@ build:aten:macos:
     - export PYTORCH_COMMIT=`cat torch/commit.txt`
     - sed -E -i bak "s/const version\* = "'"'"[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+"'"'"/const version* = "'"'"`cat docker/version.txt`"'"'"/g" torch/torch_cpp.nim
     - sed -E -i bak "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten/meta.yaml
-    - sed -E -i bak "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten_cuda10.0/meta.yaml
-    - sed -E -i bak "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" docker/conda/aten_wasm/meta.yaml
     - sed -E -i bak "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat docker/version.txt`/g" conda/nimtorch/meta.yaml # always needed by the next step
     # Use cache
     - export MACOSX_DEPLOYMENT_TARGET=10.13
