@@ -142,7 +142,8 @@ const knownNames = [
   "sizes",
   "strides",
   "type",
-  "options"]
+  "options",
+  "indices"]
 
 for knownName in knownNames:
   generatedProcs.add(ProcInfo(originalName: knownName, name: knownName, kind: Namespace))
@@ -260,6 +261,11 @@ block declarations:
           let stringValue = arguments[i]["default"].getStr()
           case stringValue
           of "nullptr": defaultStr = " = nil"
+          of "{}":
+            case arguments[i]["dynamic_type"].getStr():
+              of "TensorOptions": defaultStr = " = defaultOptions()"
+              of "IntList, TensorList": defaultStr = " = []"
+              else: discard
         else:
           # skipping defaults, might cause integration issues tho
           discard
