@@ -160,6 +160,11 @@ proc toATenType*(kind: TensorKind): ScalarType {.inline.} =
   of LongTensor: return ScalarType.kLong
   else: raiseAssert("Unknown type")
 
+proc defaultOptions*(): TensorOptions =
+  var opts: TensorOptions
+  opts.dtype(get_default_dtype().toATenType()).to(void)
+  return opts
+
 proc device*(deviceName: string): Device {.inline.} =
   case deviceName
   of "cpu", "CPU": return Device.CPU
@@ -216,6 +221,9 @@ proc getType*(a: Tensor): TensorType {.inline, noinit.} =
 
 proc options*(a: Tensor): TensorOptions {.inline, noinit.} =
   a.tensor.dynamicCppCall("options").to(TensorOptions)
+
+proc indices*(self: Tensor): Tensor {.inline.} =
+  self.tensor.dynamicCppCall("indices").to(ATensor).newTensor()
 
 converter toTensorOptions*(tensorType: TensorType): TensorOptions =
   result = tensorType.options()

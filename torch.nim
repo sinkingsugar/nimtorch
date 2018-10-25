@@ -230,15 +230,12 @@ when isMainModule:
   import torch/nn/functional
 
   block:  
-    var opts: TensorOptions
-    opts.dtype(get_default_dtype().toATenType()).to(void)
-  
     let
       in_channels = 1
       out_channels = 1
-      input = randn([1, in_channels, 100, 100], opts)
-      weight = randn([out_channels, in_channels, 10, 10], opts)
-      bias = randn([out_channels], opts)
+      input = randn([1, in_channels, 100, 100])
+      weight = randn([out_channels, in_channels, 10, 10])
+      bias = randn([out_channels])
 
     weight.requires_grad = true
     bias.requires_grad = true

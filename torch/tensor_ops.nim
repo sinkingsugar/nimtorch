@@ -6,55 +6,43 @@ import macros
 include declarations
 
 proc zeros*[T: int](size: varargs[T]): Tensor =
-  var opts: TensorOptions
-  opts.dtype(get_default_dtype().toATenType()).to(void)
-  return zeros(size, opts)
+  zeros(size, defaultOptions())
 
 proc zeros*(size: openarray[int]; device: Device): Tensor =
-  var opts: TensorOptions
-  opts.dtype(get_default_dtype().toATenType()).to(void)
+  var opts = defaultOptions()
   case device
-  of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
-  of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+    of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+    of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
   return zeros(size, opts)
 
 proc zeros*(size: openarray[int]; dtype: TensorKind): Tensor =
-  var opts: TensorOptions
-  opts.dtype(dtype.toATenType()).to(void)
-  return zeros(size, opts)
+  zeros(size, defaultOptions())
 
 proc zeros*(size: openarray[int]; dtype: TensorKind; device: Device): Tensor =
-  var opts: TensorOptions
-  opts.dtype(dtype.toATenType()).to(void)
+  var opts = defaultOptions()
   case device
-  of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
-  of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+    of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+    of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
   return zeros(size, opts)
 
 proc ones*[T: int](size: varargs[T]): Tensor =
-  var opts: TensorOptions
-  opts.dtype(get_default_dtype().toATenType()).to(void)
-  return ones(size, opts)
+  ones(size, defaultOptions())
 
 proc ones*(size: openarray[int]; device: Device): Tensor =
-  var opts: TensorOptions
-  opts.dtype(get_default_dtype().toATenType()).to(void)
+  var opts = defaultOptions()
   case device
-  of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
-  of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+    of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+    of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
   return ones(size, opts)
 
 proc ones*(size: openarray[int]; dtype: TensorKind): Tensor =
-  var opts: TensorOptions
-  opts.dtype(dtype.toATenType()).to(void)
-  return ones(size, opts)
+  ones(size, defaultOptions())
 
 proc ones*(size: openarray[int]; dtype: TensorKind; device: Device): Tensor =
-  var opts: TensorOptions
-  opts.dtype(dtype.toATenType()).to(void)
+  var opts = defaultOptions()
   case device
-  of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
-  of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
+    of Device.CUDA: opts.device(DeviceTypeCUDA.toCpp).to(void)
+    of Device.CPU: opts.device(DeviceTypeCPU.toCpp).to(void)
   return ones(size, opts)
 
 proc add*(self: Tensor; value: SomeNumber; other: Tensor): Tensor {.inline.} = add(self, other, value)
