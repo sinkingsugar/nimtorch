@@ -1831,11 +1831,9 @@ proc cudnn_rnn_flatten_weight_impl*(ty: TensorType; weight_arr: openarray[Tensor
 proc cudnn_rnn_flatten_weight_impl*(weight_arr: openarray[Tensor]; weight_stride0: int; input_size: int; mode: int; hidden_size: int; num_layers: int; batch_first: bool; bidirectional: bool): Tensor {.inline.} = 
   check: atenFunction("at::_cudnn_rnn_flatten_weight", weight_arr.toATensors(), weight_stride0, input_size, mode, hidden_size, num_layers, batch_first, bidirectional).to(ATensor).newTensor()
 
-proc cudnn_rnn_impl*(ty: TensorType; input: Tensor; weight: openarray[Tensor]; weight_stride0: int; weight_buf: Tensor; hx: Tensor; cx: Tensor; mode: int; hidden_size: int; num_layers: int; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[int]; dropout_state: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] {.inline.} = 
-  check: ty[].atenMethod("_cudnn_rnn", input.tensor, weight.toATensors(), weight_stride0, weight_buf.tensor, hx.tensor, cx.tensor, mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes.toAIntList(), dropout_state.tensor).to(StdTuple5[ATensor, ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc cudnn_rnn_impl*(ty: TensorType; input: Tensor; weight: openarray[Tensor]; weight_stride0: int; weight_buf: Tensor; hx: Tensor; cx: Tensor; mode: int; hidden_size: int; num_layers: int; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[int]; dropout_state: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] {.inline.}
 
-proc cudnn_rnn_impl*(input: Tensor; weight: openarray[Tensor]; weight_stride0: int; weight_buf: Tensor; hx: Tensor; cx: Tensor; mode: int; hidden_size: int; num_layers: int; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[int]; dropout_state: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] {.inline.} = 
-  check: atenFunction("at::_cudnn_rnn", input.tensor, weight.toATensors(), weight_stride0, weight_buf.tensor, hx.tensor, cx.tensor, mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes.toAIntList(), dropout_state.tensor).to(StdTuple5[ATensor, ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc cudnn_rnn_impl*(input: Tensor; weight: openarray[Tensor]; weight_stride0: int; weight_buf: Tensor; hx: Tensor; cx: Tensor; mode: int; hidden_size: int; num_layers: int; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[int]; dropout_state: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] {.inline.}
 
 proc cudnn_rnn_backward_impl*(ty: TensorType; input: Tensor; weight: openarray[Tensor]; weight_stride0: int; weight_buf: Tensor; hx: Tensor; cx: Tensor; output: Tensor; grad_output: Tensor; grad_hy: Tensor; grad_cy: Tensor; mode: int; hidden_size: int; num_layers: int; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[int]; dropout_state: Tensor; reserve: Tensor; output_mask: StdArray[bool, 4]): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: TensorList] {.inline.} = 
   check: ty[].atenMethod("_cudnn_rnn_backward", input.tensor, weight.toATensors(), weight_stride0, weight_buf.tensor, hx.tensor, cx.tensor, output.tensor, grad_output.tensor, grad_hy.tensor, grad_cy.tensor, mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes.toAIntList(), dropout_state.tensor, reserve.tensor, output_mask).to(StdTuple4[ATensor, ATensor, ATensor, ATensors]).toNimTuple().newTensors()
@@ -4075,17 +4073,13 @@ proc is_coalesced*(ty: TensorType; self: Tensor): bool {.inline.} =
 proc is_coalesced*(self: Tensor): bool {.inline.} = 
   check: self.tensor.atenMethod("is_coalesced").to(bool)
 
-proc indices_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("_indices", self.tensor).to(ATensor).newTensor()
+proc indices_impl*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
-proc indices_impl*(self: Tensor): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("_indices").to(ATensor).newTensor()
+proc indices_impl*(self: Tensor): Tensor {.inline.}
 
-proc values_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("_values", self.tensor).to(ATensor).newTensor()
+proc values_impl*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
-proc values_impl*(self: Tensor): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("_values").to(ATensor).newTensor()
+proc values_impl*(self: Tensor): Tensor {.inline.}
 
 proc coalesced_impl_inplace*(ty: TensorType; self: Tensor; coalesced: bool): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_coalesced_", self.tensor, coalesced).to(void); self
@@ -4093,11 +4087,9 @@ proc coalesced_impl_inplace*(ty: TensorType; self: Tensor; coalesced: bool): Ten
 proc coalesced_impl_inplace*(self: Tensor; coalesced: bool): Tensor {.inline, discardable.} = 
   check: self.tensor.atenMethod("_coalesced_", coalesced).to(void); self
 
-proc indices*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("indices", self.tensor).to(ATensor).newTensor()
+proc indices*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
-proc indices*(self: Tensor): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("indices").to(ATensor).newTensor()
+proc indices*(self: Tensor): Tensor {.inline.}
 
 proc values*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
@@ -4169,11 +4161,9 @@ proc local_scalar_dense_impl*(ty: TensorType; self: Tensor): float {.inline.} =
 proc local_scalar_dense_impl*(self: Tensor): float {.inline.} = 
   check: atenFunction("at::_local_scalar_dense", self.tensor).to(float)
 
-proc thnn_fused_lstm_cell_impl*(ty: TensorType; input_gates: Tensor; hidden_gates: Tensor; cx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.} = 
-  check: ty[].atenMethod("_thnn_fused_lstm_cell", input_gates.tensor, hidden_gates.tensor, cx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_fused_lstm_cell_impl*(ty: TensorType; input_gates: Tensor; hidden_gates: Tensor; cx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.}
 
-proc thnn_fused_lstm_cell_impl*(input_gates: Tensor; hidden_gates: Tensor; cx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.} = 
-  check: atenFunction("at::_thnn_fused_lstm_cell", input_gates.tensor, hidden_gates.tensor, cx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_fused_lstm_cell_impl*(input_gates: Tensor; hidden_gates: Tensor; cx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.}
 
 proc thnn_fused_lstm_cell_backward_impl*(ty: TensorType; grad_hy: Tensor; grad_cy: Tensor; cx: Tensor; cy: Tensor; workspace: Tensor; has_bias: bool): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] {.inline.} = 
   check: ty[].atenMethod("_thnn_fused_lstm_cell_backward", grad_hy.tensor, grad_cy.tensor, cx.tensor, cy.tensor, workspace.tensor, has_bias).to(StdTuple5[ATensor, ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()

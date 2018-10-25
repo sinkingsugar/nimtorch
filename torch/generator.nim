@@ -142,8 +142,7 @@ const knownNames = [
   "sizes",
   "strides",
   "type",
-  "options",
-  "indices"]
+  "options"]
 
 for knownName in knownNames:
   generatedProcs.add(ProcInfo(originalName: knownName, name: knownName, kind: Namespace))
@@ -564,6 +563,16 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           if k == "name" or vStr.startsWith("not_implemented"):
             continue
 
+          # Indentation
+          bodyText &= "  "
+
+          # `output_differentiability` is a special parameter
+          if k == "output_differentiability":
+            bodyText &= fmt"{k}: ["
+            let items = v.getElems().map do (x: JsonNode) -> string: $x.getBool()
+            bodyText &= items.join(", ") & "]\n"
+            continue
+
           # k can be multi like: "self, weight, bias", this is likely a tuple
           let names = k.split(peg"',' \s?")
 
@@ -573,12 +582,12 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
             addedInputMask = false
             generatedTrainingAssert = false
           
-          bodyText &= "  "
           if names.len > 1:
             bodyText &= fmt"({k}): "
           else:
             bodyText &= fmt"{k}: "
 
+          # Names must be parameters of the forward function
           for name in names:
             var
               argName = info.args.filter do (x: ArgInfo) -> bool: x.originalName == name

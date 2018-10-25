@@ -1551,6 +1551,18 @@ autograd cudnn_ctc_loss_impl:
     check: atenFunction("at::_cudnn_ctc_loss", log_probs.tensor, targets.tensor, input_lengths.toAIntList(), target_lengths.toAIntList(), blank, deterministic).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
   log_probs: firstOrSelf(fwd_result[1])
 
+autograd cudnn_rnn_impl:
+  proc forward*(ty: TensorType; input: Tensor; weight: openarray[Tensor]; weight_stride0: int; weight_buf: Tensor; hx: Tensor; cx: Tensor; mode: int; hidden_size: int; num_layers: int; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[int]; dropout_state: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] {.inline.} = 
+    check: ty[].atenMethod("_cudnn_rnn", input.tensor, weight.toATensors(), weight_stride0, weight_buf.tensor, hx.tensor, cx.tensor, mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes.toAIntList(), dropout_state.tensor).to(StdTuple5[ATensor, ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+  output_differentiability: [true, true, true, false, false]
+  (input, hx, cx, weight):  fwd_result[3].clone() 
+
+autograd cudnn_rnn_impl:
+  proc forward*(input: Tensor; weight: openarray[Tensor]; weight_stride0: int; weight_buf: Tensor; hx: Tensor; cx: Tensor; mode: int; hidden_size: int; num_layers: int; batch_first: bool; dropout: float64; train: bool; bidirectional: bool; batch_sizes: openarray[int]; dropout_state: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor, result3: Tensor, result4: Tensor] {.inline.} = 
+    check: atenFunction("at::_cudnn_rnn", input.tensor, weight.toATensors(), weight_stride0, weight_buf.tensor, hx.tensor, cx.tensor, mode, hidden_size, num_layers, batch_first, dropout, train, bidirectional, batch_sizes.toAIntList(), dropout_state.tensor).to(StdTuple5[ATensor, ATensor, ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+  output_differentiability: [true, true, true, false, false]
+  (input, hx, cx, weight):  fwd_result[3].clone() 
+
 autograd abs:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
     check: ty[].atenMethod("abs", self.tensor).to(ATensor).newTensor()
@@ -2575,6 +2587,36 @@ autograd coalesce:
     check: self.tensor.atenMethod("coalesce").to(ATensor).newTensor()
   self: firstOrSelf(grad)
 
+autograd indices_impl:
+  proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
+    check: ty[].atenMethod("_indices", self.tensor).to(ATensor).newTensor()
+  output_differentiability: [false]
+
+autograd indices_impl:
+  proc forward*(self: Tensor): Tensor {.inline.} = 
+    check: self.tensor.atenMethod("_indices").to(ATensor).newTensor()
+  output_differentiability: [false]
+
+autograd values_impl:
+  proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
+    check: ty[].atenMethod("_values", self.tensor).to(ATensor).newTensor()
+  output_differentiability: [false]
+
+autograd values_impl:
+  proc forward*(self: Tensor): Tensor {.inline.} = 
+    check: self.tensor.atenMethod("_values").to(ATensor).newTensor()
+  output_differentiability: [false]
+
+autograd indices:
+  proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
+    check: ty[].atenMethod("indices", self.tensor).to(ATensor).newTensor()
+  output_differentiability: [false]
+
+autograd indices:
+  proc forward*(self: Tensor): Tensor {.inline.} = 
+    check: self.tensor.atenMethod("indices").to(ATensor).newTensor()
+  output_differentiability: [false]
+
 autograd values:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
     check: ty[].atenMethod("values", self.tensor).to(ATensor).newTensor()
@@ -2584,6 +2626,18 @@ autograd values:
   proc forward*(self: Tensor): Tensor {.inline.} = 
     check: self.tensor.atenMethod("values").to(ATensor).newTensor()
   self: firstOrSelf(sparse_coo_tensor_unsafe_impl(self.indices(), grad, self.sizes()).coalesced_impl_inplace(true))
+
+autograd thnn_fused_lstm_cell_impl:
+  proc forward*(ty: TensorType; input_gates: Tensor; hidden_gates: Tensor; cx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.} = 
+    check: ty[].atenMethod("_thnn_fused_lstm_cell", input_gates.tensor, hidden_gates.tensor, cx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+  output_differentiability: [true, true, false]
+  (input_gates, hidden_gates, cx, input_bias, hidden_bias): thnn_fused_lstm_cell_backward_impl(grads[0], grads[1], cx, fwd_result[1], fwd_result[2], input_bias.is_defined())
+
+autograd thnn_fused_lstm_cell_impl:
+  proc forward*(input_gates: Tensor; hidden_gates: Tensor; cx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.} = 
+    check: atenFunction("at::_thnn_fused_lstm_cell", input_gates.tensor, hidden_gates.tensor, cx.tensor, input_bias.tensor, hidden_bias.tensor).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+  output_differentiability: [true, true, false]
+  (input_gates, hidden_gates, cx, input_bias, hidden_bias): thnn_fused_lstm_cell_backward_impl(grads[0], grads[1], cx, fwd_result[1], fwd_result[2], input_bias.is_defined())
 
 autograd thnn_fused_gru_cell_impl:
   proc forward*(ty: TensorType; input_gates: Tensor; hidden_gates: Tensor; hx: Tensor; input_bias: Tensor; hidden_bias: Tensor): tuple[result0: Tensor, result1: Tensor] {.inline.} = 

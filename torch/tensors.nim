@@ -222,9 +222,6 @@ proc getType*(a: Tensor): TensorType {.inline, noinit.} =
 proc options*(a: Tensor): TensorOptions {.inline, noinit.} =
   a.tensor.dynamicCppCall("options").to(TensorOptions)
 
-proc indices*(self: Tensor): Tensor {.inline.} =
-  self.tensor.dynamicCppCall("indices").to(ATensor).newTensor()
-
 converter toTensorOptions*(tensorType: TensorType): TensorOptions =
   result = tensorType.options()
 

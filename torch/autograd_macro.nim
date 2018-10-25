@@ -60,6 +60,10 @@ macro autograd*(head, body: untyped): untyped =
     else:
       x[0].expectKind({ nnkIdent, nnkPar })
 
+      # TODO: Handle differentiablility
+      if x[0].kind == nnkIdent and $x[0] == "output_differentiability":
+        continue
+
       # Simply assign non-tuples
       var resultExpr: NimNode
       if x[0].kind == nnkIdent:
@@ -90,6 +94,10 @@ macro autograd*(head, body: untyped): untyped =
           `resultExpr` = `gradExpr`
         else:
           `resultIdent`= `gradExpr`
+
+  # No grads required
+  if inputIdents.len == 0:
+    return       
 
   # Propagate whether gradient is needed or not
   var
