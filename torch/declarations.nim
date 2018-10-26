@@ -869,30 +869,6 @@ proc th_zero_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, discardabl
 proc th_zero_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
   check: atenFunction("at::th_zero_", self.tensor).to(void); self
 
-proc sumall_impl*(ty: TensorType; self: Tensor): float {.inline.} = 
-  check: ty[].atenMethod("_sumall", self.tensor).to(float)
-
-proc sumall_impl*(self: Tensor): float {.inline.} = 
-  check: atenFunction("at::_sumall", self.tensor).to(float)
-
-proc th_sum_impl*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("_th_sum", self.tensor, dim, keepdim).to(ATensor).newTensor()
-
-proc th_sum_impl*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
-  check: atenFunction("at::_th_sum", self.tensor, dim, keepdim).to(ATensor).newTensor()
-
-proc prodall_impl*(ty: TensorType; self: Tensor): float {.inline.} = 
-  check: ty[].atenMethod("_prodall", self.tensor).to(float)
-
-proc prodall_impl*(self: Tensor): float {.inline.} = 
-  check: atenFunction("at::_prodall", self.tensor).to(float)
-
-proc th_prod_impl*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("_th_prod", self.tensor, dim, keepdim).to(ATensor).newTensor()
-
-proc th_prod_impl*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
-  check: atenFunction("at::_th_prod", self.tensor, dim, keepdim).to(ATensor).newTensor()
-
 proc cumsum_impl*(ty: TensorType; self: Tensor; dim: int): Tensor {.inline.} = 
   check: ty[].atenMethod("_cumsum", self.tensor, dim).to(ATensor).newTensor()
 
@@ -3587,13 +3563,31 @@ proc stride*(ty: TensorType; self: Tensor; dim: int): int {.inline.} =
 proc stride*(self: Tensor; dim: int): int {.inline.} = 
   check: self.tensor.atenMethod("stride", dim).to(int)
 
-proc sum_impl*(ty: TensorType; self: Tensor): Tensor {.inline.}
+proc sum*(ty: TensorType; self: Tensor; dtype: ScalarType): Tensor {.inline.} = 
+  check: ty[].atenMethod("sum", self.tensor, dtype).to(ATensor).newTensor()
 
-proc sum_impl*(self: Tensor): Tensor {.inline.}
+proc sum*(self: Tensor; dtype: ScalarType): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("sum", dtype).to(ATensor).newTensor()
 
-proc sum_impl*(ty: TensorType; self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.}
+proc sum*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
-proc sum_impl*(self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.}
+proc sum*(self: Tensor): Tensor {.inline.}
+
+proc sum*(ty: TensorType; self: Tensor; dim: openarray[int]; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
+  check: ty[].atenMethod("sum", self.tensor, dim.toAIntList(), keepdim, dtype).to(ATensor).newTensor()
+
+proc sum*(self: Tensor; dim: openarray[int]; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("sum", dim.toAIntList(), keepdim, dtype).to(ATensor).newTensor()
+
+proc sum*(ty: TensorType; self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.}
+
+proc sum*(self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.}
+
+proc sum*(ty: TensorType; self: Tensor; dim: openarray[int]; dtype: ScalarType): Tensor {.inline.} = 
+  check: ty[].atenMethod("sum", self.tensor, dim.toAIntList(), dtype).to(ATensor).newTensor()
+
+proc sum*(self: Tensor; dim: openarray[int]; dtype: ScalarType): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("sum", dim.toAIntList(), dtype).to(ATensor).newTensor()
 
 proc sqrt*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
@@ -3629,12 +3623,6 @@ proc prod*(ty: TensorType; self: Tensor): Tensor {.inline.} =
 proc prod*(self: Tensor): Tensor {.inline.} = 
   check: self.tensor.atenMethod("prod").to(ATensor).newTensor()
 
-proc prod_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("_prod", self.tensor).to(ATensor).newTensor()
-
-proc prod_impl*(self: Tensor): Tensor {.inline.} = 
-  check: atenFunction("at::_prod", self.tensor).to(ATensor).newTensor()
-
 proc prod*(ty: TensorType; self: Tensor; dim: int; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("prod", self.tensor, dim, keepdim, dtype).to(ATensor).newTensor()
 
@@ -3652,12 +3640,6 @@ proc prod*(ty: TensorType; self: Tensor; dim: int; dtype: ScalarType): Tensor {.
 
 proc prod*(self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
   check: self.tensor.atenMethod("prod", dim, dtype).to(ATensor).newTensor()
-
-proc prod_impl*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("_prod", self.tensor, dim, keepdim).to(ATensor).newTensor()
-
-proc prod_impl*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
-  check: atenFunction("at::_prod", self.tensor, dim, keepdim).to(ATensor).newTensor()
 
 proc t*(ty: TensorType; self: Tensor): Tensor {.inline.}
 

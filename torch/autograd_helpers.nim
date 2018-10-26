@@ -60,22 +60,6 @@ proc isIntegralType(dtype: ScalarType): bool {.importcpp: "at::isIntegralType(#)
 proc toType*(self: Tensor; t: ScalarType; non_blocking: bool = false): Tensor =
   self.toType(self.getType().toScalarType(t))
 
-proc integer_upcast(self: Tensor; dtype: Option[ScalarType] = ScalarType.none): Tensor =
-  let 
-    scalarType = self.getType().scalarType
-    upcast_scalarType =
-      if dtype.isSome: dtype.get()
-      elif scalarType.isIntegralType(): ScalarType.kLong
-      else: scalarType
-
-  return self.toType(upcast_scalarType)
-
-proc sum*(self: Tensor; dim: openarray[int]; keepdim: bool = false; dtype: Option[ScalarType] = ScalarType.none): Tensor {.inline.} =
-  sum_impl(integer_upcast(self, dtype), dim, keepdim)
-
-proc sum*(self: Tensor; dtype: Option[ScalarType] = ScalarType.none): Tensor {.inline.} =
-  sum_impl(integer_upcast(self, dtype))
-
 # Sums `tensor` repeatedly to produce a tensor of shape `shape`.
 # Precondition: is_expandable_to(shape, tensor.sizes()) must be true
 proc sum_to*(tensor: Tensor; shape: IntList): Tensor =

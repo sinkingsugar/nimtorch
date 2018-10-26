@@ -2339,24 +2339,24 @@ autograd stack:
     check: atenFunction("at::stack", tensors.toATensors(), dim).to(ATensor).newTensor()
   tensors: firstOrSelf(unbind(grad, dim))
 
-autograd sum_impl:
+autograd sum:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
-    check: ty[].atenMethod("_sum", self.tensor).to(ATensor).newTensor()
+    check: ty[].atenMethod("sum", self.tensor).to(ATensor).newTensor()
   self: firstOrSelf(grad.expand(self.sizes()))
 
-autograd sum_impl:
+autograd sum:
   proc forward*(self: Tensor): Tensor {.inline.} = 
-    check: atenFunction("at::_sum", self.tensor).to(ATensor).newTensor()
+    check: self.tensor.atenMethod("sum").to(ATensor).newTensor()
   self: firstOrSelf(grad.expand(self.sizes()))
 
-autograd sum_impl:
+autograd sum:
   proc forward*(ty: TensorType; self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.} = 
-    check: ty[].atenMethod("_sum", self.tensor, dim.toAIntList(), keepdim).to(ATensor).newTensor()
+    check: ty[].atenMethod("sum", self.tensor, dim.toAIntList(), keepdim).to(ATensor).newTensor()
   self: firstOrSelf(sum_backward(grad, self.sizes(), dim, keepdim))
 
-autograd sum_impl:
+autograd sum:
   proc forward*(self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.} = 
-    check: atenFunction("at::_sum", self.tensor, dim.toAIntList(), keepdim).to(ATensor).newTensor()
+    check: self.tensor.atenMethod("sum", dim.toAIntList(), keepdim).to(ATensor).newTensor()
   self: firstOrSelf(sum_backward(grad, self.sizes(), dim, keepdim))
 
 autograd sqrt:
