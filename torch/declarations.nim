@@ -4214,6 +4214,12 @@ proc to_sparse*(ty: TensorType; self: Tensor): Tensor {.inline.} =
 proc to_sparse*(self: Tensor): Tensor {.inline.} = 
   check: self.tensor.atenMethod("to_sparse").to(ATensor).newTensor()
 
+proc to_name*(ty: TensorType; self: Tensor; options: TensorOptions; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
+  check: ty[].atenMethod("to", self.tensor, options, non_blocking, copy).to(ATensor).newTensor()
+
+proc to_name*(self: Tensor; options: TensorOptions; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("to", options, non_blocking, copy).to(ATensor).newTensor()
+
 proc to_name*(ty: TensorType; self: Tensor; dtype: ScalarType; non_blocking: bool = false; copy: bool = false): Tensor {.inline.} = 
   check: ty[].atenMethod("to", self.tensor, dtype, non_blocking, copy).to(ATensor).newTensor()
 
