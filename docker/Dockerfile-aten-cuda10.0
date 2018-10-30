@@ -43,7 +43,7 @@ cd pytorch && \
 mkdir built && \
 cd built && \
 source activate deps && \
-cmake -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DOpenMP_libiomp5_LIBRARY="libiomp5" -DOpenMP_CXX_LIB_NAMES="libiomp5" -DOpenMP_C_LIB_NAMES="libiomp5" -DOpenMP_CXX_FLAGS="-liomp5 -L$CONDA_PREFIX/lib" -DOpenMP_C_FLAGS="-liomp5 -L$CONDA_PREFIX/lib" -DMKLDNN_ROOT_DIR=$CONDA_PREFIX -DUSE_MKLDNN=ON -DUSE_MKL=ON -DBLAS=MKL -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
+cmake -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DOpenMP_libiomp5_LIBRARY="libiomp5" -DOpenMP_CXX_LIB_NAMES="libiomp5" -DOpenMP_C_LIB_NAMES="libiomp5" -DOpenMP_CXX_FLAGS="-liomp5 -L$CONDA_PREFIX/lib" -DOpenMP_C_FLAGS="-liomp5 -L$CONDA_PREFIX/lib" -DMKLDNN_ROOT_DIR=$CONDA_PREFIX -DMKLDNN_FOUND=ON -DUSE_MKLDNN=ON -DUSE_MKL=ON -DBLAS=MKL -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
 make install -j10 && \
 make clean && \
 cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
