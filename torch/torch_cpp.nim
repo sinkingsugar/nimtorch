@@ -108,7 +108,12 @@ elif defined osx:
 else:
   {.passC: "-std=c++11".}
 
-  {.passL: "-lcpuinfo -lsleef -pthread -lrt -lc10 -lcaffe2".}
+  const hasMkldnn = staticExec("[ -f '" & atenPath & "/lib/libmkldnn.so" & "' ] && echo 'true' || echo 'false'")
+  when hasMkldnn == "true":
+    {.passL: "-lcpuinfo -lsleef -pthread -lrt -lmkldnn -lc10 -lcaffe2".}
+  else:
+    {.passL: "-lcpuinfo -lsleef -pthread -lrt -lc10 -lcaffe2".}
+  
   when defined cuda:
     const hasMagma = staticExec("[ -f '" & atenPath & "/lib/libmagma.so" & "' ] && echo 'true' || echo 'false'")
     when hasMagma == "true":
