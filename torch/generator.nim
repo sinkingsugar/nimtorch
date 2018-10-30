@@ -33,6 +33,11 @@ type
   InvalidReturnException = object of Exception
 
 proc toNimType(typeName: string): string =
+  if typeName.endsWith("?"):
+    # TODO: Handle optional args (e.g. in `clamp`)
+    return typeName[0..^2].toNimType()
+    #return "Option[" & typeName[0..^2].toNimType() & "]"
+
   case typeName
   of "Tensor", "BoolTensor", "IndexTensor", "IntegerTensor": return "Tensor"
   of "TensorOptions": return "TensorOptions"
@@ -54,7 +59,7 @@ proc toNimType(typeName: string): string =
   of "std::string": return "StdString"
   of "Type": return "TensorType"
   of "SparseTensorRef": return "ASparseTensorRef"
-  else: raise newException(InvalidReturnException, "Invalid return type '" & typeName & "'")
+  else: raise newException(ValueError, fmt"Invalid return type '{typeName}''")
 
 proc validate(name: string): string =
   case name:
@@ -533,10 +538,18 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           argB = args[i].split(peg"\s+")[0].toNimType
           argA = x.args[i].nimType
         
+        if x.originalName == "clamp":
+          echo "---"
+          echo argA
+          echo argB
+
         if argA != argB:
           return false
 
       return true
+
+    if candidates.len == 0:
+      echo fmt"No candidates for derivative {name} with arguments {args}"
 
     for info in candidates:
 

@@ -143,10 +143,13 @@ proc set_default_dtype*(dtype: TensorKind) {.inline.} = defaultType = dtype
 proc get_default_dtype*(): TensorKind {.inline.} = defaultType
 
 proc is_cuda*(self: TensorType): bool =
-  when defined cuda:
-    return self.dynamicCppCall("is_cuda").to(bool)
-  else:
-    return false
+  self[].is_cuda().to(bool)
+
+proc is_cuda*(self: Tensor): bool =
+  self.tensor.is_cuda().to(bool)
+
+proc is_sparse*(self: Tensor): bool =
+  self.tensor.is_sparse().to(bool)
 
 proc toATenType*(kind: TensorKind): ScalarType {.inline.} =
   case kind
