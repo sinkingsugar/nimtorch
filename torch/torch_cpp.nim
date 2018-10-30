@@ -62,13 +62,13 @@ cpplibpaths(atenPath & """/lib64""")
 type AInt64* {.importcpp: "int64_t", header: "<stdint.h>".} = object
 
 when defined wasm:  
-  {.passL: "-lcaffe2 -lc10".}
+  {.passL: "-lc10 -lcaffe2".}
 
 elif defined windows:
   cpplibs(
+    atenPath & "/lib/cpuinfo.lib",
     atenPath & "/lib/c10.lib",
-    atenPath & "/lib/caffe2.lib",
-    atenPath & "/lib/cpuinfo.lib"
+    atenPath & "/lib/caffe2.lib"
   )
 
   cppdefines("NOMINMAX")
@@ -85,13 +85,13 @@ elif defined windows:
     cpplibs(cudaLibPath & "/cuda.lib")
 
 elif defined osx:
-  {.passC: "-std=c++14".}
+  {.passC: "-std=c++11".}
 
   when not defined ios:
-    {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -lc10".}
+    {.passL: "-lcpuinfo -lsleef -pthread -lc10 -lcaffe2".}
   else:
     import fragments/ffi/ios
-    {.passL: "-lcaffe2 -lcpuinfo -pthread -lc10".}
+    {.passL: "-lcpuinfo -pthread -lc10 -lcaffe2 ".}
   
   # Make sure we allow users to use rpath and be able find ATEN easier
   const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
@@ -105,9 +105,9 @@ elif defined osx:
     proc ProfilerStop*() {.importc.}
 
 else:
-  {.passC: "-std=c++14".}
+  {.passC: "-std=c++11".}
 
-  {.passL: "-lcaffe2 -lcpuinfo -lsleef -pthread -lrt -lc10".}
+  {.passL: "-lcpuinfo -lsleef -pthread -lrt -lc10 -lcaffe2".}
   when defined cuda:
     const hasMagma = staticExec("[ -f '" & atenPath & "/lib/libmagma.so" & "' ] && echo 'true' || echo 'false'")
     when hasMagma == "true":
