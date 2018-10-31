@@ -1,6 +1,6 @@
 package:
   name: nimtorch
-  version: "2018.10.30.1577"
+  version: "2018.10.31.1587"
 
 source:
   path: ../..
@@ -9,4 +9,4 @@ requirements:
   run:
     - nim ==0.19.1
     - fragments ==0.1.22
-    - aten ==2018.10.30.1577
+    - aten ==2018.10.31.1587
