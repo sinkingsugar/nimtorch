@@ -17,12 +17,6 @@ template check(body: untyped): untyped =
   except StdException as e: raiseAssert($e.what())
   r
 
-proc th_storage_offset_impl*(ty: TensorType; self: Tensor): int {.inline.} = 
-  check: ty[].atenMethod("_th_storage_offset", self.tensor).to(int)
-
-proc th_storage_offset_impl*(self: Tensor): int {.inline.} = 
-  check: self.tensor.atenMethod("_th_storage_offset").to(int)
-
 proc th_ndimension_impl*(ty: TensorType; self: Tensor): int {.inline.} = 
   check: ty[].atenMethod("_th_ndimension", self.tensor).to(int)
 
@@ -4351,12 +4345,6 @@ proc pad_packed_sequence_impl*(ty: TensorType; data: Tensor; batch_sizes: Tensor
 
 proc pad_packed_sequence_impl*(data: Tensor; batch_sizes: Tensor; batch_first: bool; padding_value: float; total_length: int): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
   check: atenFunction("at::_pad_packed_sequence", data.tensor, batch_sizes.tensor, batch_first, padding_value, total_length).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
-
-proc storage_offset*(ty: TensorType; self: Tensor): int {.inline.} = 
-  check: ty[].atenMethod("storage_offset", self.tensor).to(int)
-
-proc storage_offset*(self: Tensor): int {.inline.} = 
-  check: self.tensor.atenMethod("storage_offset").to(int)
 
 proc set_inplace*(ty: TensorType; self: Tensor; source: AStorage): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("set_", self.tensor, source).to(void); self
