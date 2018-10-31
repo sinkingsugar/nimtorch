@@ -77,7 +77,7 @@ proc sum_to*(tensor: Tensor; shape: IntList): Tensor =
 proc mm*(self, mat2: Tensor): Tensor =
   if self.is_sparse:
     return mat2.getType().addmm(zeros([], mat2.getType()), self, mat2, 0.0, 1.0)
-  return mm_impl(self, mat2);
+  return th_mm_impl(self, mat2);
 
 proc matmul*(tensor1, tensor2: Tensor): Tensor =
   let
