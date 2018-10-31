@@ -30,7 +30,7 @@ git submodule update --init --recursive
 
 ENV PYTORCH_PYTHON=python3
 
-RUN conda create -n deps mkl mkl-include intel-openmp mkl-dnn
+RUN conda create -n deps mkl mkl-include intel-openmp
 
 RUN apt-get install -y curl
 # download magma 2.4.0 pre built using same docker images

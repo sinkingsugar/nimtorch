@@ -10,7 +10,6 @@ requirements:
     - mkl # [linux]
     - mkl-include # [linux]
     - intel-openmp # [linux]
-    - mkl-dnn # [linux]
 
 build:
   script_env:
