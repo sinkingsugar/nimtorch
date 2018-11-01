@@ -37,15 +37,15 @@ macro autograd*(head, body: untyped): untyped =
     x.expectKind({ nnkCall, nnkPar, nnkProcDef, nnkFuncDef })
 
     if x.kind in { nnkProcDef, nnkFuncDef }:
-      if x.name.basename != ident"forward":
+      if x.name != ident"forward":
         error("Only a proc named 'forward' is allowed", x)
 
       # TODO: Handle non-expressions
       let forwardExpr = x.body
-      x.name = nnkPostfix.newTree(ident"*", name)
+      x.name = name
       forwardBody.add quote do:
         `resultIdent` = `forwardExpr`
-        let `forwardResultIdent` = `resultIdent`      
+        let `forwardResultIdent` = `resultIdent`    
 
       # If parameters are non-concrete, captures them as concrete types (e.g. openarray -> seq)
       for i in 1 ..< x.params.len:
