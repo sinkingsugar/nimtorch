@@ -81,7 +81,8 @@ proc backward*(tensors, grads: openarray[Tensor]; retain_graph = false; create_g
           node.grad_fn = nil
     
     # Issue #16, GC being lazy about cleaning up garbage
-    GC_fullCollect()
+    when not defined useRealtimeGC:
+      GC_fullCollect()
 
 proc backward*(tensor, grad: Tensor; retain_graph = false; create_graph = false) =
   backward([tensor], [grad], retain_graph, create_graph)

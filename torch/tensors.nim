@@ -67,12 +67,16 @@ proc newTensor*(): Tensor {.inline, noinit.} =
   cppctor(addr(result.tensor))
   result.hasTensor = false
   result.tensor = undefinedTensor
+  when defined useRealtimeGC:
+    GC_step(100)
 
 proc newTensor*(a: ATensor): Tensor {.inline, noinit.} =
   new(result, proc(self: Tensor) = cppdtor(addr(self.tensor)))
   cppctor(addr(result.tensor))
   result.hasTensor = true
   result.tensor = a
+  when defined useRealtimeGC:
+    GC_step(100)
 
 proc len*(v: ATensors): int {.inline.} = v.size().to(int)
 
