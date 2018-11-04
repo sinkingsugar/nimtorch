@@ -20,34 +20,6 @@ autograd th_addmm_impl:
   mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
   mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
 
-autograd th_addmv_impl:
-  proc forward*(ty: TensorType; self: Tensor; mat: Tensor; vec: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-    check: ty[].atenMethod("_th_addmv", self.tensor, mat.tensor, vec.tensor, beta, alpha).to(ATensor).newTensor()
-  self: firstOrSelf(maybe_multiply(grad, beta))
-  mat: firstOrSelf(grad.ger(vec) * alpha)
-  vec: firstOrSelf(mat.t().mv(grad) * alpha)
-
-autograd th_addmv_impl:
-  proc forward*(self: Tensor; mat: Tensor; vec: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-    check: atenFunction("at::_th_addmv", self.tensor, mat.tensor, vec.tensor, beta, alpha).to(ATensor).newTensor()
-  self: firstOrSelf(maybe_multiply(grad, beta))
-  mat: firstOrSelf(grad.ger(vec) * alpha)
-  vec: firstOrSelf(mat.t().mv(grad) * alpha)
-
-autograd th_addr_impl:
-  proc forward*(ty: TensorType; self: Tensor; vec1: Tensor; vec2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-    check: ty[].atenMethod("_th_addr", self.tensor, vec1.tensor, vec2.tensor, beta, alpha).to(ATensor).newTensor()
-  self: firstOrSelf(maybe_multiply(grad, beta))
-  vec1: firstOrSelf(grad.mv(vec2) * alpha)
-  vec2: firstOrSelf(grad.t().mv(vec1) * alpha)
-
-autograd th_addr_impl:
-  proc forward*(self: Tensor; vec1: Tensor; vec2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-    check: atenFunction("at::_th_addr", self.tensor, vec1.tensor, vec2.tensor, beta, alpha).to(ATensor).newTensor()
-  self: firstOrSelf(maybe_multiply(grad, beta))
-  vec1: firstOrSelf(grad.mv(vec2) * alpha)
-  vec2: firstOrSelf(grad.t().mv(vec1) * alpha)
-
 autograd th_mm_impl:
   proc forward*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor {.inline.} = 
     check: ty[].atenMethod("_th_mm", self.tensor, mat2.tensor).to(ATensor).newTensor()
@@ -59,20 +31,6 @@ autograd th_mm_impl:
     check: atenFunction("at::_th_mm", self.tensor, mat2.tensor).to(ATensor).newTensor()
   self: firstOrSelf(mm_mat1_backward(grad, mat2, self.sizes(), self.strides(), 1))
   mat2: firstOrSelf(mm_mat2_backward(grad, self, mat2.sizes(), mat2.strides(), 1))
-
-autograd addbmm:
-  proc forward*(ty: TensorType; self: Tensor; batch1: Tensor; batch2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-    check: ty[].atenMethod("addbmm", self.tensor, batch1.tensor, batch2.tensor, beta, alpha).to(ATensor).newTensor()
-  self: firstOrSelf(maybe_multiply(grad, beta))
-  batch1: firstOrSelf(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ]).bmm(batch2.transpose(1, 2)) * alpha)
-  batch2: firstOrSelf(batch1.transpose(1, 2).bmm(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ])) * alpha)
-
-autograd addbmm:
-  proc forward*(self: Tensor; batch1: Tensor; batch2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-    check: self.tensor.atenMethod("addbmm", batch1.tensor, batch2.tensor, beta, alpha).to(ATensor).newTensor()
-  self: firstOrSelf(maybe_multiply(grad, beta))
-  batch1: firstOrSelf(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ]).bmm(batch2.transpose(1, 2)) * alpha)
-  batch2: firstOrSelf(batch1.transpose(1, 2).bmm(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ])) * alpha)
 
 autograd binary_cross_entropy:
   proc forward*(ty: TensorType; self: Tensor; target: Tensor; weight: Tensor; reduction: int): Tensor {.inline.} = 
@@ -947,6 +905,34 @@ autograd add:
   proc forward*(self: Tensor; other: float; alpha: float = 1): Tensor {.inline.} = 
     check: self.tensor.atenMethod("add", other, alpha).to(ATensor).newTensor()
   self: firstOrSelf(grad)
+
+autograd addmv:
+  proc forward*(ty: TensorType; self: Tensor; mat: Tensor; vec: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+    check: ty[].atenMethod("addmv", self.tensor, mat.tensor, vec.tensor, beta, alpha).to(ATensor).newTensor()
+  self: firstOrSelf(maybe_multiply(grad, beta))
+  mat: firstOrSelf(grad.ger(vec) * alpha)
+  vec: firstOrSelf(mat.t().mv(grad) * alpha)
+
+autograd addmv:
+  proc forward*(self: Tensor; mat: Tensor; vec: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+    check: self.tensor.atenMethod("addmv", mat.tensor, vec.tensor, beta, alpha).to(ATensor).newTensor()
+  self: firstOrSelf(maybe_multiply(grad, beta))
+  mat: firstOrSelf(grad.ger(vec) * alpha)
+  vec: firstOrSelf(mat.t().mv(grad) * alpha)
+
+autograd addr:
+  proc forward*(ty: TensorType; self: Tensor; vec1: Tensor; vec2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+    check: ty[].atenMethod("addr", self.tensor, vec1.tensor, vec2.tensor, beta, alpha).to(ATensor).newTensor()
+  self: firstOrSelf(maybe_multiply(grad, beta))
+  vec1: firstOrSelf(grad.mv(vec2) * alpha)
+  vec2: firstOrSelf(grad.t().mv(vec1) * alpha)
+
+autograd addr:
+  proc forward*(self: Tensor; vec1: Tensor; vec2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+    check: self.tensor.atenMethod("addr", vec1.tensor, vec2.tensor, beta, alpha).to(ATensor).newTensor()
+  self: firstOrSelf(maybe_multiply(grad, beta))
+  vec1: firstOrSelf(grad.mv(vec2) * alpha)
+  vec2: firstOrSelf(grad.t().mv(vec1) * alpha)
 
 autograd asin:
   proc forward*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
@@ -2267,6 +2253,20 @@ autograd ne_inplace:
     check: self.tensor.atenMethod("ne_", other.tensor).to(void); self
   self: firstOrSelf(zeros_like(self))
   other: firstOrSelf(zeros_like(other))
+
+autograd addbmm:
+  proc forward*(ty: TensorType; self: Tensor; batch1: Tensor; batch2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+    check: ty[].atenMethod("addbmm", self.tensor, batch1.tensor, batch2.tensor, beta, alpha).to(ATensor).newTensor()
+  self: firstOrSelf(maybe_multiply(grad, beta))
+  batch1: firstOrSelf(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ]).bmm(batch2.transpose(1, 2)) * alpha)
+  batch2: firstOrSelf(batch1.transpose(1, 2).bmm(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ])) * alpha)
+
+autograd addbmm:
+  proc forward*(self: Tensor; batch1: Tensor; batch2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+    check: self.tensor.atenMethod("addbmm", batch1.tensor, batch2.tensor, beta, alpha).to(ATensor).newTensor()
+  self: firstOrSelf(maybe_multiply(grad, beta))
+  batch1: firstOrSelf(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ]).bmm(batch2.transpose(1, 2)) * alpha)
+  batch2: firstOrSelf(batch1.transpose(1, 2).bmm(grad.unsqueeze(0).expand([ batch1.size(0), batch1.size(1), batch2.size(2) ])) * alpha)
 
 autograd random_inplace:
   proc forward*(ty: TensorType; self: Tensor; from_name: int; to_name: int; generator: Generator = nil): Tensor {.inline, discardable.} = 
