@@ -1,6 +1,6 @@
 FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
 
-RUN apt-get update && apt-get install -y build-essential git cmake python3-pip libmpfr-dev libgmp-dev wget
+RUN apt-get update && apt-get install -y build-essential git cmake python3-pip libmpfr-dev libgmp-dev wget curl
 
 RUN pip3 install pyyaml
 RUN pip3 install typing
@@ -32,7 +32,6 @@ ENV PYTORCH_PYTHON=python3
 
 RUN conda create -n deps mkl mkl-include intel-openmp
 
-RUN apt-get install -y curl
 # download magma 2.4.0 pre built using same docker images
 RUN cd && curl -L -o magmalib.tar.gz "https://drive.google.com/uc?export=download&id=1ABrWQxC9FxVSxa9tBx340jhsfg-4etjJ" && tar xzf magmalib.tar.gz
 ENV MAGMA_HOME=/root/output
