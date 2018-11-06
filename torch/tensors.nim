@@ -36,6 +36,15 @@ type
 
 var undefinedTensor*: ATensor
 
+when defined inference:
+  proc `requires_grad=`*(self: Tensor; value: bool) = discard
+
+  proc `requires_grad`*(self: Tensor): bool = discard
+
+  proc `grad=`*(self: Tensor; value: Tensor) = discard
+
+  proc `grad`*(self: Tensor): Tensor = discard
+
 # TODO: Shallow copy without leaf checking?
 proc data*(self: Tensor): Tensor {.inline.} = self
 
@@ -67,6 +76,7 @@ const
   nimtorchGcUsInt = parseInt(nimtorchGcUs)
 
 proc newTensor*(): Tensor {.inline, noinit.} =
+  #GC_fullCollect()
   new(result, proc(self: Tensor) = cppdtor(addr(self.tensor)))
   cppctor(addr(result.tensor))
   result.hasTensor = false
@@ -75,6 +85,7 @@ proc newTensor*(): Tensor {.inline, noinit.} =
     GC_step(nimtorchGcUsInt)
 
 proc newTensor*(a: ATensor): Tensor {.inline, noinit.} =
+  #GC_fullCollect()
   new(result, proc(self: Tensor) = cppdtor(addr(self.tensor)))
   cppctor(addr(result.tensor))
   result.hasTensor = true
@@ -358,6 +369,7 @@ proc set_num_threads*(num: int) =
 proc get_num_threads*(): int {.importcpp: "at::get_num_threads()".}
 
 proc detach_inplace*(self: Tensor): Tensor {.discardable.} =
-  self.grad_fn = nil
-  self.requires_grad = false
+  when not defined inference:
+    self.grad_fn = nil
+    self.requires_grad = false
   return self
