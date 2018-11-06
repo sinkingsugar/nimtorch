@@ -1,6 +1,6 @@
 import fragments/ffi/cpp
 import torch_cpp
-import macros, sequtils, math, sets, strformat, options
+import macros, sequtils, math, sets, strformat, options, strutils
 
 {.experimental: "implicitDeref".}
 
@@ -62,13 +62,17 @@ template enable_grad*(body: untyped): untyped =
 
 proc use_count*(x: Tensor): int = x.tensor.dynamicCppCall("get()->use_count").to(int)
 
+const
+  nimtorchGcUs {.strdefine.} = "1000"
+  nimtorchGcUsInt = parseInt(nimtorchGcUs)
+
 proc newTensor*(): Tensor {.inline, noinit.} =
   new(result, proc(self: Tensor) = cppdtor(addr(self.tensor)))
   cppctor(addr(result.tensor))
   result.hasTensor = false
   result.tensor = undefinedTensor
   when defined useRealtimeGC:
-    GC_step(100)
+    GC_step(nimtorchGcUsInt)
 
 proc newTensor*(a: ATensor): Tensor {.inline, noinit.} =
   new(result, proc(self: Tensor) = cppdtor(addr(self.tensor)))
@@ -76,7 +80,7 @@ proc newTensor*(a: ATensor): Tensor {.inline, noinit.} =
   result.hasTensor = true
   result.tensor = a
   when defined useRealtimeGC:
-    GC_step(100)
+    GC_step(nimtorchGcUsInt)
 
 proc len*(v: ATensors): int {.inline.} = v.size().to(int)
 
