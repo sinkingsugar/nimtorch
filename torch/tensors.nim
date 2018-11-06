@@ -135,11 +135,19 @@ macro newTensors*(nativeTensors: tuple): untyped =
   let T = nativeTensors.getType()
   T.expectKind(nnkBracketExpr)
 
-  result = nnkTupleConstr.newTree()
+  let
+    tempSym = genSym(nskLet)
+    tupleExpr = nnkTupleConstr.newTree()
+
   for i in 1 ..< T.len:
     let index = i - 1
-    result.add quote do:
-      newTensors(`nativeTensors`[`index`])
+    tupleExpr.add quote do:
+      newTensors(`tempSym`[`index`])
+
+  result = quote do:
+    # Store the argument, since it might be an expression
+    let `tempSym` = `nativeTensors`
+    `tupleExpr`
 
 var defaultType = FloatTensor
 
