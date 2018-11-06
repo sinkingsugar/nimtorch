@@ -66,10 +66,10 @@ proc validate(name: string): string =
     of "linear", "bilinear": return name & "_internal"
 
     else:
-      const invalidNames = ["div", "var", "end", "result", "to", "from"]
+      const invalidNames = ["div", "var", "end", "result", "to", "from", "addr"]
       result = name
       if invalidNames.contains(result):
-        result = result & "_name"
+        result = result & "_special"
       else:
         result = result.replacef(re"^_*(.*?)_*$", "$1")
         if name.match(re"^__(.*)__$"): result &= "_builtin"
@@ -649,7 +649,7 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           nimLikeStr = nimLikeStr.replacef(peg"^'output' {!\ident}", "fwd_result$1")
 
           # TODO: Handle invalide names
-          nimLikeStr = nimLikeStr.replacef(peg"'end'", "end_name")
+          nimLikeStr = nimLikeStr.replacef(peg"'end'", "end_special")
 
           nimLikeStr = nimLikeStr.replace(".type()", ".getType()")
           nimLikeStr = nimLikeStr.replace(".defined()", ".is_defined()")
