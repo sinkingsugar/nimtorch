@@ -1,5 +1,5 @@
 
-import torch, torch/[nn, optim]
+import ../torch, ../torch/[nn, optim]
 import strformat, math, times
 
 proc normalized_columns_init(self: Tensor; std: float = 1.0): Tensor {.discardable.} =
