@@ -125,7 +125,7 @@ when isMainModule:
   
   hy.print()
 
-  when not defined webassembly:
+  when not defined wasm:
     var hycopy = hy.copy()
 
     var longt = zeros(@[1, 1, 1], dtype = LongTensor)
