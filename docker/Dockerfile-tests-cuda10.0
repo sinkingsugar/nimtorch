@@ -25,7 +25,7 @@ ENV PATH=$PATH:/home/tester/miniconda3/bin
 
 ARG ATEN
 
-RUN conda install -c fragcolor nim=0.19.1 fragments=0.1.22 ${ATEN} cuda10.0
+RUN conda install -c fragcolor nim=0.19.9 fragments=0.1.23 ${ATEN} cuda10.0
 
 ENV ATEN=/home/tester/miniconda3
 
