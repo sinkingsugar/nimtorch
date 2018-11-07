@@ -27,14 +27,14 @@ task test, "Run cpu tests":
   exec """nim cpp --define:useRealtimeGC -r -o:test tests/test_xor.nim"""
   exec """nim cpp --define:useRealtimeGC -d:release -r -o:test tests/test_xor.nim"""
 
-task test_wasm, "Run wasm tests":
+task test_wasm, "Run webassembly tests":
   exec """nim cpp -r -o:test torch/generator.nim"""
-  exec """nim cpp -d:release -d:wasm -o:test.js torch && node test.js"""
-  exec """nim cpp -d:release -d:wasm -o:test.js torch/nn/modules.nim && node test.js"""
-  exec """nim cpp -d:release -d:wasm -o:test.js torch/nn/init.nim && node test.js"""
-  exec """nim cpp -d:release -d:wasm -o:test.js torch/nn/functional.nim && node test.js"""
-  exec """nim cpp -d:release -d:wasm -o:test.js tests/test_autograd.nim && node test.js"""
-  exec """nim cpp -d:release -d:wasm -o:test.js tests/test_xor.nim && node test.js"""
+  exec """nim cpp -d:release -d:webassembly -o:test.js torch && node test.js"""
+  exec """nim cpp -d:release -d:webassembly -o:test.js torch/nn/modules.nim && node test.js"""
+  exec """nim cpp -d:release -d:webassembly -o:test.js torch/nn/init.nim && node test.js"""
+  exec """nim cpp -d:release -d:webassembly -o:test.js torch/nn/functional.nim && node test.js"""
+  exec """nim cpp -d:release -d:webassembly -o:test.js tests/test_autograd.nim && node test.js"""
+  exec """nim cpp -d:release -d:webassembly -o:test.js tests/test_xor.nim && node test.js"""
 
 task test_cuda, "Run cuda gpu tests":
   exec """nim cpp -r -o:test torch/generator.nim"""

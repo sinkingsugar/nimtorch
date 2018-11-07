@@ -61,7 +61,7 @@ cpplibpaths(atenPath & """/lib64""")
 
 type AInt64* {.importcpp: "int64_t", header: "<stdint.h>".} = object
 
-when defined wasm:
+when defined webassembly:
   {.passC: "-std=c++11".}
   {.passL: "-lc10 -lcaffe2".}
 
