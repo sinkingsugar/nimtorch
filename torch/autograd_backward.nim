@@ -17,8 +17,10 @@ proc backward*(tensors, grads: openarray[Tensor]; retain_graph = false; create_g
     var
       sortedNodes: seq[Tensor]
       gradFuncs: HashSet[pointer]
+      visitedGrads: HashSet[pointer]
 
     gradFuncs.init()
+    visitedGrads.init()
 
     proc visit(node: Tensor) =
       # Gradient along this path is not needed
@@ -67,10 +69,17 @@ proc backward*(tensors, grads: openarray[Tensor]; retain_graph = false; create_g
             # Sum up gradient or initialize it if not present
             if input.grad.isNil:
               input.grad = grad
-            elif not create_graph:
-              input.grad.add_inplace(grad)
             else:
-              input.grad += grad
+              if not create_graph:         
+                # We only need to create a new tensor the first time we add gradients.
+                # (i.e. if there is mutltiple occurances of an tensor in the graph)
+                # TODO: If the first grad was a temporary, we can always use add_inplace.
+                if not visitedGrads.containsOrIncl(cast[pointer](input)):
+                  input.grad += grad
+                else:
+                  input.grad.add_inplace(grad)
+              else:
+                input.grad += grad
 
         # Free the graph
         # TODO: Check if this behavior matches pytorch properly
