@@ -46,6 +46,20 @@ method reset_parameters*(self: RNNCellBaseModule) =
   for weight in self.parameters:
     weight.uniform_inplace(-stdv, stdv)
 
+method cuda*(m: RNNCellBaseModule) =
+  m.weight_ih = m.weight_ih.cuda()
+  m.weight_hh = m.weight_hh.cuda()
+  if m.bias:
+    m.bias_ih = m.bias_ih.cuda()
+    m.bias_hh = m.bias_hh.cuda()
+
+method cpu*(m: RNNCellBaseModule) =
+  m.weight_ih = m.weight_ih.cpu()
+  m.weight_hh = m.weight_hh.cpu()
+  if m.bias:
+    m.bias_ih = m.bias_ih.cpu()
+    m.bias_hh = m.bias_hh.cpu()
+
 proc GRUCell*(input_size, hidden_size: int; bias: bool = true): GRUCellModule =
   new result
   result.init(input_size, hidden_size, bias, 3)
