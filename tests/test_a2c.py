@@ -13,8 +13,13 @@ parser.add_argument('--totalStepCount', dest='totalStepCount', type=int, default
 parser.add_argument('--batchSize', dest='batchSize', type=int, default=128)
 parser.add_argument('--hiddenCount', dest='hiddenCount', type=int, default=16)
 parser.add_argument('--logSteps', dest='logSteps', type=int, default=100)
+parser.add_argument('--cuda', dest='cuda', type=bool, default=False)
 args = parser.parse_args()
 
+if args.cuda:
+  device = 'cuda'
+else:
+  device = 'cpu'
 
 def normalized_columns_init(self, std = 1.0):
   result = torch.randn_like(self)
@@ -25,9 +30,9 @@ class Model():
   def __init__(result, traceLength, observationCount, actionCount, hiddenSize):
     result.hiddenSize = hiddenSize
 
-    result.gru = nn.GRUCell(observationCount, hiddenSize)
-    result.policyNet = nn.Linear(hiddenSize, actionCount)
-    result.valueNFunctionNet = nn.Linear(hiddenSize, 1)
+    result.gru = nn.GRUCell(observationCount, hiddenSize).to(device=device)
+    result.policyNet = nn.Linear(hiddenSize, actionCount).to(device=device)
+    result.valueNFunctionNet = nn.Linear(hiddenSize, 1).to(device=device)
 
     normalized_columns_init(result.policyNet.weight.data)
     normalized_columns_init(result.valueNFunctionNet.weight.data)
@@ -45,7 +50,7 @@ class Model():
 
     self.state_h = initialState
     if initialState is None:
-      self.state_h = torch.zeros([batchSize, self.hiddenSize])
+      self.state_h = torch.zeros([batchSize, self.hiddenSize], device=device)
 
     logits = []
     values = []
@@ -112,7 +117,7 @@ class Environment():
     if done == None:
       self.state.uniform_(-0.05, 0.05)
     else:
-      self.state.masked_scatter_(done.unsqueeze(1), zeros([self.state.numel]).uniform_(-0.05, 0.05))
+      self.state.masked_scatter_(done.unsqueeze(1), zeros([self.state.numel], device=device).uniform_(-0.05, 0.05))
     
     self.done = torch.zeros_like(self.done)
 
@@ -145,8 +150,8 @@ class Environment():
     result.observation_space = 4 #spaces.Box(-high, high, dtype=np.float32)
 
     #result.seed()
-    result.state = torch.zeros([batchSize, 4])
-    result.done = torch.zeros([batchSize]).type(torch.ByteTensor)
+    result.state = torch.zeros([batchSize, 4], device=device)
+    result.done = torch.zeros([batchSize], device=device).type(torch.ByteTensor)
 
   def step(self, action):
     #assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
@@ -174,7 +179,7 @@ class Environment():
 
     self.state[:, 0], self.state[:, 1], self.state[:, 2], self.state[:, 3] = (x, x_dot, theta, theta_dot)
 
-    reward = torch.zeros([self.batchSize])
+    reward = torch.zeros([self.batchSize], device=device)
     reward.masked_fill_(self.done ^ 1, 1.0) # not done
 
     self.done = \
@@ -201,11 +206,11 @@ for batchIndex in range(0, args.totalStepCount):
   currentTime = time.perf_counter()
 
   initialState = state
-  observationBatch = torch.zeros([args.traceLength, args.batchSize, environment.observation_space])
-  actionBatch = torch.zeros([args.traceLength, args.batchSize])
-  valueBatch = torch.zeros([args.traceLength, args.batchSize])
-  rewardBatch = torch.zeros([args.traceLength, args.batchSize])
-  doneBatch = torch.zeros([args.traceLength, args.batchSize]).type(torch.ByteTensor)
+  observationBatch = torch.zeros([args.traceLength, args.batchSize, environment.observation_space], device=device)
+  actionBatch = torch.zeros([args.traceLength, args.batchSize], device=device)
+  valueBatch = torch.zeros([args.traceLength, args.batchSize], device=device)
+  rewardBatch = torch.zeros([args.traceLength, args.batchSize], device=device)
+  doneBatch = torch.zeros([args.traceLength, args.batchSize], device=device).type(torch.ByteTensor)
 
   # Do N steps through the environment, randomly sampling actions from the policy
   for i in range(0, args.traceLength):
@@ -226,7 +231,7 @@ for batchIndex in range(0, args.totalStepCount):
 
   # Propagate the value of each step back through the trace,
   # summing up immediate returns and discounted future returns
-  discountedReturn = torch.zeros([args.traceLength, args.batchSize])
+  discountedReturn = torch.zeros([args.traceLength, args.batchSize], device=device)
   for i in reversed(range(args.traceLength)):
     valueEstimate = valueEstimate * args.discountFactor + rewardBatch[i].squeeze()
     discountedReturn[i] = valueEstimate

@@ -10,6 +10,11 @@ const
   hiddenCount {.intdefine.} = 16
   logSteps {.intdefine.} = 100
 
+when defined cuda:
+  template toDevice(self: untyped): untyped = self.cuda()
+else:
+  template toDevice(self: untyped): untyped = self
+
 proc normalized_columns_init(self: Tensor; std: float = 1.0): Tensor {.discardable.} =
   result = randn_like(self, TensorKind.FloatTensor)
   result.mul_inplace(std / sqrt((result * result).sum([0], keepdim = true)))
@@ -34,6 +39,10 @@ proc newModel(traceLength, observationCount, actionCount, hiddenSize: int): Mode
   result.policyNet = Linear(hiddenSize, actionCount)
   result.valueNFunctionNet = Linear(hiddenSize, 1)
 
+  result.gru.toDevice()
+  result.policyNet.toDevice()
+  result.valueNFunctionNet.toDevice()
+
   normalized_columns_init(result.policyNet.weight.data)
   normalized_columns_init(result.valueNFunctionNet.weight.data)
 
@@ -52,7 +61,7 @@ proc policy(self: Model; observation, initialState: Tensor; mask: Tensor = nil):
 
   self.state_h = initialState
   if initialState.isNil:
-    self.state_h = zeros([batchSize, self.hiddenSize])
+    self.state_h = zeros([batchSize, self.hiddenSize]).toDevice()
 
   var
     logits: seq[Tensor]# = newSeq[Tensor](traceLength)
@@ -146,7 +155,7 @@ proc reset(self: Environment; done: Tensor = nil): Tensor =
   if done.isNil:
     self.state.uniform_inplace(-0.05, 0.05)
   else:
-    self.state.masked_scatter_inplace(done.unsqueeze(1), zeros([self.state.numel]).uniform_inplace(-0.05, 0.05))
+    self.state.masked_scatter_inplace(done.unsqueeze(1), zeros([self.state.numel]).toDevice().uniform_inplace(-0.05, 0.05))
   
   self.done = self.done.zeros_like()
 
@@ -180,8 +189,8 @@ proc newEnvironment(batchSize: int): Environment =
   result.observation_space = 4 #spaces.Box(-high, high, dtype=np.float32)
 
   #result.seed()
-  result.state = zeros([batchSize, 4])
-  result.done = zeros([batchSize]).toType(ScalarType.kByte)
+  result.state = zeros([batchSize, 4]).toDevice()
+  result.done = zeros([batchSize]).toDevice().toType(ScalarType.kByte)
 
 proc step(self: Environment; action: Tensor): tuple[observation, reward, done: Tensor] =
   #assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
@@ -210,7 +219,7 @@ proc step(self: Environment; action: Tensor): tuple[observation, reward, done: T
 
   (self.state[_, 0], self.state[_, 1], self.state[_, 2], self.state[_, 3]) = (x, x_dot, theta, theta_dot)
 
-  let reward = zeros([self.batchSize])
+  let reward = zeros([self.batchSize]).toDevice()
   reward.masked_fill_inplace(not self.done, 1.0)
 
   self.done =
@@ -240,11 +249,11 @@ for batchIndex in 0 ..< totalStepCount:
 
   let
     initialState = state
-    observationBatch = zeros([traceLength, batchSize, environment.observation_space])
-    actionBatch = zeros([traceLength, batchSize])
-    valueBatch = zeros([traceLength, batchSize])
-    rewardBatch = zeros([traceLength, batchSize])
-    doneBatch = zeros([traceLength, batchSize]).toType(ScalarType.kByte)
+    observationBatch = zeros([traceLength, batchSize, environment.observation_space]).toDevice()
+    actionBatch = zeros([traceLength, batchSize]).toDevice()
+    valueBatch = zeros([traceLength, batchSize]).toDevice()
+    rewardBatch = zeros([traceLength, batchSize]).toDevice()
+    doneBatch = zeros([traceLength, batchSize]).toDevice().toType(ScalarType.kByte)
 
   # Do N steps through the environment, randomly sampling actions from the policy
   for i in 0 ..< traceLength:
@@ -265,7 +274,7 @@ for batchIndex in 0 ..< totalStepCount:
 
   # Propagate the value of each step back through the trace,
   # summing up immediate returns and discounted future returns
-  let discountedReturn = zeros([traceLength, batchSize])
+  let discountedReturn = zeros([traceLength, batchSize]).toDevice()
   for i in countdown(traceLength - 1, 0):
     valueEstimate = valueEstimate * discountFactor + rewardBatch[i].squeeze()
     discountedReturn[i] = valueEstimate
