@@ -4,6 +4,17 @@ import torch.nn as nn
 import torch.optim as optim
 import time
 import math
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--discountFactor', dest='discountFactor', type=float, default=0.99)
+parser.add_argument('--traceLength', dest='traceLength', type=int, default=5)
+parser.add_argument('--totalStepCount', dest='totalStepCount', type=int, default=1000)
+parser.add_argument('--batchSize', dest='batchSize', type=int, default=128)
+parser.add_argument('--hiddenCount', dest='hiddenCount', type=int, default=16)
+parser.add_argument('--logSteps', dest='logSteps', type=int, default=100)
+args = parser.parse_args()
+
 
 def normalized_columns_init(self, std = 1.0):
   result = torch.randn_like(self)
@@ -96,12 +107,6 @@ class Model():
 
     return (loss, policyGradientLoss, valueFunctionLoss, policyEntropy)
 
-discountFactor = 0.99
-traceLength = 5
-totalStepCount = 10000000000
-batchSize = 128
-hiddenCount = 16
-
 class Environment():
   def reset(self, done = None):
     if done == None:
@@ -180,9 +185,9 @@ class Environment():
       (theta > self.theta_threshold_radians)
     return (self.state, reward, self.done)
 
-environment = Environment(batchSize)
+environment = Environment(args.batchSize)
 testEnvironment = Environment(10)
-model = Model(traceLength, environment.observation_space, environment.action_space, hiddenCount)
+model = Model(args.traceLength, environment.observation_space, environment.action_space, args.hiddenCount)
 
 observation = environment.reset()
 state = None
@@ -191,19 +196,19 @@ traceTime = 0.0
 trainingTime = 0.0
 trainingCount = 0
 
-for batchIndex in range(0, totalStepCount):
+for batchIndex in range(0, args.totalStepCount):
 
   currentTime = time.perf_counter()
 
   initialState = state
-  observationBatch = torch.zeros([traceLength, batchSize, environment.observation_space])
-  actionBatch = torch.zeros([traceLength, batchSize])
-  valueBatch = torch.zeros([traceLength, batchSize])
-  rewardBatch = torch.zeros([traceLength, batchSize])
-  doneBatch = torch.zeros([traceLength, batchSize]).type(torch.ByteTensor)
+  observationBatch = torch.zeros([args.traceLength, args.batchSize, environment.observation_space])
+  actionBatch = torch.zeros([args.traceLength, args.batchSize])
+  valueBatch = torch.zeros([args.traceLength, args.batchSize])
+  rewardBatch = torch.zeros([args.traceLength, args.batchSize])
+  doneBatch = torch.zeros([args.traceLength, args.batchSize]).type(torch.ByteTensor)
 
   # Do N steps through the environment, randomly sampling actions from the policy
-  for i in range(0, traceLength):
+  for i in range(0, args.traceLength):
     observationBatch[i] = observation
     actionBatch[i], valueBatch[i], state = model.explorationStep(observation, state)
     observation, rewardBatch[i], doneBatch[i] = environment.step(actionBatch[i])
@@ -217,13 +222,13 @@ for batchIndex in range(0, totalStepCount):
 
   # Estimate the value of the state just AFTER the trace
   # If the last step (or any before) was the end of the episode, the estimate is 0.
-  valueEstimate = model.estimateValue(observation, state) * (doneBatch[traceLength - 1] ^ 1).type(torch.FloatTensor)
+  valueEstimate = model.estimateValue(observation, state) * (doneBatch[args.traceLength - 1] ^ 1).type(torch.FloatTensor)
 
   # Propagate the value of each step back through the trace,
   # summing up immediate returns and discounted future returns
-  discountedReturn = torch.zeros([traceLength, batchSize])
-  for i in reversed(range(traceLength)):
-    valueEstimate = valueEstimate * discountFactor + rewardBatch[i].squeeze()
+  discountedReturn = torch.zeros([args.traceLength, args.batchSize])
+  for i in reversed(range(args.traceLength)):
+    valueEstimate = valueEstimate * args.discountFactor + rewardBatch[i].squeeze()
     discountedReturn[i] = valueEstimate
 
   traceTime += time.perf_counter() - currentTime
@@ -234,11 +239,10 @@ for batchIndex in range(0, totalStepCount):
   trainingTime += time.perf_counter() - currentTime
   trainingCount += 1
 
-  if batchIndex % 100 == 0:
+  if batchIndex % args.logSteps == args.logSteps - 1:
     print(f"Training: trace collection time: {traceTime / trainingCount}s, training time: {trainingTime / trainingCount}s")
     print(f"Training: loss = {loss}, policyLoss = {policyLoss}, valueLoss = {valueLoss}, policyEntropy = {policyEntropy}")
 
-  if batchIndex % 100 == 0:
     currentTime = time.perf_counter()
 
     eval_state = None
@@ -265,6 +269,6 @@ for batchIndex in range(0, totalStepCount):
 
     print(f"Testing: total reward = {totalReward}")
 
-  if doneBatch[traceLength - 1].all():
+  if doneBatch[args.traceLength - 1].all():
     observation = environment.reset()
     state = None

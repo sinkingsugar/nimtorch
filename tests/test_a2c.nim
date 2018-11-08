@@ -2,6 +2,14 @@
 import ../torch, ../torch/[nn, optim]
 import strformat, math, times
 
+const
+  discountFactor = 0.99
+  traceLength {.intdefine.} = 5
+  totalStepCount {.intdefine.} = 1000
+  batchSize {.intdefine.} = 128
+  hiddenCount {.intdefine.} = 16
+  logSteps {.intdefine.} = 100
+
 proc normalized_columns_init(self: Tensor; std: float = 1.0): Tensor {.discardable.} =
   result = randn_like(self, TensorKind.FloatTensor)
   result.mul_inplace(std / sqrt((result * result).sum([0], keepdim = true)))
@@ -110,13 +118,6 @@ proc train(self: Model; observation, action, done, targetValue, value, initialSt
   result.loss.backward()
   self.optimizer.step()
   self.optimizer.zero_grad()
-
-let
-  discountFactor = 0.99
-  traceLength = 5
-  totalStepCount = 10000000000
-  batchSize = 128
-  hiddenCount = 16
 
 type
   Environment = ref object
@@ -277,11 +278,10 @@ for batchIndex in 0 ..< totalStepCount:
   trainingTime += epochTime() - time
   inc trainingCount
 
-  if batchIndex mod 100 == 0:
+  if batchIndex mod logSteps == logSteps - 1:
     echo fmt"Training: trace collection time: {traceTime / trainingCount.float}s, training time: {trainingTime / trainingCount.float}s"
     echo fmt"Training: loss = {loss.float32}, policyLoss = {policyLoss.float32}, valueLoss = {valueLoss.float32}, policyEntropy = {policyEntropy.float32}"
 
-  if batchIndex mod 100 == 0:
     time = epochTime()
 
     var
