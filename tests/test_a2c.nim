@@ -13,7 +13,7 @@ const
 when defined cuda:
   template toDevice(self: untyped): untyped = self.cuda()
 else:
-  template toDevice(self: untyped): untyped = self
+  template toDevice(self: untyped): untyped = self.cpu()
 
 proc normalized_columns_init(self: Tensor; std: float = 1.0): Tensor {.discardable.} =
   result = randn_like(self, TensorKind.FloatTensor)
