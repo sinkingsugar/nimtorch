@@ -300,12 +300,12 @@ deploy:nimtorch:
     - sh scripts/diffcheck.sh
     # Commit and push on this branch
     - git commit --allow-empty -a -m "PyTorch upstream nightly success"
-    - git push ssh://git@git.fragcolor.xyz:27030/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
+    - git push ssh://git@gitlab.fragcolor.xyz/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
     # Merge master on release
     - git checkout release
     - git reset --hard origin/release
     - git merge master
-    - git push ssh://git@git.fragcolor.xyz:27030/fragcolor/nimtorch.git release
+    - git push ssh://git@gitlab.fragcolor.xyz/fragcolor/nimtorch.git release
     # Also push release on github
     - git push https://$GITHUB_LOGIN@github.com/fragcolor-xyz/nimtorch.git release
     # Finally trigger conda automations, aka: windows and macOS release builds
