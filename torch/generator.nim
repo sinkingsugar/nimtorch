@@ -82,7 +82,6 @@ var generatedProcs = newSeq[ProcInfo]()
 # Functions that are implemented manually to enable autograd
 const customNames = [
   "matmul",
-  "mm",
   "contiguous",
   "chunk",
   "expand_as",

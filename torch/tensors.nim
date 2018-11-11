@@ -293,6 +293,8 @@ proc ndimension*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(nd
 
 proc dim*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(int)
 
+proc is_contiguous*(a: Tensor): bool {.inline.} = a.tensor.is_contiguous().to(bool)
+
 proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
   newTensor a.tensor.toCpp()[index].to(ATensor)
 

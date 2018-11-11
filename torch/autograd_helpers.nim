@@ -74,11 +74,6 @@ proc sum_to*(tensor: Tensor; shape: IntList): Tensor =
     if shape[i] == 1 and result.sizes[i] > 1:
       result = result.sum([i], true)
 
-proc mm*(self, mat2: Tensor): Tensor =
-  if self.is_sparse:
-    return mat2.getType().addmm(zeros([], mat2.getType()), self, mat2, 0.0, 1.0)
-  return th_mm_impl(self, mat2);
-
 proc matmul*(tensor1, tensor2: Tensor): Tensor =
   let
     dim_tensor1 = tensor1.dim()
@@ -153,6 +148,19 @@ proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
     return a * b
 
 proc mm_mat1_backward*(grad, mat2: Tensor; sizes, strides: IntList; alpha: float): Tensor {.inline, noinit.} =
+  if strides[0] == 1 and strides[1] == sizes[0]:
+    return maybe_multiply(mat2.mm(grad.t()).t(), alpha)
+  else:
+    return maybe_multiply(grad.mm(mat2.t()), alpha)
+
+proc mm_mat1_backward*(grad, mat2, mat1: Tensor; alpha: float): Tensor {.inline, noinit.} =
+  # if input was column-major, return grad as column-order for efficiency
+  assert(not mat1.is_sparse(), "calculating the gradient of a sparse Tensor argument to mm is not supported.")
+
+  let
+    sizes = mat1.sizes()
+    strides = mat1.strides()
+
   if strides[0] == 1 and strides[1] == sizes[0]:
     return maybe_multiply(mat2.mm(grad.t()).t(), alpha)
   else:
@@ -335,3 +343,10 @@ proc symeig_backward*(grads: openarray[Tensor]; self: Tensor; eigenvectors, uppe
     result = triu(result) + triu(result.t(), 1)
   else:
     result = tril(result) + tril(result.t(), -1)
+
+# Workaround for Pytorch's hacky grad definition due to unly single-dimension rolls being currently supported
+proc roll*(ty: TensorType; self: Tensor; shift: int; dims: openarray[int]): Tensor {.inline.} =
+  ty.roll(self, [shift], dims)
+
+proc roll*(self: Tensor; shift: int; dims: openarray[int]): Tensor {.inline.} =
+  self.roll([shift], dims)
