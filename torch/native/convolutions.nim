@@ -109,9 +109,10 @@ proc convolution_impl*(input_r, weight_r, bias_r: Tensor; stride, padding, dilat
 proc convolution_nogroup_impl*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int]; transposed: bool; output_padding: openarray[int]): Tensor
 
 proc convolution*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int): Tensor =
-  #let ctx = globalContext
-  convolution_impl(input, weight, bias, stride, padding, dilation, transposed, output_padding, groups, false, false, false)
-    #ctx.benchmarkCuDNN(), ctx.deterministicCuDNN(), ctx.userEnabledCuDNN())
+  proc benchmarkCuDNN(): bool {.importcpp: "at::globalContext().benchmarkCuDNN()".}
+  proc deterministicCuDNN(): bool {.importcpp: "at::globalContext().deterministicCuDNN()".}
+  proc userEnabledCuDNN(): bool {.importcpp: "at::globalContext().userEnabledCuDNN()".}
+  convolution_impl(input, weight, bias, stride, padding, dilation, transposed, output_padding, groups, benchmarkCuDNN(), deterministicCuDNN(), userEnabledCuDNN())
 
 proc convolution_expand_param_if_needed(list_param: openarray[int]; param_name: static string; expected_dim: int): seq[int] =
   if list_param.len == 1:
