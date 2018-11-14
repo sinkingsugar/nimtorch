@@ -98,11 +98,11 @@ macro autograd*(head, body: untyped): untyped =
 
       backwardBody.add quote do:
         if `requiresGradExpr`:
-        when type(`gradExpr`) isnot TensorList:
-          #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
-          `resultExpr` = `gradExpr`
-        else:
-          `resultIdent`= `gradExpr`
+          when type(`gradExpr`) isnot TensorList:
+            #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
+            `resultExpr` = `gradExpr`
+          else:
+            `resultIdent`= `gradExpr`
 
   # No grads required
   if inputIdents.len == 0:
