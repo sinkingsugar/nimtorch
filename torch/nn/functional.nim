@@ -2,10 +2,14 @@ import ../../torch
 import strformat
 
 proc linear*(input, weight: Tensor; bias: Tensor = nil): Tensor {.inline.} =
-  # Change from PyTorch: Transpose on the last 2 dimensions, so stacked models are supported
-  result = input.matmul(weight.transpose(-2, -1))
-  if not bias.isNil:
-    result = result + bias
+  if input.dim() == 2 and not bias.isNil:
+    # fused op is marginally faster
+    return addmm(bias, input, weight.t())
+  else:
+    # Change from PyTorch: Transpose on the last 2 dimensions, so stacked models are supported
+    result = input.matmul(weight.transpose(-2, -1))
+    if not bias.isNil:
+      result = result + bias
 
 proc bilinear*(input1, input2, weight: Tensor; bias: Tensor = nil): Tensor =
 
@@ -171,6 +175,7 @@ proc gru_cell*(input, hidden, w_ih, w_hh, b_ih, b_hh: Tensor): Tensor =
 
     reset_gate = sigmoid(chunked_igates[0] + chunked_hgates[0])
     input_gate = sigmoid(chunked_igates[1] + chunked_hgates[1])
+    #new_gate = tanh(chunked_igates[2] + reset_gate * chunked_hgates[2])
     new_gate = tanh(chunked_igates[2] + reset_gate * chunked_hgates[2])
 
   return new_gate + input_gate * (hidden - new_gate)
