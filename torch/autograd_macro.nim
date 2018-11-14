@@ -64,9 +64,14 @@ macro autograd*(head, body: untyped): untyped =
         continue
 
       # Simply assign non-tuples
-      var resultExpr: NimNode
+      var
+        resultExpr: NimNode
+        requiresGradExpr: NimNode
+
       if x[0].kind == nnkIdent:
+        let inputIdent = x[0]
         resultExpr = quote do: `resultIdent`[`resultIndex`] 
+        requiresGradExpr = quote do: `inputIdent`.requires_grad_internal
         inputIdents.add(x[0])
         inc resultIndex
 
@@ -80,6 +85,10 @@ macro autograd*(head, body: untyped): untyped =
         for i, inputIdent in x[0]:
           inputIdent.expectKind(nnkIdent)
           resultExpr.add quote do: `resultIdent`[`resultIndex`]
+          requiresGradExpr =
+            if requiresGradExpr == nil: quote do: `inputIdent`.requires_grad_internal
+            else: quote do: `requiresGradExpr` or `inputIdent`.requires_grad_internal
+
           inputIdents.add(inputIdent)
           backwardBody.add quote do:
             `gradInputMaskIdent`[`i`] = `inputIdent`.requires_grad_internal
@@ -88,6 +97,7 @@ macro autograd*(head, body: untyped): untyped =
       let gradExpr = x[1]
 
       backwardBody.add quote do:
+        if `requiresGradExpr`:
         when type(`gradExpr`) isnot TensorList:
           #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
           `resultExpr` = `gradExpr`
@@ -100,16 +110,13 @@ macro autograd*(head, body: untyped): untyped =
 
   # Propagate whether gradient is needed or not
   var
-    requiresGradExpr: NimNode
+    requiresAnyGradExpr: NimNode
     addInputsStmts = newStmtList()
 
   for i, inputIdent in inputIdents:
-    if i == 0:
-      requiresGradExpr = quote do:
-        `inputIdent`.requires_grad_internal
-    else:
-      requiresGradExpr = quote do:
-        `requiresGradExpr` or `inputIdent`.requires_grad_internal
+    requiresAnyGradExpr =
+      if i == 0: quote do: `inputIdent`.requires_grad_internal
+      else: quote do: `requiresAnyGradExpr` or `inputIdent`.requires_grad_internal
 
     # Make statements to add the differential inputs to `grad_fn.inputs`
     # TODO: Optimize this, so it doesn't do multiple `add`s for single Tensors,
@@ -119,7 +126,7 @@ macro autograd*(head, body: untyped): untyped =
 
   forwardBody.add quote do:
     when not defined inference:
-      if is_grad_enabled() and `requiresGradExpr`:
+      if is_grad_enabled() and `requiresAnyGradExpr`:
 
         let `gradFnSym` = new BackwardFunction
         `gradFnSym`.apply = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
