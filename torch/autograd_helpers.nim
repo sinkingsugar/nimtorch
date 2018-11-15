@@ -55,7 +55,7 @@ proc toScalarType(t: TensorType; s: ScalarType): TensorType {.importcpp: "&(#->t
 
 proc scalarType(t: TensorType): ScalarType {.importcpp: "#->scalarType()".}
 
-proc isIntegralType(dtype: ScalarType): bool {.importcpp: "at::isIntegralType(#)".}
+proc isIntegralType*(dtype: ScalarType): bool {.importcpp: "at::isIntegralType(#)".}
 
 proc toType*(self: Tensor; t: ScalarType; non_blocking: bool = false): Tensor =
   self.toType(self.getType().toScalarType(t))

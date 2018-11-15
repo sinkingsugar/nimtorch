@@ -13,13 +13,13 @@ type
     deterministic: bool
     cudnn_enabled: bool
 
-proc is_strided(self: ConvParams): bool =
+proc is_strided(self: ConvParams): bool {.used.} =
   for x in self.stride: result = result or x != 1
 
 proc is_dilated(self: ConvParams): bool =
   for x in self.dilation: result = result or x != 1
 
-proc is_padded(self: ConvParams): bool =
+proc is_padded(self: ConvParams): bool {.used.} =
   for x in self.padding: result = result or x != 0
 
 proc is_output_padding_neg(self: ConvParams): bool =
@@ -39,31 +39,30 @@ proc view1d_as_2d(self: var ConvParams) =
     self.output_padding.insert(self.output_padding[0], 0)
 
 proc use_cudnn(self: ConvParams; input: Tensor): bool =
-  false
-# if (!detail::getCUDAHooks().compiledWithCuDNN()) {
-#   return false;
-# }
-# if (!input.type().is_cuda() || !cudnn_enabled) {
-#   return false;
-# }
+  proc compiledWithCuDNN: bool {.importcpp: "at::detail::getCUDAHooks().compiledWithCuDNN()", header: "ATen/ATen.h".}
+  proc supportsDilatedConvolutionWithCuDNN: bool {.importcpp: "at::detail::getCUDAHooks().compiledWithCuDNN()", header: "ATen/ATen.h".}
 
-# if (deterministic && is_dilated()) {
-#   // cudnn doesn't support deterministic dilated convolution fully yet
-#   return false;
-# }
-# if (is_dilated()) {
-#   return detail::getCUDAHooks().supportsDilatedConvolutionWithCuDNN() && !is_output_padding_big();
-# }
-# return !is_output_padding_big();
-# }
+  if not compiledWithCuDNN():
+    return false
+
+  if not input.getType().is_cuda() or not self.cudnn_enabled:
+    return false
+  
+
+  if self.deterministic and self.is_dilated:
+    # cudnn doesn't support deterministic dilated convolution fully yet
+    return false
+  
+  if self.is_dilated:
+    return supportsDilatedConvolutionWithCuDNN() and not self.is_output_padding_big
+
+  return not self.is_output_padding_big
 
 proc use_miopen(self: ConvParams; input: Tensor): bool =
-  return false
-# auto ConvParams::use_miopen(const at::Tensor& input) const -> bool {
-# if (!detail::getCUDAHooks().compiledWithMIOpen() || !input.type().is_cuda() || !cudnn_enabled)
-#   return false;
-# return true;
-# }
+  proc compiledWithMIOpen: bool {.importcpp: "at::detail::getCUDAHooks().compiledWithMIOpen()", header: "ATen/ATen.h".}
+  if not compiledWithMIOpen() or not input.getType().is_cuda() or not self.cudnn_enabled:
+    return false
+  return true
 
 proc use_mkldnn(self: ConvParams; input: Tensor): bool =
   return false
@@ -110,9 +109,10 @@ proc convolution_impl*(input_r, weight_r, bias_r: Tensor; stride, padding, dilat
 proc convolution_nogroup_impl*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int]; transposed: bool; output_padding: openarray[int]): Tensor
 
 proc convolution*(input, weight, bias: Tensor; stride, padding, dilation: openarray[int], transposed: bool; output_padding: openarray[int]; groups: int): Tensor =
-  #let ctx = globalContext
-  convolution_impl(input, weight, bias, stride, padding, dilation, transposed, output_padding, groups, false, false, false)
-    #ctx.benchmarkCuDNN(), ctx.deterministicCuDNN(), ctx.userEnabledCuDNN())
+  proc benchmarkCuDNN(): bool {.importcpp: "at::globalContext().benchmarkCuDNN()".}
+  proc deterministicCuDNN(): bool {.importcpp: "at::globalContext().deterministicCuDNN()".}
+  proc userEnabledCuDNN(): bool {.importcpp: "at::globalContext().userEnabledCuDNN()".}
+  convolution_impl(input, weight, bias, stride, padding, dilation, transposed, output_padding, groups, benchmarkCuDNN(), deterministicCuDNN(), userEnabledCuDNN())
 
 proc convolution_expand_param_if_needed(list_param: openarray[int]; param_name: static string; expected_dim: int): seq[int] =
   if list_param.len == 1:
@@ -191,14 +191,14 @@ proc convolution_impl(input_r, weight_r, bias_r: Tensor; stride, padding, dilati
     else:
       result = cudnn_convolution(input, weight, bias, params.padding, params.stride, params.dilation, params.groups, params.benchmark, params.deterministic)
 
-  # elif (params.use_miopen(input)):
-  #   assert(input.getType() == weight.getType(), fmt"Input type ({input.getType()}) and weight type ({weight.getType()}) should be the same")
-  #   assert(not bias.is_defined() or (input.getType() == bias.getType()), fmt"Input type ({input.getType()}) and bias type ({bias.getType()}) should be the same")
+  elif params.use_miopen(input):
+    assert(input.getType() == weight.getType(), fmt"Input type ({input.getType()}) and weight type ({weight.getType()}) should be the same")
+    assert(not bias.is_defined() or (input.getType() == bias.getType()), fmt"Input type ({input.getType()}) and bias type ({bias.getType()}) should be the same")
 
-  #   if params.transposed:
-  #     result = miopen_convolution_transpose(input, weight, bias, params.padding, params.output_padding, params.stride, params.dilation, params.groups, params.benchmark, params.deterministic)
-  #   else:
-  #     result = miopen_convolution(input, weight, bias, params.padding, params.stride, params.dilation, params.groups, params.benchmark, params.deterministic)
+    if params.transposed:
+      result = miopen_convolution_transpose(input, weight, bias, params.padding, params.output_padding, params.stride, params.dilation, params.groups, params.benchmark, params.deterministic)
+    else:
+      result = miopen_convolution(input, weight, bias, params.padding, params.stride, params.dilation, params.groups, params.benchmark, params.deterministic)
 
   elif params.use_mkldnn(input):
     when defined AT_MKLDNN_ENABLED:
