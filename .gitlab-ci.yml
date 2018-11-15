@@ -272,6 +272,9 @@ test:nimtorch:wasm:
     - build:aten:wasm
   tags:
     - LINUX, DOCKER
+  except:
+    changes:
+      - docker/*
 
 test:nimtorch:macos:
   stage: test
