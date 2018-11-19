@@ -6,20 +6,6 @@ const M_PI = math.PI
 template firstOrSelf(self: tuple): untyped = self[0]
 template firstOrSelf(self: not tuple): untyped = self
 
-autograd th_addmm_impl:
-  proc forward*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-    check: ty[].atenMethod("_th_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
-  self: firstOrSelf(maybe_multiply(grad, beta))
-  mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
-  mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
-
-autograd th_addmm_impl:
-  proc forward*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-    check: atenFunction("at::_th_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
-  self: firstOrSelf(maybe_multiply(grad, beta))
-  mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
-  mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
-
 autograd binary_cross_entropy:
   proc forward*(ty: TensorType; self: Tensor; target: Tensor; weight: Tensor; reduction: int): Tensor {.inline.} = 
     check: ty[].atenMethod("binary_cross_entropy_forward", self.tensor, target.tensor, weight.tensor, reduction).to(ATensor).newTensor()
@@ -1934,18 +1920,18 @@ autograd rsub:
     check: atenFunction("at::rsub", self.tensor, other, alpha).to(ATensor).newTensor()
   self: firstOrSelf(-grad * alpha)
 
-autograd s_native_addmm:
+autograd addmm:
   proc forward*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-    check: ty[].atenMethod("s_native_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+    check: ty[].atenMethod("addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
   self: firstOrSelf(maybe_multiply(grad, beta))
-  mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
+  mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1, alpha))
   mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
 
-autograd s_native_addmm:
+autograd addmm:
   proc forward*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-    check: atenFunction("at::s_native_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+    check: self.tensor.atenMethod("addmm", mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
   self: firstOrSelf(maybe_multiply(grad, beta))
-  mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1.sizes(), mat1.strides(), alpha))
+  mat1: firstOrSelf(mm_mat1_backward(grad, mat2, mat1, alpha))
   mat2: firstOrSelf(mm_mat2_backward(grad, mat1, mat2.sizes(), mat2.strides(), alpha))
 
 autograd coalesce:

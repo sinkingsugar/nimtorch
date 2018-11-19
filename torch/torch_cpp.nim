@@ -2,7 +2,7 @@ import fragments/ffi/cpp as cpp
 export cpp
 import os
 
-const version* = "2018.11.15.1706"
+const version* = "2018.11.19.1715"
 
 cppdefines("ATEN_VERSION=" & version)
 

@@ -21,25 +21,25 @@ proc th_set_impl_inplace*(ty: TensorType; self: Tensor; source: AStorage): Tenso
   check: ty[].atenMethod("_th_set_", self.tensor, source).to(void); self
 
 proc th_set_impl_inplace*(self: Tensor; source: AStorage): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_set_", source).to(void); self
+  check: atenFunction("at::_th_set_", self.tensor, source).to(void); self
 
 proc th_set_impl_inplace*(ty: TensorType; self: Tensor; source: AStorage; storage_offset: int; size: openarray[int]; stride: openarray[int]): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_set_", self.tensor, source, storage_offset, size.toAIntList(), stride.toAIntList()).to(void); self
 
 proc th_set_impl_inplace*(self: Tensor; source: AStorage; storage_offset: int; size: openarray[int]; stride: openarray[int]): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_set_", source, storage_offset, size.toAIntList(), stride.toAIntList()).to(void); self
+  check: atenFunction("at::_th_set_", self.tensor, source, storage_offset, size.toAIntList(), stride.toAIntList()).to(void); self
 
 proc th_set_impl_inplace*(ty: TensorType; self: Tensor; source: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_set_", self.tensor, source.tensor).to(void); self
 
 proc th_set_impl_inplace*(self: Tensor; source: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_set_", source.tensor).to(void); self
+  check: atenFunction("at::_th_set_", self.tensor, source.tensor).to(void); self
 
 proc th_set_impl_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_set_", self.tensor).to(void); self
 
 proc th_set_impl_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_set_").to(void); self
+  check: atenFunction("at::_th_set_", self.tensor).to(void); self
 
 proc th_fill_impl_inplace*(ty: TensorType; self: Tensor; value: float): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_fill_", self.tensor, value).to(void); self
@@ -63,19 +63,19 @@ proc th_masked_fill_impl_inplace*(ty: TensorType; self: Tensor; mask: Tensor; va
   check: ty[].atenMethod("_th_masked_fill_", self.tensor, mask.tensor, value).to(void); self
 
 proc th_masked_fill_impl_inplace*(self: Tensor; mask: Tensor; value: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_masked_fill_", mask.tensor, value).to(void); self
+  check: atenFunction("at::_th_masked_fill_", self.tensor, mask.tensor, value).to(void); self
 
 proc th_masked_fill_impl_inplace*(ty: TensorType; self: Tensor; mask: Tensor; value: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_masked_fill_", self.tensor, mask.tensor, value.tensor).to(void); self
 
 proc th_masked_fill_impl_inplace*(self: Tensor; mask: Tensor; value: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_masked_fill_", mask.tensor, value.tensor).to(void); self
+  check: atenFunction("at::_th_masked_fill_", self.tensor, mask.tensor, value.tensor).to(void); self
 
 proc th_masked_scatter_impl_inplace*(ty: TensorType; self: Tensor; mask: Tensor; source: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_masked_scatter_", self.tensor, mask.tensor, source.tensor).to(void); self
 
 proc th_masked_scatter_impl_inplace*(self: Tensor; mask: Tensor; source: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_masked_scatter_", mask.tensor, source.tensor).to(void); self
+  check: atenFunction("at::_th_masked_scatter_", self.tensor, mask.tensor, source.tensor).to(void); self
 
 proc th_masked_select_impl*(ty: TensorType; self: Tensor; mask: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_masked_select", self.tensor, mask.tensor).to(ATensor).newTensor()
@@ -129,25 +129,25 @@ proc th_put_impl_inplace*(ty: TensorType; self: Tensor; index: Tensor; source: T
   check: ty[].atenMethod("_th_put_", self.tensor, index.tensor, source.tensor, accumulate).to(void); self
 
 proc th_put_impl_inplace*(self: Tensor; index: Tensor; source: Tensor; accumulate: bool = false): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_put_", index.tensor, source.tensor, accumulate).to(void); self
+  check: atenFunction("at::_th_put_", self.tensor, index.tensor, source.tensor, accumulate).to(void); self
 
 proc th_index_add_impl_inplace*(ty: TensorType; self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_index_add_", self.tensor, dim, index.tensor, source.tensor).to(void); self
 
 proc th_index_add_impl_inplace*(self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_index_add_", dim, index.tensor, source.tensor).to(void); self
+  check: atenFunction("at::_th_index_add_", self.tensor, dim, index.tensor, source.tensor).to(void); self
 
 proc th_index_fill_impl_inplace*(ty: TensorType; self: Tensor; dim: int; index: Tensor; value: float): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_index_fill_", self.tensor, dim, index.tensor, value).to(void); self
 
 proc th_index_fill_impl_inplace*(self: Tensor; dim: int; index: Tensor; value: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_index_fill_", dim, index.tensor, value).to(void); self
+  check: atenFunction("at::_th_index_fill_", self.tensor, dim, index.tensor, value).to(void); self
 
 proc th_index_fill_impl_inplace*(ty: TensorType; self: Tensor; dim: int; index: Tensor; value: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_index_fill_", self.tensor, dim, index.tensor, value.tensor).to(void); self
 
 proc th_index_fill_impl_inplace*(self: Tensor; dim: int; index: Tensor; value: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_index_fill_", dim, index.tensor, value.tensor).to(void); self
+  check: atenFunction("at::_th_index_fill_", self.tensor, dim, index.tensor, value.tensor).to(void); self
 
 proc th_unfold_impl*(ty: TensorType; self: Tensor; dimension: int; size: int; step: int): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_unfold", self.tensor, dimension, size, step).to(ATensor).newTensor()
@@ -168,19 +168,19 @@ proc th_scatter_impl_inplace*(ty: TensorType; self: Tensor; dim: int; index: Ten
   check: ty[].atenMethod("_th_scatter_", self.tensor, dim, index.tensor, src.tensor).to(void); self
 
 proc th_scatter_impl_inplace*(self: Tensor; dim: int; index: Tensor; src: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_scatter_", dim, index.tensor, src.tensor).to(void); self
+  check: atenFunction("at::_th_scatter_", self.tensor, dim, index.tensor, src.tensor).to(void); self
 
 proc th_scatter_impl_inplace*(ty: TensorType; self: Tensor; dim: int; index: Tensor; value: float): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_scatter_", self.tensor, dim, index.tensor, value).to(void); self
 
 proc th_scatter_impl_inplace*(self: Tensor; dim: int; index: Tensor; value: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_scatter_", dim, index.tensor, value).to(void); self
+  check: atenFunction("at::_th_scatter_", self.tensor, dim, index.tensor, value).to(void); self
 
 proc th_scatter_add_impl_inplace*(ty: TensorType; self: Tensor; dim: int; index: Tensor; src: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_scatter_add_", self.tensor, dim, index.tensor, src.tensor).to(void); self
 
 proc th_scatter_add_impl_inplace*(self: Tensor; dim: int; index: Tensor; src: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_scatter_add_", dim, index.tensor, src.tensor).to(void); self
+  check: atenFunction("at::_th_scatter_add_", self.tensor, dim, index.tensor, src.tensor).to(void); self
 
 proc th_gather_impl*(ty: TensorType; self: Tensor; dim: int; index: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_gather", self.tensor, dim, index.tensor).to(ATensor).newTensor()
@@ -210,13 +210,13 @@ proc th_iand_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tensor {
   check: ty[].atenMethod("_th_iand_", self.tensor, other).to(void); self
 
 proc th_iand_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_iand_", other).to(void); self
+  check: atenFunction("at::_th_iand_", self.tensor, other).to(void); self
 
 proc th_iand_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_iand_", self.tensor, other.tensor).to(void); self
 
 proc th_iand_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_iand_", other.tensor).to(void); self
+  check: atenFunction("at::_th_iand_", self.tensor, other.tensor).to(void); self
 
 proc th_or_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_or", self.tensor, other).to(ATensor).newTensor()
@@ -234,13 +234,13 @@ proc th_ior_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tensor {.
   check: ty[].atenMethod("_th_ior_", self.tensor, other).to(void); self
 
 proc th_ior_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_ior_", other).to(void); self
+  check: atenFunction("at::_th_ior_", self.tensor, other).to(void); self
 
 proc th_ior_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_ior_", self.tensor, other.tensor).to(void); self
 
 proc th_ior_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_ior_", other.tensor).to(void); self
+  check: atenFunction("at::_th_ior_", self.tensor, other.tensor).to(void); self
 
 proc th_xor_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_xor", self.tensor, other).to(ATensor).newTensor()
@@ -258,13 +258,13 @@ proc th_ixor_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tensor {
   check: ty[].atenMethod("_th_ixor_", self.tensor, other).to(void); self
 
 proc th_ixor_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_ixor_", other).to(void); self
+  check: atenFunction("at::_th_ixor_", self.tensor, other).to(void); self
 
 proc th_ixor_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_ixor_", self.tensor, other.tensor).to(void); self
 
 proc th_ixor_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_ixor_", other.tensor).to(void); self
+  check: atenFunction("at::_th_ixor_", self.tensor, other.tensor).to(void); self
 
 proc th_lshift_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_lshift", self.tensor, other).to(ATensor).newTensor()
@@ -282,13 +282,13 @@ proc th_ilshift_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tenso
   check: ty[].atenMethod("_th_ilshift_", self.tensor, other).to(void); self
 
 proc th_ilshift_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_ilshift_", other).to(void); self
+  check: atenFunction("at::_th_ilshift_", self.tensor, other).to(void); self
 
 proc th_ilshift_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_ilshift_", self.tensor, other.tensor).to(void); self
 
 proc th_ilshift_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_ilshift_", other.tensor).to(void); self
+  check: atenFunction("at::_th_ilshift_", self.tensor, other.tensor).to(void); self
 
 proc th_rshift_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_rshift", self.tensor, other).to(ATensor).newTensor()
@@ -306,13 +306,13 @@ proc th_irshift_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tenso
   check: ty[].atenMethod("_th_irshift_", self.tensor, other).to(void); self
 
 proc th_irshift_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_irshift_", other).to(void); self
+  check: atenFunction("at::_th_irshift_", self.tensor, other).to(void); self
 
 proc th_irshift_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_irshift_", self.tensor, other.tensor).to(void); self
 
 proc th_irshift_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_irshift_", other.tensor).to(void); self
+  check: atenFunction("at::_th_irshift_", self.tensor, other.tensor).to(void); self
 
 proc th_lt_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_lt", self.tensor, other).to(ATensor).newTensor()
@@ -330,13 +330,13 @@ proc th_lt_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tensor {.i
   check: ty[].atenMethod("_th_lt_", self.tensor, other).to(void); self
 
 proc th_lt_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_lt_", other).to(void); self
+  check: atenFunction("at::_th_lt_", self.tensor, other).to(void); self
 
 proc th_lt_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_lt_", self.tensor, other.tensor).to(void); self
 
 proc th_lt_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_lt_", other.tensor).to(void); self
+  check: atenFunction("at::_th_lt_", self.tensor, other.tensor).to(void); self
 
 proc th_gt_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_gt", self.tensor, other).to(ATensor).newTensor()
@@ -354,13 +354,13 @@ proc th_gt_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tensor {.i
   check: ty[].atenMethod("_th_gt_", self.tensor, other).to(void); self
 
 proc th_gt_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_gt_", other).to(void); self
+  check: atenFunction("at::_th_gt_", self.tensor, other).to(void); self
 
 proc th_gt_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_gt_", self.tensor, other.tensor).to(void); self
 
 proc th_gt_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_gt_", other.tensor).to(void); self
+  check: atenFunction("at::_th_gt_", self.tensor, other.tensor).to(void); self
 
 proc th_le_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_le", self.tensor, other).to(ATensor).newTensor()
@@ -378,13 +378,13 @@ proc th_le_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tensor {.i
   check: ty[].atenMethod("_th_le_", self.tensor, other).to(void); self
 
 proc th_le_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_le_", other).to(void); self
+  check: atenFunction("at::_th_le_", self.tensor, other).to(void); self
 
 proc th_le_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_le_", self.tensor, other.tensor).to(void); self
 
 proc th_le_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_le_", other.tensor).to(void); self
+  check: atenFunction("at::_th_le_", self.tensor, other.tensor).to(void); self
 
 proc th_ge_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_ge", self.tensor, other).to(ATensor).newTensor()
@@ -402,13 +402,13 @@ proc th_ge_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tensor {.i
   check: ty[].atenMethod("_th_ge_", self.tensor, other).to(void); self
 
 proc th_ge_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_ge_", other).to(void); self
+  check: atenFunction("at::_th_ge_", self.tensor, other).to(void); self
 
 proc th_ge_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_ge_", self.tensor, other.tensor).to(void); self
 
 proc th_ge_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_ge_", other.tensor).to(void); self
+  check: atenFunction("at::_th_ge_", self.tensor, other.tensor).to(void); self
 
 proc th_eq_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_eq", self.tensor, other).to(ATensor).newTensor()
@@ -426,13 +426,13 @@ proc th_eq_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tensor {.i
   check: ty[].atenMethod("_th_eq_", self.tensor, other).to(void); self
 
 proc th_eq_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_eq_", other).to(void); self
+  check: atenFunction("at::_th_eq_", self.tensor, other).to(void); self
 
 proc th_eq_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_eq_", self.tensor, other.tensor).to(void); self
 
 proc th_eq_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_eq_", other.tensor).to(void); self
+  check: atenFunction("at::_th_eq_", self.tensor, other.tensor).to(void); self
 
 proc th_ne_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_ne", self.tensor, other).to(ATensor).newTensor()
@@ -450,13 +450,13 @@ proc th_ne_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tensor {.i
   check: ty[].atenMethod("_th_ne_", self.tensor, other).to(void); self
 
 proc th_ne_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_ne_", other).to(void); self
+  check: atenFunction("at::_th_ne_", self.tensor, other).to(void); self
 
 proc th_ne_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_ne_", self.tensor, other.tensor).to(void); self
 
 proc th_ne_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_ne_", other.tensor).to(void); self
+  check: atenFunction("at::_th_ne_", self.tensor, other.tensor).to(void); self
 
 proc th_min_impl*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_min", self.tensor, other.tensor).to(ATensor).newTensor()
@@ -600,7 +600,7 @@ proc th_lgamma_impl_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, dis
   check: ty[].atenMethod("_th_lgamma_", self.tensor).to(void); self
 
 proc th_lgamma_impl_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_lgamma_").to(void); self
+  check: atenFunction("at::_th_lgamma_", self.tensor).to(void); self
 
 proc th_digamma_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_digamma", self.tensor).to(ATensor).newTensor()
@@ -612,7 +612,7 @@ proc th_digamma_impl_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, di
   check: ty[].atenMethod("_th_digamma_", self.tensor).to(void); self
 
 proc th_digamma_impl_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_digamma_").to(void); self
+  check: atenFunction("at::_th_digamma_", self.tensor).to(void); self
 
 proc th_polygamma_impl*(ty: TensorType; n: int; self: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_polygamma", n, self.tensor).to(ATensor).newTensor()
@@ -624,7 +624,7 @@ proc th_polygamma_impl_inplace*(ty: TensorType; self: Tensor; n: int): Tensor {.
   check: ty[].atenMethod("_th_polygamma_", self.tensor, n).to(void); self
 
 proc th_polygamma_impl_inplace*(self: Tensor; n: int): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_polygamma_", n).to(void); self
+  check: atenFunction("at::_th_polygamma_", self.tensor, n).to(void); self
 
 proc th_exp_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_exp", self.tensor).to(ATensor).newTensor()
@@ -708,7 +708,7 @@ proc th_erfinv_impl_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, dis
   check: ty[].atenMethod("_th_erfinv_", self.tensor).to(void); self
 
 proc th_erfinv_impl_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_erfinv_").to(void); self
+  check: atenFunction("at::_th_erfinv_", self.tensor).to(void); self
 
 proc th_erfinv_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_erfinv", self.tensor).to(ATensor).newTensor()
@@ -756,7 +756,7 @@ proc th_frac_impl_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, disca
   check: ty[].atenMethod("_th_frac_", self.tensor).to(void); self
 
 proc th_frac_impl_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_frac_").to(void); self
+  check: atenFunction("at::_th_frac_", self.tensor).to(void); self
 
 proc th_frac_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_frac", self.tensor).to(ATensor).newTensor()
@@ -810,7 +810,7 @@ proc th_renorm_impl_inplace*(ty: TensorType; self: Tensor; p: float; dim: int; m
   check: ty[].atenMethod("_th_renorm_", self.tensor, p, dim, maxnorm).to(void); self
 
 proc th_renorm_impl_inplace*(self: Tensor; p: float; dim: int; maxnorm: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_renorm_", p, dim, maxnorm).to(void); self
+  check: atenFunction("at::_th_renorm_", self.tensor, p, dim, maxnorm).to(void); self
 
 proc th_dist_impl*(ty: TensorType; self: Tensor; other: Tensor; p: float = 2): float {.inline.} = 
   check: ty[].atenMethod("_th_dist", self.tensor, other.tensor, p).to(float)
@@ -828,7 +828,7 @@ proc th_reciprocal_impl_inplace*(ty: TensorType; self: Tensor): Tensor {.inline,
   check: ty[].atenMethod("_th_reciprocal_", self.tensor).to(void); self
 
 proc th_reciprocal_impl_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_reciprocal_").to(void); self
+  check: atenFunction("at::_th_reciprocal_", self.tensor).to(void); self
 
 proc th_neg_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_neg", self.tensor).to(ATensor).newTensor()
@@ -840,7 +840,7 @@ proc th_neg_impl_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, discar
   check: ty[].atenMethod("_th_neg_", self.tensor).to(void); self
 
 proc th_neg_impl_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_neg_").to(void); self
+  check: atenFunction("at::_th_neg_", self.tensor).to(void); self
 
 proc th_atan2_impl*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_atan2", self.tensor, other.tensor).to(ATensor).newTensor()
@@ -852,7 +852,7 @@ proc th_atan2_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor
   check: ty[].atenMethod("_th_atan2_", self.tensor, other.tensor).to(void); self
 
 proc th_atan2_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_atan2_", other.tensor).to(void); self
+  check: atenFunction("at::_th_atan2_", self.tensor, other.tensor).to(void); self
 
 proc th_pow_impl*(ty: TensorType; self: Tensor; exponent: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_pow", self.tensor, exponent).to(ATensor).newTensor()
@@ -876,13 +876,13 @@ proc th_pow_impl_inplace*(ty: TensorType; self: Tensor; exponent: float): Tensor
   check: ty[].atenMethod("_th_pow_", self.tensor, exponent).to(void); self
 
 proc th_pow_impl_inplace*(self: Tensor; exponent: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_pow_", exponent).to(void); self
+  check: atenFunction("at::_th_pow_", self.tensor, exponent).to(void); self
 
 proc th_pow_impl_inplace*(ty: TensorType; self: Tensor; exponent: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_pow_", self.tensor, exponent.tensor).to(void); self
 
 proc th_pow_impl_inplace*(self: Tensor; exponent: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_pow_", exponent.tensor).to(void); self
+  check: atenFunction("at::_th_pow_", self.tensor, exponent.tensor).to(void); self
 
 proc th_lerp_impl*(ty: TensorType; self: Tensor; end_special: Tensor; weight: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_lerp", self.tensor, end_special.tensor, weight).to(ATensor).newTensor()
@@ -894,7 +894,7 @@ proc th_lerp_impl_inplace*(ty: TensorType; self: Tensor; end_special: Tensor; we
   check: ty[].atenMethod("_th_lerp_", self.tensor, end_special.tensor, weight).to(void); self
 
 proc th_lerp_impl_inplace*(self: Tensor; end_special: Tensor; weight: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_lerp_", end_special.tensor, weight).to(void); self
+  check: atenFunction("at::_th_lerp_", self.tensor, end_special.tensor, weight).to(void); self
 
 proc th_linspace_impl*(ty: TensorType; start: float; end_special: float; steps: int): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_linspace", start, end_special, steps).to(ATensor).newTensor()
@@ -936,7 +936,7 @@ proc th_sign_impl_inplace*(ty: TensorType; self: Tensor): Tensor {.inline, disca
   check: ty[].atenMethod("_th_sign_", self.tensor).to(void); self
 
 proc th_sign_impl_inplace*(self: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_sign_").to(void); self
+  check: atenFunction("at::_th_sign_", self.tensor).to(void); self
 
 proc th_trace_impl*(ty: TensorType; self: Tensor): float {.inline.} = 
   check: ty[].atenMethod("_th_trace", self.tensor).to(float)
@@ -960,13 +960,13 @@ proc th_fmod_impl_inplace*(ty: TensorType; self: Tensor; other: float): Tensor {
   check: ty[].atenMethod("_th_fmod_", self.tensor, other).to(void); self
 
 proc th_fmod_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_fmod_", other).to(void); self
+  check: atenFunction("at::_th_fmod_", self.tensor, other).to(void); self
 
 proc th_fmod_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_fmod_", self.tensor, other.tensor).to(void); self
 
 proc th_fmod_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_fmod_", other.tensor).to(void); self
+  check: atenFunction("at::_th_fmod_", self.tensor, other.tensor).to(void); self
 
 proc th_remainder_impl*(ty: TensorType; self: Tensor; other: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_remainder", self.tensor, other).to(ATensor).newTensor()
@@ -984,13 +984,13 @@ proc th_remainder_impl_inplace*(ty: TensorType; self: Tensor; other: float): Ten
   check: ty[].atenMethod("_th_remainder_", self.tensor, other).to(void); self
 
 proc th_remainder_impl_inplace*(self: Tensor; other: float): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_remainder_", other).to(void); self
+  check: atenFunction("at::_th_remainder_", self.tensor, other).to(void); self
 
 proc th_remainder_impl_inplace*(ty: TensorType; self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_remainder_", self.tensor, other.tensor).to(void); self
 
 proc th_remainder_impl_inplace*(self: Tensor; other: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_remainder_", other.tensor).to(void); self
+  check: atenFunction("at::_th_remainder_", self.tensor, other.tensor).to(void); self
 
 proc th_clamp_impl*(ty: TensorType; self: Tensor; min: float; max: float): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_clamp", self.tensor, min, max).to(ATensor).newTensor()
@@ -1026,7 +1026,7 @@ proc th_tril_impl_inplace*(ty: TensorType; self: Tensor; diagonal: int = 0): Ten
   check: ty[].atenMethod("_th_tril_", self.tensor, diagonal).to(void); self
 
 proc th_tril_impl_inplace*(self: Tensor; diagonal: int = 0): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_tril_", diagonal).to(void); self
+  check: atenFunction("at::_th_tril_", self.tensor, diagonal).to(void); self
 
 proc th_triu_impl*(ty: TensorType; self: Tensor; diagonal: int = 0): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_triu", self.tensor, diagonal).to(ATensor).newTensor()
@@ -1052,9 +1052,11 @@ proc th_diag_impl*(ty: TensorType; self: Tensor; diagonal: int = 0): Tensor {.in
 proc th_diag_impl*(self: Tensor; diagonal: int = 0): Tensor {.inline.} = 
   check: atenFunction("at::_th_diag", self.tensor, diagonal).to(ATensor).newTensor()
 
-proc th_addmm_impl*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.}
+proc th_addmm_impl*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+  check: ty[].atenMethod("_th_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
 
-proc th_addmm_impl*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.}
+proc th_addmm_impl*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+  check: atenFunction("at::_th_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
 
 proc th_addmm_impl_inplace*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_addmm_", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(void); self
@@ -1120,7 +1122,7 @@ proc th_addbmm_impl_inplace*(ty: TensorType; self: Tensor; batch1: Tensor; batch
   check: ty[].atenMethod("_th_addbmm_", self.tensor, batch1.tensor, batch2.tensor, beta, alpha).to(void); self
 
 proc th_addbmm_impl_inplace*(self: Tensor; batch1: Tensor; batch2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_addbmm_", batch1.tensor, batch2.tensor, beta, alpha).to(void); self
+  check: atenFunction("at::_th_addbmm_", self.tensor, batch1.tensor, batch2.tensor, beta, alpha).to(void); self
 
 proc th_baddbmm_impl*(ty: TensorType; self: Tensor; batch1: Tensor; batch2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_baddbmm", self.tensor, batch1.tensor, batch2.tensor, beta, alpha).to(ATensor).newTensor()
@@ -1138,7 +1140,7 @@ proc th_addcmul_impl_inplace*(ty: TensorType; self: Tensor; tensor1: Tensor; ten
   check: ty[].atenMethod("_th_addcmul_", self.tensor, tensor1.tensor, tensor2.tensor, value).to(void); self
 
 proc th_addcmul_impl_inplace*(self: Tensor; tensor1: Tensor; tensor2: Tensor; value: float = 1): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_addcmul_", tensor1.tensor, tensor2.tensor, value).to(void); self
+  check: atenFunction("at::_th_addcmul_", self.tensor, tensor1.tensor, tensor2.tensor, value).to(void); self
 
 proc th_addcdiv_impl*(ty: TensorType; self: Tensor; tensor1: Tensor; tensor2: Tensor; value: float = 1): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_addcdiv", self.tensor, tensor1.tensor, tensor2.tensor, value).to(ATensor).newTensor()
@@ -1150,7 +1152,7 @@ proc th_addcdiv_impl_inplace*(ty: TensorType; self: Tensor; tensor1: Tensor; ten
   check: ty[].atenMethod("_th_addcdiv_", self.tensor, tensor1.tensor, tensor2.tensor, value).to(void); self
 
 proc th_addcdiv_impl_inplace*(self: Tensor; tensor1: Tensor; tensor2: Tensor; value: float = 1): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_addcdiv_", tensor1.tensor, tensor2.tensor, value).to(void); self
+  check: atenFunction("at::_th_addcdiv_", self.tensor, tensor1.tensor, tensor2.tensor, value).to(void); self
 
 proc th_gesv_single_impl*(ty: TensorType; self: Tensor; A: Tensor): tuple[solution: Tensor, lu: Tensor] {.inline.} = 
   check: ty[].atenMethod("_th_gesv_single", self.tensor, A.tensor).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
@@ -1194,11 +1196,11 @@ proc th_getri_single_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} =
 proc th_getri_single_impl*(self: Tensor): Tensor {.inline.} = 
   check: atenFunction("at::_th_getri_single", self.tensor).to(ATensor).newTensor()
 
-proc th_potrf_impl*(ty: TensorType; self: Tensor; upper: bool = true): Tensor {.inline.} = 
-  check: ty[].atenMethod("_th_potrf", self.tensor, upper).to(ATensor).newTensor()
+proc th_potrf_single_impl*(ty: TensorType; self: Tensor; upper: bool = true): Tensor {.inline.} = 
+  check: ty[].atenMethod("_th_potrf_single", self.tensor, upper).to(ATensor).newTensor()
 
-proc th_potrf_impl*(self: Tensor; upper: bool = true): Tensor {.inline.} = 
-  check: atenFunction("at::_th_potrf", self.tensor, upper).to(ATensor).newTensor()
+proc th_potrf_single_impl*(self: Tensor; upper: bool = true): Tensor {.inline.} = 
+  check: atenFunction("at::_th_potrf_single", self.tensor, upper).to(ATensor).newTensor()
 
 proc th_potrs_single_impl*(ty: TensorType; self: Tensor; input2: Tensor; upper: bool = true): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_potrs_single", self.tensor, input2.tensor, upper).to(ATensor).newTensor()
@@ -1264,19 +1266,19 @@ proc th_random_impl_inplace*(ty: TensorType; self: Tensor; from_special: int; to
   check: ty[].atenMethod("_th_random_", self.tensor, from_special, to_special, generator).to(void); self
 
 proc th_random_impl_inplace*(self: Tensor; from_special: int; to_special: int; generator: Generator = nil): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_random_", from_special, to_special, generator).to(void); self
+  check: atenFunction("at::_th_random_", self.tensor, from_special, to_special, generator).to(void); self
 
 proc th_random_impl_inplace*(ty: TensorType; self: Tensor; to_special: int; generator: Generator = nil): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_random_", self.tensor, to_special, generator).to(void); self
 
 proc th_random_impl_inplace*(self: Tensor; to_special: int; generator: Generator = nil): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_random_", to_special, generator).to(void); self
+  check: atenFunction("at::_th_random_", self.tensor, to_special, generator).to(void); self
 
 proc th_random_impl_inplace*(ty: TensorType; self: Tensor; generator: Generator = nil): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_random_", self.tensor, generator).to(void); self
 
 proc th_random_impl_inplace*(self: Tensor; generator: Generator = nil): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_random_", generator).to(void); self
+  check: atenFunction("at::_th_random_", self.tensor, generator).to(void); self
 
 proc th_multinomial_impl*(ty: TensorType; self: Tensor; num_samples: int; replacement: bool = false; generator: Generator = nil): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_multinomial", self.tensor, num_samples, replacement, generator).to(ATensor).newTensor()
@@ -1288,7 +1290,7 @@ proc th_uniform_impl_inplace*(ty: TensorType; self: Tensor; from_special: float6
   check: ty[].atenMethod("_th_uniform_", self.tensor, from_special, to_special, generator).to(void); self
 
 proc th_uniform_impl_inplace*(self: Tensor; from_special: float64 = 0; to_special: float64 = 1; generator: Generator = nil): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_uniform_", from_special, to_special, generator).to(void); self
+  check: atenFunction("at::_th_uniform_", self.tensor, from_special, to_special, generator).to(void); self
 
 proc th_normal_impl*(ty: TensorType; mean: Tensor; std: float64 = 1; generator: Generator = nil): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_normal", mean.tensor, std, generator).to(ATensor).newTensor()
@@ -1312,31 +1314,31 @@ proc th_normal_impl_inplace*(ty: TensorType; self: Tensor; mean: float64 = 0; st
   check: ty[].atenMethod("_th_normal_", self.tensor, mean, std, generator).to(void); self
 
 proc th_normal_impl_inplace*(self: Tensor; mean: float64 = 0; std: float64 = 1; generator: Generator = nil): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_normal_", mean, std, generator).to(void); self
+  check: atenFunction("at::_th_normal_", self.tensor, mean, std, generator).to(void); self
 
 proc th_cauchy_impl_inplace*(ty: TensorType; self: Tensor; median: float64 = 0; sigma: float64 = 1; generator: Generator = nil): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_cauchy_", self.tensor, median, sigma, generator).to(void); self
 
 proc th_cauchy_impl_inplace*(self: Tensor; median: float64 = 0; sigma: float64 = 1; generator: Generator = nil): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_cauchy_", median, sigma, generator).to(void); self
+  check: atenFunction("at::_th_cauchy_", self.tensor, median, sigma, generator).to(void); self
 
 proc th_log_normal_impl_inplace*(ty: TensorType; self: Tensor; mean: float64 = 1; std: float64 = 2; generator: Generator = nil): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_log_normal_", self.tensor, mean, std, generator).to(void); self
 
 proc th_log_normal_impl_inplace*(self: Tensor; mean: float64 = 1; std: float64 = 2; generator: Generator = nil): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_log_normal_", mean, std, generator).to(void); self
+  check: atenFunction("at::_th_log_normal_", self.tensor, mean, std, generator).to(void); self
 
 proc th_exponential_impl_inplace*(ty: TensorType; self: Tensor; lambd: float64 = 1; generator: Generator = nil): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_exponential_", self.tensor, lambd, generator).to(void); self
 
 proc th_exponential_impl_inplace*(self: Tensor; lambd: float64 = 1; generator: Generator = nil): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_exponential_", lambd, generator).to(void); self
+  check: atenFunction("at::_th_exponential_", self.tensor, lambd, generator).to(void); self
 
 proc th_geometric_impl_inplace*(ty: TensorType; self: Tensor; p: float64; generator: Generator = nil): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_geometric_", self.tensor, p, generator).to(void); self
 
 proc th_geometric_impl_inplace*(self: Tensor; p: float64; generator: Generator = nil): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_geometric_", p, generator).to(void); self
+  check: atenFunction("at::_th_geometric_", self.tensor, p, generator).to(void); self
 
 proc th_dirichlet_grad_impl*(ty: TensorType; x: Tensor; alpha: Tensor; total: Tensor): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_dirichlet_grad", x.tensor, alpha.tensor, total.tensor).to(ATensor).newTensor()
@@ -3294,6 +3296,12 @@ proc pdist_backward_impl*(ty: TensorType; grad: Tensor; self: Tensor; p: float64
 proc pdist_backward_impl*(grad: Tensor; self: Tensor; p: float64; pdist: Tensor): Tensor {.inline.} = 
   check: atenFunction("at::_pdist_backward", grad.tensor, self.tensor, p, pdist.tensor).to(ATensor).newTensor()
 
+proc cosine_similarity*(ty: TensorType; x1: Tensor; x2: Tensor; dim: int = 1; eps: float64): Tensor {.inline.} = 
+  check: ty[].atenMethod("cosine_similarity", x1.tensor, x2.tensor, dim, eps).to(ATensor).newTensor()
+
+proc cosine_similarity*(x1: Tensor; x2: Tensor; dim: int = 1; eps: float64): Tensor {.inline.} = 
+  check: atenFunction("at::cosine_similarity", x1.tensor, x2.tensor, dim, eps).to(ATensor).newTensor()
+
 proc permute*(ty: TensorType; self: Tensor; dims: openarray[int]): Tensor {.inline.} = 
   check: ty[].atenMethod("permute", self.tensor, dims.toAIntList()).to(ATensor).newTensor()
 
@@ -4056,9 +4064,11 @@ proc rsub*(ty: TensorType; self: Tensor; other: float; alpha: float = 1): Tensor
 
 proc rsub*(self: Tensor; other: float; alpha: float = 1): Tensor {.inline.}
 
-proc s_native_addmm*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.}
+proc s_native_addmm*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+  check: ty[].atenMethod("s_native_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
 
-proc s_native_addmm*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.}
+proc s_native_addmm*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+  check: atenFunction("at::s_native_addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
 
 proc s_native_addmm_inplace*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("s_native_addmm_", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(void); self
@@ -4066,11 +4076,9 @@ proc s_native_addmm_inplace*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: T
 proc s_native_addmm_inplace*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline, discardable.} = 
   check: atenFunction("at::s_native_addmm_", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(void); self
 
-proc addmm*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-  check: ty[].atenMethod("addmm", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+proc addmm*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.}
 
-proc addmm*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("addmm", mat1.tensor, mat2.tensor, beta, alpha).to(ATensor).newTensor()
+proc addmm*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.}
 
 proc addmm_inplace*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("addmm_", self.tensor, mat1.tensor, mat2.tensor, beta, alpha).to(void); self
@@ -4955,6 +4963,12 @@ proc cholesky*(ty: TensorType; self: Tensor; upper: bool = false): Tensor {.inli
 
 proc cholesky*(self: Tensor; upper: bool = false): Tensor {.inline.} = 
   check: self.tensor.atenMethod("cholesky", upper).to(ATensor).newTensor()
+
+proc cholesky_helper_impl*(ty: TensorType; self: Tensor; upper: bool): Tensor {.inline.} = 
+  check: ty[].atenMethod("_cholesky_helper", self.tensor, upper).to(ATensor).newTensor()
+
+proc cholesky_helper_impl*(self: Tensor; upper: bool): Tensor {.inline.} = 
+  check: atenFunction("at::_cholesky_helper", self.tensor, upper).to(ATensor).newTensor()
 
 proc potrs*(ty: TensorType; self: Tensor; input2: Tensor; upper: bool = true): Tensor {.inline.} = 
   check: ty[].atenMethod("potrs", self.tensor, input2.tensor, upper).to(ATensor).newTensor()
