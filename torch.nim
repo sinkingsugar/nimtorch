@@ -24,15 +24,6 @@ macro exportTorch*(procDef: untyped): untyped =
     """.}
     `procDef`
 
-when defined wasm:
-  {.emit: """/*INCLUDESECTION*/
-  #include <emscripten.h>
-  """.}
-  # define in custom javascript code a torchLoaded function to get notified when the wasm module is ready to be used.
-  proc wasm_ready() {.exportTorch.} =
-    {.emit: "EM_ASM( if(torchLoaded) torchLoaded() );".}
-  wasm_ready()
-
 when defined cuda:
   import torch/torch_cuda_cpp
   export torch_cuda_cpp
