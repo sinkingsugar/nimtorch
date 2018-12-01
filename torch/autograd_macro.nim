@@ -1,11 +1,12 @@
 import macros
 import tensors
 
-proc requires_grad_internal*(self: Tensor): bool {.inline.} = self.requires_grad
+proc requires_grad_internal*(self: Tensor): bool {.inline.} =
+  not self.isNil and self.requires_grad
 
 proc requires_grad_internal*(self: openarray[Tensor]): bool {.inline.} =
-  for tensor in  self:
-    if tensor.requires_grad:
+  for tensor in self:
+    if not tensor.isNil and tensor.requires_grad:
       return true
 
 template capture*(name: untyped): untyped =
