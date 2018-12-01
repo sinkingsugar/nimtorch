@@ -19,6 +19,7 @@ let
   fc1 = nn.Linear(2, 4)
   fc2 = nn.Linear(4, 1)
 
+# At this point we want to notify the JS side that we are ready to work!
 EM_ASM("torchLoaded()")
 
 proc xor_run() {.exportTorch.} =
@@ -45,9 +46,5 @@ proc activate(input, output: var openarray[float32]) {.exportTorch.} =
       inputTensor = toTensor(input, input.len)
       prediction = inputTensor.fc1.relu.fc2.sigmoid
     
-    echo "Prediction: ", prediction
-
     for i in 0..<output.len:
       output[i] = prediction[i]
-    
-    echo "Output: ", output
