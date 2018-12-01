@@ -321,7 +321,7 @@ block declarations:
         # For tensor procs we don't add `self` parameter to the native call
         if kind != Tensor or argName != "self":
           if nimType == "Tensor":
-            argsStr2 &= ", $1.tensor" % [argName]
+            argsStr2 &= ", $1.toATensor()" % [argName]
           elif nimType == "IntList":
             argsStr2 &= ", $1.toAIntList()" % [argName]
           elif nimType == "TensorList":
