@@ -10,7 +10,7 @@ proc requires_grad_internal*(self: openarray[Tensor]): bool {.inline.} =
 
 template capture*(name: untyped): untyped =
   when name is openarray | varargs:
-    let name = @`name`
+    let name {.used.} = @`name`
 
 macro autograd*(head, body: untyped): untyped =
 
@@ -25,12 +25,11 @@ macro autograd*(head, body: untyped): untyped =
     gradInputMaskIdent = ident"grad_input_mask"
     forwardBody = newStmtList()
     backwardBody = newStmtList()
-    resultExpressions = nnkBracket.newTree()
     inputIdents = nnkBracket.newTree()
 
   # Make `grad` available in derivative expressions, as alias for `grads[0]`
   backwardBody.add quote do:
-    template grad: Tensor = `gradsIdent`[0]
+    template grad: Tensor {.used.} = `gradsIdent`[0]
     
   var resultIndex = 0
   for x in body:
@@ -45,7 +44,7 @@ macro autograd*(head, body: untyped): untyped =
       x.name = name
       forwardBody.add quote do:
         `resultIdent` = `forwardExpr`
-        let `forwardResultIdent` = `resultIdent`    
+        let `forwardResultIdent` {.used.} = `resultIdent`    
 
       # If parameters are non-concrete, captures them as concrete types (e.g. openarray -> seq)
       for i in 1 ..< x.params.len:
