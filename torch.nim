@@ -30,7 +30,7 @@ when defined wasm:
   """.}
   # define in custom javascript code a torchLoaded function to get notified when the wasm module is ready to be used.
   proc wasm_ready() {.exportTorch.} =
-    {.emit: "EM_ASM(torchLoaded());".}
+    {.emit: "EM_ASM( if(torchLoaded) torchLoaded() );".}
   wasm_ready()
 
 when defined cuda:
