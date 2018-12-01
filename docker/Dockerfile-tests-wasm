@@ -35,5 +35,3 @@ ENV HOME=/home/tester
 
 # needed to init wasm
 RUN source /etc/profile.d/emscripten.sh && emcc --version && touch emcc.nim && nim torch -d:wasm -o:emcc.js emcc.nim && rm emcc.js emcc.nim
-
-ENTRYPOINT source /etc/profile.d/emscripten.sh
