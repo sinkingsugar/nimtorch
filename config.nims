@@ -1,5 +1,7 @@
 when defined wasm:
   echo "Injecting wasm options"
+  echo "If the build fails make sure emcc is in your path, on linux you might have to run:"
+  echo "source /etc/profile.d/emscripten.sh"
 
   switch("cc", "clang")
   switch("os", "linux")
