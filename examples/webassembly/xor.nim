@@ -1,14 +1,3 @@
-when defined wasm:
-  {.emit: """/*INCLUDESECTION*/
-  #include <emscripten.h>
-  """.}
-  {.pragma: exportTorch, codegendecl: """extern "C" $# EMSCRIPTEN_KEEPALIVE $#$#""", exportc.}
-  proc wasm_ready() {.exportTorch.} =
-    {.emit: "EM_ASM(torchLoaded());".}
-  wasm_ready()
-else:
-  {.pragma: exportTorch, exportc.}
-
 import ../../torch
 import ../../torch/[nn, optim]
 

@@ -1,5 +1,37 @@
+import macros
 import fragments/ffi/cpp, torch/torch_cpp
 export cpp, torch_cpp
+
+macro exportTorch*(procDef: untyped): untyped =
+  procDef.expectKind({ nnkProcDef, nnkFuncDef })
+
+  if procDef.pragma.kind == nnkEmpty:
+    procDef.pragma = nnkPragma.newTree()
+
+  when defined wasm:
+    procDef.pragma.add(
+      nnkExprColonExpr.newTree(ident"codegenDecl", newLit("""extern "C" $# EMSCRIPTEN_KEEPALIVE $#$#""")),
+      ident("exportc")
+    )
+  else:
+    procDef.pragma.add(
+      ident("exportc")
+    )
+
+  return quote do:
+    {.emit: """/*INCLUDESECTION*/
+    #include <emscripten.h>
+    """.}
+    `procDef`
+
+when defined wasm:
+  {.emit: """/*INCLUDESECTION*/
+  #include <emscripten.h>
+  """.}
+  # define in custom javascript code a torchLoaded function to get notified when the wasm module is ready to be used.
+  proc wasm_ready() {.exportTorch.} =
+    {.emit: "EM_ASM(torchLoaded());".}
+  wasm_ready()
 
 when defined cuda:
   import torch/torch_cuda_cpp

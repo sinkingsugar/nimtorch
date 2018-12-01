@@ -8,9 +8,9 @@ when defined wasm:
   switch("cpu", "i386")
   switch("define", "emscripten")
   switch("clang.exe", "emcc")
-  switch("clang.cpp.exe", "emcc")
+  switch("clang.cpp.exe", "em++")
   switch("clang.linkerexe", "emcc")
-  switch("clang.cpp.linkerexe", "emcc")
+  switch("clang.cpp.linkerexe", "em++")
 
   when defined release:
     # TODO - add -s USE_PTHREADS=1
