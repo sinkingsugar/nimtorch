@@ -665,10 +665,11 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           # TODO: Properly handle "training ? A : B"
           nimLikeStr = nimLikeStr.replacef(re"^(.*)\?(.*):(.*)$", "$2")
 
-          if names.len == 1:
-            bodyText &= fmt"firstOrSelf({nimLikeStr})" & "\n"
-          else:
-            bodyText &= fmt"{nimLikeStr}" & "\n"
+          # Not needed anymore, it seems
+          # if names.len == 1:
+          #   bodyText &= fmt"firstOrSelf({nimLikeStr})" & "\n"
+          # else:
+          bodyText &= fmt"{nimLikeStr}" & "\n"
 
       if hasError:
         echo "Ignoring derivative (not implemented or error): ", name
@@ -731,10 +732,10 @@ template check(body: untyped): untyped =
 # nim c -r torch/generator.nim
 import math
 const M_PI = math.PI
-  
-template firstOrSelf(self: tuple): untyped = self[0]
-template firstOrSelf(self: not tuple): untyped = self
 """
+# template firstOrSelf(self: tuple): untyped = self[0]
+# template firstOrSelf(self: not tuple): untyped = self
+# """
 
   for info in generatedProcs:
     let pragma = if info.isInplace: ", discardable" else: ""
