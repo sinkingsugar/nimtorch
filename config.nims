@@ -5,10 +5,10 @@ when defined wasm:
   --os:linux
   --cpu:i386
   --define:emscripten
-  --clang.exe:"/usr/lib/emscripten/emcc"
-  --clang.cpp.exe:"/usr/lib/emscripten/emcc"
-  --clang.linkerexe:"/usr/lib/emscripten/emcc"
-  --clang.cpp.linkerexe:"/usr/lib/emscripten/emcc"
+  --clang.exe:"emcc"
+  --clang.cpp.exe:"emcc"
+  --clang.linkerexe:"emcc"
+  --clang.cpp.linkerexe:"emcc"
 
   when defined release:
     --clang.options.always:"-std=c++14 -s ALLOW_MEMORY_GROWTH=1 -s BINARYEN_MEM_MAX=2147418112 -s EXTRA_EXPORTED_RUNTIME_METHODS=\"['intArrayFromString', 'ALLOC_NORMAL', 'allocate']\" -s SINGLE_FILE=1 -s WASM=1 -O3 -s BINARYEN_ASYNC_COMPILATION=0 -s DISABLE_EXCEPTION_CATCHING=0"
