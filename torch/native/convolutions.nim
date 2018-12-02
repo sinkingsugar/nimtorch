@@ -1,6 +1,50 @@
 
 import strformat, sequtils
 
+# https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/LegacyNNDefinitions.cpp
+proc thnn_conv_transpose2d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} =
+  ty.thnn_conv_transpose2d_forward(self, weight, kernel_size, bias, stride, padding, output_padding, dilation).output
+
+proc thnn_conv_transpose2d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} =
+  self.thnn_conv_transpose2d_forward(weight, kernel_size, bias, stride, padding, output_padding, dilation).output
+
+proc thnn_conv_transpose3d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} =
+  ty.thnn_conv_transpose3d_forward(self, weight, kernel_size, bias, stride, padding, output_padding, dilation).output
+
+proc thnn_conv_transpose3d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} =
+  self.thnn_conv_transpose3d_forward(weight, kernel_size, bias, stride, padding, output_padding, dilation).output
+
+proc thnn_conv2d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): Tensor {.inline.} =
+  ty.thnn_conv2d_forward(self, weight, kernel_size, bias, stride, padding).output
+
+proc thnn_conv2d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): Tensor {.inline.} =
+  self.thnn_conv2d_forward(weight, kernel_size, bias, stride, padding).output
+  
+proc thnn_conv_depthwise2d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} =
+  ty.thnn_conv_depthwise2d_forward(self, weight, kernel_size, bias, stride, padding, dilation)
+
+proc thnn_conv_depthwise2d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} =
+  self.thnn_conv_depthwise2d_forward(weight, kernel_size, bias, stride, padding, dilation)
+
+proc thnn_conv3d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): Tensor {.inline.} =
+  ty.thnn_conv3d_forward(self, weight, kernel_size, bias, stride, padding).output
+
+proc thnn_conv3d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): Tensor {.inline.} =
+  self.thnn_conv3d_forward(weight, kernel_size, bias, stride, padding).output
+
+proc thnn_conv_dilated2d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} =
+  ty.thnn_conv_dilated2d_forward(self, weight, kernel_size, bias, stride, padding, dilation).output
+
+proc thnn_conv_dilated2d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} =
+  self.thnn_conv_dilated2d_forward(weight, kernel_size, bias, stride, padding, dilation).output
+
+proc thnn_conv_dilated3d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} =
+  ty.thnn_conv_dilated3d_forward(self, weight, kernel_size, bias, stride, padding, dilation).output
+
+proc thnn_conv_dilated3d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} =
+  self.thnn_conv_dilated3d_forward(weight, kernel_size, bias, stride, padding, dilation).output
+
+# https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/Convolution.cpp
 type
   ConvParams = object
     stride: seq[int]
@@ -247,20 +291,20 @@ proc convolution_nogroup_impl*(input, weight, bias: Tensor; stride, padding, dil
 
   if params.transposed:
     if dim == 4:
-      return thnn_conv_transpose2d(input, weight, kernel_size, bias, stride, padding, output_padding, dilation).output
+      return thnn_conv_transpose2d(input, weight, kernel_size, bias, stride, padding, output_padding, dilation)
     elif (dim == 5):
-      return thnn_conv_transpose3d(input, weight, kernel_size, bias, stride, padding, output_padding, dilation).output
+      return thnn_conv_transpose3d(input, weight, kernel_size, bias, stride, padding, output_padding, dilation)
   else: # Not transposed
     if dim == 4:
       if dilated:
-        return thnn_conv_dilated2d(input, weight, kernel_size, bias, stride, padding, dilation).output
+        return thnn_conv_dilated2d(input, weight, kernel_size, bias, stride, padding, dilation)
       else: # dim == 4, non-dilated
         # CPU implementation has specialized MM kernels for non-dilated case here
-        return thnn_conv2d(input, weight, kernel_size, bias, stride, padding).output
+        return thnn_conv2d(input, weight, kernel_size, bias, stride, padding)
     elif dim == 5 and (input.getType().is_cuda() or dilated):
-      return thnn_conv_dilated3d(input, weight, kernel_size, bias, stride, padding, dilation).output
+      return thnn_conv_dilated3d(input, weight, kernel_size, bias, stride, padding, dilation)
     elif dim == 5: # dim == 5, CPU, non-dilated
       # CPU implementation has specialized MM kernels for non-dilated case here
-      return thnn_conv3d(input, weight, kernel_size, bias, stride, padding).output
+      return thnn_conv3d(input, weight, kernel_size, bias, stride, padding)
 
   raiseAssert("unsupported ConvNd parameters")

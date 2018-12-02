@@ -99,6 +99,14 @@ const customNames = [
   "conv_transpose2d",
   "conv_transpose3d",
 
+  "thnn_conv_transpose2d",
+  "thnn_conv_transpose3d",
+  "thnn_conv2d",
+  "thnn_conv_depthwise2d",
+  "thnn_conv3d",
+  "thnn_conv_dilated2d",
+  "thnn_conv_dilated3d",
+
   "gru_cell",
 
   "max_pool1d",
@@ -409,7 +417,11 @@ block declarations:
 
         if node.hasKey("inplace") and node["inplace"].getBool():
           procInfo.isInplace = true
-          convertStr = ".to(void); self"
+          # For inplace procs, return the input tensor, except if there is no return type
+          if procInfo.nimReturnType == "void":
+            convertStr = ".to(void)"
+          else:
+            convertStr = ".to(void); self"
 
         case kind:
           of Tensor:

@@ -1038,7 +1038,7 @@ proc th_triu_impl_inplace*(ty: TensorType; self: Tensor; diagonal: int = 0): Ten
   check: ty[].atenMethod("_th_triu_", self.toATensor(), diagonal).to(void); self
 
 proc th_triu_impl_inplace*(self: Tensor; diagonal: int = 0): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("_th_triu_", diagonal).to(void); self
+  check: atenFunction("at::_th_triu_", self.toATensor(), diagonal).to(void); self
 
 proc th_cross_impl*(ty: TensorType; self: Tensor; other: Tensor; dim: int = -1): Tensor {.inline.} = 
   check: ty[].atenMethod("_th_cross", self.toATensor(), other.toATensor(), dim).to(ATensor).newTensor()
@@ -1886,75 +1886,89 @@ proc thnn_tanh_backward_impl*(ty: TensorType; grad_output: Tensor; output: Tenso
 proc thnn_tanh_backward_impl*(grad_output: Tensor; output: Tensor): Tensor {.inline.} = 
   check: atenFunction("at::_thnn_tanh_backward", grad_output.toATensor(), output.toATensor()).to(ATensor).newTensor()
 
-proc thnn_conv_transpose2d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+proc thnn_conv_transpose2d_impl*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv_transpose2d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_transpose2d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+proc thnn_conv_transpose2d_impl*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv_transpose2d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_transpose2d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: ty[].atenMethod("thnn_conv_transpose2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv_transpose2d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv_transpose2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_transpose2d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: atenFunction("at::thnn_conv_transpose2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv_transpose2d_backward_impl*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv_transpose2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_transpose3d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+proc thnn_conv_transpose3d_impl*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv_transpose3d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_transpose3d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+proc thnn_conv_transpose3d_impl*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv_transpose3d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_transpose3d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: ty[].atenMethod("thnn_conv_transpose3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv_transpose3d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv_transpose3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_transpose3d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: atenFunction("at::thnn_conv_transpose3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv_transpose3d_backward_impl*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv_transpose3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv2d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+proc thnn_conv2d_impl*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv2d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv2d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+proc thnn_conv2d_impl*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv2d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv2d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: ty[].atenMethod("thnn_conv2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv2d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv2d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: atenFunction("at::thnn_conv2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv2d_backward_impl*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_depthwise2d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.}
+proc thnn_conv_depthwise2d_impl*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv_depthwise2d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(ATensor).newTensor()
 
-proc thnn_conv_depthwise2d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.}
+proc thnn_conv_depthwise2d_impl*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.} = 
+  check: atenFunction("at::_thnn_conv_depthwise2d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(ATensor).newTensor()
 
-proc thnn_conv_depthwise2d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; output_mask: StdArray[bool, 2]): tuple[self: Tensor, weight: Tensor] {.inline.} = 
-  check: ty[].atenMethod("thnn_conv_depthwise2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), output_mask).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv_depthwise2d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; output_mask: StdArray[bool, 2]): tuple[self: Tensor, weight: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv_depthwise2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), output_mask).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_depthwise2d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; output_mask: StdArray[bool, 2]): tuple[self: Tensor, weight: Tensor] {.inline.} = 
-  check: atenFunction("at::thnn_conv_depthwise2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), output_mask).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv_depthwise2d_backward_impl*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; output_mask: StdArray[bool, 2]): tuple[self: Tensor, weight: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv_depthwise2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), output_mask).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv3d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+proc thnn_conv3d_impl*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv3d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv3d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+proc thnn_conv3d_impl*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv3d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv3d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: ty[].atenMethod("thnn_conv3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv3d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv3d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: atenFunction("at::thnn_conv3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv3d_backward_impl*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_dilated2d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+proc thnn_conv_dilated2d_impl*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv_dilated2d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_dilated2d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+proc thnn_conv_dilated2d_impl*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv_dilated2d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_dilated2d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: ty[].atenMethod("thnn_conv_dilated2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv_dilated2d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv_dilated2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_dilated2d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: atenFunction("at::thnn_conv_dilated2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv_dilated2d_backward_impl*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv_dilated2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_dilated3d*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+proc thnn_conv_dilated3d_impl*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv_dilated3d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_dilated3d*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+proc thnn_conv_dilated3d_impl*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv_dilated3d_forward", self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), bias.toATensor(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList()).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_dilated3d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: ty[].atenMethod("thnn_conv_dilated3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv_dilated3d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("_thnn_conv_dilated3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc thnn_conv_dilated3d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
-  check: atenFunction("at::thnn_conv_dilated3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+proc thnn_conv_dilated3d_backward_impl*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::_thnn_conv_dilated3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
 proc cast_Byte_impl*(ty: TensorType; self: Tensor; non_blocking: bool = false): Tensor {.inline.} = 
   check: ty[].atenMethod("_cast_Byte", self.toATensor(), non_blocking).to(ATensor).newTensor()
@@ -2113,6 +2127,16 @@ proc addr_inplace*(ty: TensorType; self: Tensor; vec1: Tensor; vec2: Tensor; bet
 
 proc addr_inplace*(self: Tensor; vec1: Tensor; vec2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline, discardable.} = 
   check: self.tensor.atenMethod("addr_", vec1.toATensor(), vec2.toATensor(), beta, alpha).to(void); self
+
+proc affine_grid_generator*(ty: TensorType; theta: Tensor; size: openarray[int]): Tensor {.inline.}
+
+proc affine_grid_generator*(theta: Tensor; size: openarray[int]): Tensor {.inline.}
+
+proc affine_grid_generator_backward*(ty: TensorType; grad: Tensor; size: openarray[int]): Tensor {.inline.} = 
+  check: ty[].atenMethod("affine_grid_generator_backward", grad.toATensor(), size.toAIntList()).to(ATensor).newTensor()
+
+proc affine_grid_generator_backward*(grad: Tensor; size: openarray[int]): Tensor {.inline.} = 
+  check: atenFunction("at::affine_grid_generator_backward", grad.toATensor(), size.toAIntList()).to(ATensor).newTensor()
 
 proc all*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
   check: ty[].atenMethod("all", self.toATensor(), dim, keepdim).to(ATensor).newTensor()
@@ -2414,11 +2438,23 @@ proc conv_tbc_backward*(ty: TensorType; self: Tensor; input: Tensor; weight: Ten
 proc conv_tbc_backward*(self: Tensor; input: Tensor; weight: Tensor; bias: Tensor; pad: int): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.} = 
   check: atenFunction("at::conv_tbc_backward", self.toATensor(), input.toATensor(), weight.toATensor(), bias.toATensor(), pad).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
-proc copy_impl_inplace*(ty: TensorType; self: Tensor; src: Tensor): Tensor {.inline, discardable.} = 
-  check: ty[].atenMethod("_copy_", self.toATensor(), src.toATensor()).to(void); self
+proc s_copy_inplace*(ty: TensorType; self: Tensor; src: Tensor; non_blocking: bool = false): Tensor {.inline, discardable.} = 
+  check: ty[].atenMethod("s_copy_", self.toATensor(), src.toATensor(), non_blocking).to(void); self
 
-proc copy_impl_inplace*(self: Tensor; src: Tensor): Tensor {.inline, discardable.} = 
-  check: atenFunction("at::_copy_", self.toATensor(), src.toATensor()).to(void); self
+proc s_copy_inplace*(self: Tensor; src: Tensor; non_blocking: bool = false): Tensor {.inline, discardable.} = 
+  check: atenFunction("at::s_copy_", self.toATensor(), src.toATensor(), non_blocking).to(void); self
+
+proc s_copy_from_impl*(ty: TensorType; self: Tensor; dst: Tensor; non_blocking: bool = false): Tensor {.inline.} = 
+  check: ty[].atenMethod("_s_copy_from", self.toATensor(), dst.toATensor(), non_blocking).to(ATensor).newTensor()
+
+proc s_copy_from_impl*(self: Tensor; dst: Tensor; non_blocking: bool = false): Tensor {.inline.} = 
+  check: atenFunction("at::_s_copy_from", self.toATensor(), dst.toATensor(), non_blocking).to(ATensor).newTensor()
+
+proc copy_same_type_impl_inplace*(ty: TensorType; self: Tensor; src: Tensor): void {.inline, discardable.} = 
+  checkVoid: ty[].atenMethod("_copy_same_type_", self.toATensor(), src.toATensor()).to(void)
+
+proc copy_same_type_impl_inplace*(self: Tensor; src: Tensor): void {.inline, discardable.} = 
+  checkVoid: atenFunction("at::_copy_same_type_", self.toATensor(), src.toATensor()).to(void)
 
 proc cos*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
@@ -2970,17 +3006,15 @@ proc index_copy_inplace*(ty: TensorType; self: Tensor; dim: int; index: Tensor; 
 
 proc index_copy_inplace*(self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline, discardable.}
 
-proc index_put*(ty: TensorType; self: Tensor; indices: openarray[Tensor]; values: Tensor): Tensor {.inline.} = 
-  check: ty[].atenMethod("index_put", self.toATensor(), indices.toATensors(), values.toATensor()).to(ATensor).newTensor()
+proc index_put*(ty: TensorType; self: Tensor; indices: openarray[Tensor]; values: Tensor; accumulate: bool = false): Tensor {.inline.} = 
+  check: ty[].atenMethod("index_put", self.toATensor(), indices.toATensors(), values.toATensor(), accumulate).to(ATensor).newTensor()
 
-proc index_put*(self: Tensor; indices: openarray[Tensor]; values: Tensor): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("index_put", indices.toATensors(), values.toATensor()).to(ATensor).newTensor()
+proc index_put*(self: Tensor; indices: openarray[Tensor]; values: Tensor; accumulate: bool = false): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("index_put", indices.toATensors(), values.toATensor(), accumulate).to(ATensor).newTensor()
 
-proc index_put_inplace*(ty: TensorType; self: Tensor; indices: openarray[Tensor]; values: Tensor): Tensor {.inline, discardable.} = 
-  check: ty[].atenMethod("index_put_", self.toATensor(), indices.toATensors(), values.toATensor()).to(void); self
+proc index_put_inplace*(ty: TensorType; self: Tensor; indices: openarray[Tensor]; values: Tensor; accumulate: bool = false): Tensor {.inline, discardable.}
 
-proc index_put_inplace*(self: Tensor; indices: openarray[Tensor]; values: Tensor): Tensor {.inline, discardable.} = 
-  check: self.tensor.atenMethod("index_put_", indices.toATensors(), values.toATensor()).to(void); self
+proc index_put_inplace*(self: Tensor; indices: openarray[Tensor]; values: Tensor; accumulate: bool = false): Tensor {.inline, discardable.}
 
 proc instance_norm*(ty: TensorType; input: Tensor; weight: Tensor; bias: Tensor; running_mean: Tensor; running_var: Tensor; use_input_stats: bool; momentum: float64; eps: float64; cudnn_enabled: bool): Tensor {.inline.} = 
   check: ty[].atenMethod("instance_norm", input.toATensor(), weight.toATensor(), bias.toATensor(), running_mean.toATensor(), running_var.toATensor(), use_input_stats, momentum, eps, cudnn_enabled).to(ATensor).newTensor()
@@ -3204,21 +3238,21 @@ proc mean*(ty: TensorType; self: Tensor): Tensor {.inline.}
 
 proc mean*(self: Tensor): Tensor {.inline.}
 
-proc mean*(ty: TensorType; self: Tensor; dim: int; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
-  check: ty[].atenMethod("mean", self.toATensor(), dim, keepdim, dtype).to(ATensor).newTensor()
+proc mean*(ty: TensorType; self: Tensor; dim: openarray[int]; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
+  check: ty[].atenMethod("mean", self.toATensor(), dim.toAIntList(), keepdim, dtype).to(ATensor).newTensor()
 
-proc mean*(self: Tensor; dim: int; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("mean", dim, keepdim, dtype).to(ATensor).newTensor()
+proc mean*(self: Tensor; dim: openarray[int]; keepdim: bool; dtype: ScalarType): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("mean", dim.toAIntList(), keepdim, dtype).to(ATensor).newTensor()
 
-proc mean*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.}
+proc mean*(ty: TensorType; self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.}
 
-proc mean*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.}
+proc mean*(self: Tensor; dim: openarray[int]; keepdim: bool = false): Tensor {.inline.}
 
-proc mean*(ty: TensorType; self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
-  check: ty[].atenMethod("mean", self.toATensor(), dim, dtype).to(ATensor).newTensor()
+proc mean*(ty: TensorType; self: Tensor; dim: openarray[int]; dtype: ScalarType): Tensor {.inline.} = 
+  check: ty[].atenMethod("mean", self.toATensor(), dim.toAIntList(), dtype).to(ATensor).newTensor()
 
-proc mean*(self: Tensor; dim: int; dtype: ScalarType): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("mean", dim, dtype).to(ATensor).newTensor()
+proc mean*(self: Tensor; dim: openarray[int]; dtype: ScalarType): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("mean", dim.toAIntList(), dtype).to(ATensor).newTensor()
 
 proc median*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
   check: ty[].atenMethod("median", self.toATensor(), dim, keepdim).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
@@ -3940,9 +3974,11 @@ proc flip*(ty: TensorType; self: Tensor; dims: openarray[int]): Tensor {.inline.
 
 proc flip*(self: Tensor; dims: openarray[int]): Tensor {.inline.}
 
-proc roll*(ty: TensorType; self: Tensor; shifts: openarray[int]; dims: openarray[int]): Tensor {.inline.}
+proc roll*(ty: TensorType; self: Tensor; shifts: openarray[int]; dims: openarray[int]): Tensor {.inline.} = 
+  check: ty[].atenMethod("roll", self.toATensor(), shifts.toAIntList(), dims.toAIntList()).to(ATensor).newTensor()
 
-proc roll*(self: Tensor; shifts: openarray[int]; dims: openarray[int]): Tensor {.inline.}
+proc roll*(self: Tensor; shifts: openarray[int]; dims: openarray[int]): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("roll", shifts.toAIntList(), dims.toAIntList()).to(ATensor).newTensor()
 
 proc rot90*(ty: TensorType; self: Tensor; k: int = 1; dims: openarray[int]): Tensor {.inline.}
 
@@ -4096,6 +4132,34 @@ proc native_norm*(ty: TensorType; self: Tensor; p: float = 2): Tensor {.inline.}
 proc native_norm*(self: Tensor; p: float = 2): Tensor {.inline.} = 
   check: atenFunction("at::native_norm", self.toATensor(), p).to(ATensor).newTensor()
 
+proc sparse_sum_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
+  check: ty[].atenMethod("_sparse_sum", self.toATensor()).to(ATensor).newTensor()
+
+proc sparse_sum_impl*(self: Tensor): Tensor {.inline.} = 
+  check: atenFunction("at::_sparse_sum", self.toATensor()).to(ATensor).newTensor()
+
+proc sparse_sum_impl*(ty: TensorType; self: Tensor; dtype: ScalarType): Tensor {.inline.} = 
+  check: ty[].atenMethod("_sparse_sum", self.toATensor(), dtype).to(ATensor).newTensor()
+
+proc sparse_sum_impl*(self: Tensor; dtype: ScalarType): Tensor {.inline.} = 
+  check: atenFunction("at::_sparse_sum", self.toATensor(), dtype).to(ATensor).newTensor()
+
+proc sparse_sum_impl*(ty: TensorType; self: Tensor; dim: openarray[int]): Tensor {.inline.}
+
+proc sparse_sum_impl*(self: Tensor; dim: openarray[int]): Tensor {.inline.}
+
+proc sparse_sum_impl*(ty: TensorType; self: Tensor; dim: openarray[int]; dtype: ScalarType): Tensor {.inline.} = 
+  check: ty[].atenMethod("_sparse_sum", self.toATensor(), dim.toAIntList(), dtype).to(ATensor).newTensor()
+
+proc sparse_sum_impl*(self: Tensor; dim: openarray[int]; dtype: ScalarType): Tensor {.inline.} = 
+  check: atenFunction("at::_sparse_sum", self.toATensor(), dim.toAIntList(), dtype).to(ATensor).newTensor()
+
+proc sparse_sum_backward_impl*(ty: TensorType; grad: Tensor; self: Tensor; dim: openarray[int]): Tensor {.inline.} = 
+  check: ty[].atenMethod("_sparse_sum_backward", grad.toATensor(), self.toATensor(), dim.toAIntList()).to(ATensor).newTensor()
+
+proc sparse_sum_backward_impl*(grad: Tensor; self: Tensor; dim: openarray[int]): Tensor {.inline.} = 
+  check: atenFunction("at::_sparse_sum_backward", grad.toATensor(), self.toATensor(), dim.toAIntList()).to(ATensor).newTensor()
+
 proc norm*(ty: TensorType; self: Tensor; p: float = 2): Tensor {.inline.} = 
   check: ty[].atenMethod("norm", self.toATensor(), p).to(ATensor).newTensor()
 
@@ -4207,6 +4271,12 @@ proc s_native_addmm_inplace*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: T
 
 proc s_native_addmm_inplace*(self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline, discardable.} = 
   check: atenFunction("at::s_native_addmm_", self.toATensor(), mat1.toATensor(), mat2.toATensor(), beta, alpha).to(void); self
+
+proc sparse_addmm_impl*(ty: TensorType; self: Tensor; sparse: Tensor; dense: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+  check: ty[].atenMethod("_sparse_addmm", self.toATensor(), sparse.toATensor(), dense.toATensor(), beta, alpha).to(ATensor).newTensor()
+
+proc sparse_addmm_impl*(self: Tensor; sparse: Tensor; dense: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.} = 
+  check: atenFunction("at::_sparse_addmm", self.toATensor(), sparse.toATensor(), dense.toATensor(), beta, alpha).to(ATensor).newTensor()
 
 proc addmm*(ty: TensorType; self: Tensor; mat1: Tensor; mat2: Tensor; beta: float = 1; alpha: float = 1): Tensor {.inline.}
 
@@ -5738,4 +5808,74 @@ proc sigmoid_backward*(grad_output: Tensor; output: Tensor): Tensor {.inline.}
 proc tanh_backward*(ty: TensorType; grad_output: Tensor; output: Tensor): Tensor {.inline.}
 
 proc tanh_backward*(grad_output: Tensor; output: Tensor): Tensor {.inline.}
+
+proc thnn_conv_transpose2d_forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+
+proc thnn_conv_transpose2d_forward*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+
+proc thnn_conv_transpose2d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("thnn_conv_transpose2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv_transpose2d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::thnn_conv_transpose2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv_transpose3d_forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+
+proc thnn_conv_transpose3d_forward*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+
+proc thnn_conv_transpose3d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("thnn_conv_transpose3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv_transpose3d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; output_padding: openarray[int]; dilation: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::thnn_conv_transpose3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), output_padding.toAIntList(), dilation.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv2d_forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+
+proc thnn_conv2d_forward*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+
+proc thnn_conv2d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("thnn_conv2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv2d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::thnn_conv2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv_depthwise2d_forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.}
+
+proc thnn_conv_depthwise2d_forward*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): Tensor {.inline.}
+
+proc thnn_conv_depthwise2d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; output_mask: StdArray[bool, 2]): tuple[self: Tensor, weight: Tensor] {.inline.} = 
+  check: ty[].atenMethod("thnn_conv_depthwise2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), output_mask).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv_depthwise2d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; output_mask: StdArray[bool, 2]): tuple[self: Tensor, weight: Tensor] {.inline.} = 
+  check: atenFunction("at::thnn_conv_depthwise2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), output_mask).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv3d_forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+
+proc thnn_conv3d_forward*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]): tuple[output: Tensor, finput: Tensor, fgrad_input: Tensor] {.inline.}
+
+proc thnn_conv3d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("thnn_conv3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv3d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; finput: Tensor; fgrad_input: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::thnn_conv3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), finput.toATensor(), fgrad_input.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv_dilated2d_forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+
+proc thnn_conv_dilated2d_forward*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+
+proc thnn_conv_dilated2d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("thnn_conv_dilated2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv_dilated2d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::thnn_conv_dilated2d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv_dilated3d_forward*(ty: TensorType; self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+
+proc thnn_conv_dilated3d_forward*(self: Tensor; weight: Tensor; kernel_size: openarray[int]; bias: Tensor; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]): tuple[output: Tensor, columns: Tensor, ones: Tensor] {.inline.}
+
+proc thnn_conv_dilated3d_backward*(ty: TensorType; grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: ty[].atenMethod("thnn_conv_dilated3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
+
+proc thnn_conv_dilated3d_backward*(grad_output: Tensor; self: Tensor; weight: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int]; dilation: openarray[int]; columns: Tensor; ones: Tensor; output_mask: StdArray[bool, 3]): tuple[self: Tensor, weight: Tensor, bias: Tensor] {.inline.} = 
+  check: atenFunction("at::thnn_conv_dilated3d_backward", grad_output.toATensor(), self.toATensor(), weight.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), columns.toATensor(), ones.toATensor(), output_mask).to(StdTuple3[ATensor, ATensor, ATensor]).toNimTuple().newTensors()
 
