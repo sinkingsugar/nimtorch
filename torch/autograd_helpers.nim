@@ -138,8 +138,11 @@ proc matmul*(tensor1, tensor2: Tensor): Tensor =
   raise newException(ValueError, fmt"both arguments to matmul need to be at least 1D, but they are {dim_tensor1}D and {dim_tensor2}D")
 
 # TODO: Workaround for int instead of IntList
-proc sum(self: Tensor; dim: int): Tensor =
+proc sum(self: Tensor; dim: int): Tensor {.inline.} =
   self.sum([dim])
+
+proc mean*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} =
+  self.mean([dim], keepdim)
 
 proc maybe_multiply*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} =
   if b.float == 1.0:
@@ -198,9 +201,12 @@ proc atan2_backward*(grad, self, other: Tensor; outputMask: StdArray[bool, 2]): 
 proc maybe_wrap_dim(dim, size: int): int {.inline.} =
   return dynamicCCall("at::maybe_wrap_dim", dim, size).to(int)
 
-proc safe_size_impl*(sizes: openarray[int]; dim: int): int =
-  let dim = maybe_wrap_dim(dim, sizes.len)
-  return if sizes.len != 0: sizes[dim] else: 1
+proc safe_size_impl*(sizes, dim: openarray[int]): int =
+  result = 1
+  if sizes.len > 0:
+    for d in dim:
+      let wd = maybe_wrap_dim(d, sizes.len)
+      result *= sizes[wd]
 
 proc split_with_sizes_backward*(grads: openarray[Tensor]; split_sizes: openarray[int]; dim: int; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
   let ndim = maybe_wrap_dim(dim, sizes.len())
