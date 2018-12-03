@@ -199,3 +199,27 @@ when isMainModule:
   
     res = linear(x, w_input)
   res.print()
+
+proc batch_norm(input, weight, bias, running_mean, running_var: Tensor; training: bool; momentum, eps: float; cudnn_enabled: bool): Tensor =
+  # let num_features = input.size(1)
+  # if (running_mean.defined()) {
+  #   check_dims_match_num_input_features("running_mean", num_features, running_mean.numel());
+  # } else if (!training) {
+  #   AT_ERROR("running_mean must be defined in evaluation mode");
+  # }
+  # if (running_var.defined()) {
+  #   check_dims_match_num_input_features("running_var", num_features, running_var.numel());
+  # } else if (!training) {
+  #   AT_ERROR("running_var must be defined in evaluation mode");
+  # }
+  # if (weight.defined()) {
+  #   check_dims_match_num_input_features("weight", num_features, weight.numel());
+  # }
+  # if (bias.defined()) {
+  #   check_dims_match_num_input_features("bias", num_features, bias.numel());
+  # }
+
+  return native_batch_norm(input, weight, bias, running_mean, running_var, training, momentum, eps)[0]
+
+proc batch_norm*(input, running_mean, running_var: Tensor; weight: Tensor = nil; bias: Tensor = nil; training: bool = false; momentum: float = 0.1; eps: float = 1e-5): Tensor =
+  batch_norm(input, weight, bias, running_mean, running_var, training, momentum, eps, false)
