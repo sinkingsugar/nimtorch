@@ -78,7 +78,10 @@ proc Linear*(in_features, out_features: int; bias: bool = true): LinearModule =
   
   return m
 
-method parameters*(self: LinearModuleBase): seq[Tensor] = @[self.weight, self.bias]
+method parameters*(self: LinearModuleBase): seq[Tensor] =
+  result.add(self.weight)
+  if not self.bias.isNil:
+    result.add(self.bias)
 
 method reset_parameters*(m: BilinearModule) =
   let bound = 1 / math.sqrt(m.weight.size(1).float)
