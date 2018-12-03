@@ -4,7 +4,8 @@ import
     rnn,
     convolutions,
     pooling,
-    dropouts
+    dropouts,
+    batchnorm
   ]
 
 export
@@ -13,4 +14,5 @@ export
   rnn,
   convolutions,
   pooling,
-  dropouts
+  dropouts,
+  batchnorm
