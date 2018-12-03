@@ -2,7 +2,7 @@ import ../../../torch, ../modules, ../functional
 import math
 
 type
-  ConvolutionModule = ref object of LinearModuleBase
+  ConvolutionModule* = ref object of LinearModuleBase
     kernel_size: seq[int]
     stride: seq[int]
     padding: seq[int]
