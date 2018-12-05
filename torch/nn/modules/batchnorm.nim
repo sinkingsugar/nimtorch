@@ -14,7 +14,7 @@ type
 
     training: bool
 
-proc BatchNorm*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; affine: bool = true; track_running_stats: bool = false): BatchNormModule =
+proc BatchNorm*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; affine: bool = true; track_running_stats: bool = true): BatchNormModule =
   new(result)
   let m = result
 
@@ -30,7 +30,7 @@ proc BatchNorm*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; aff
 
   if m.track_running_stats:
     m.running_mean = zeros(num_features)
-    m.running_mean = zeros(num_features)
+    m.running_var = ones(num_features)
 
   m.forward = proc(input: varargs[Tensor]): Tensor =
     var exponential_average_factor = 0.0
@@ -46,6 +46,13 @@ proc BatchNorm*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; aff
 
   m.reset_parameters()
 
+method parameters*(m: BatchNormModule): seq[Tensor] =
+  if m.affine:
+    result.add([m.weight, m.bias])
+  if m.track_running_stats:
+    echo "hi"
+    result.add([m.running_mean, m.running_var])
+
 proc reset_running_state*(m: BatchNormModule) =
   if m.track_running_stats:
     m.running_mean.zero_inplace()
@@ -60,11 +67,11 @@ method reset_parameters*(m: BatchNormModule) =
     m.weight.requires_grad = true
     m.bias.requires_grad = true
 
-proc BatchNorm1d*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; affine: bool = true; track_running_stats: bool = false): BatchNormModule =
+proc BatchNorm1d*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; affine: bool = true; track_running_stats: bool = true): BatchNormModule =
   BatchNorm(num_features, eps, momentum, affine, track_running_stats)
 
-proc BatchNorm2d*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; affine: bool = true; track_running_stats: bool = false): BatchNormModule =
+proc BatchNorm2d*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; affine: bool = true; track_running_stats: bool = true): BatchNormModule =
   BatchNorm(num_features, eps, momentum, affine, track_running_stats)
 
-proc BatchNorm3d*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; affine: bool = true; track_running_stats: bool = false): BatchNormModule =
+proc BatchNorm3d*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; affine: bool = true; track_running_stats: bool = true): BatchNormModule =
   BatchNorm(num_features, eps, momentum, affine, track_running_stats)
