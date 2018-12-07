@@ -50,7 +50,6 @@ method parameters*(m: BatchNormModule): seq[Tensor] =
   if m.affine:
     result.add([m.weight, m.bias])
   if m.track_running_stats:
-    echo "hi"
     result.add([m.running_mean, m.running_var])
 
 proc reset_running_state*(m: BatchNormModule) =
