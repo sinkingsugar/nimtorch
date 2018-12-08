@@ -1,16 +1,17 @@
 import macros
 import tensors
 
-proc requires_grad_internal*(self: Tensor): bool {.inline.} = self.requires_grad
+proc requires_grad_internal*(self: Tensor): bool {.inline.} =
+  not self.isNil and self.requires_grad
 
 proc requires_grad_internal*(self: openarray[Tensor]): bool {.inline.} =
-  for tensor in  self:
-    if tensor.requires_grad:
+  for tensor in self:
+    if not tensor.isNil and tensor.requires_grad:
       return true
 
 template capture*(name: untyped): untyped =
   when name is openarray | varargs:
-    let name = @`name`
+    let name {.used.} = @`name`
 
 macro autograd*(head, body: untyped): untyped =
 
@@ -25,12 +26,11 @@ macro autograd*(head, body: untyped): untyped =
     gradInputMaskIdent = ident"grad_input_mask"
     forwardBody = newStmtList()
     backwardBody = newStmtList()
-    resultExpressions = nnkBracket.newTree()
     inputIdents = nnkBracket.newTree()
 
   # Make `grad` available in derivative expressions, as alias for `grads[0]`
   backwardBody.add quote do:
-    template grad: Tensor = `gradsIdent`[0]
+    template grad: Tensor {.used.} = `gradsIdent`[0]
     
   var resultIndex = 0
   for x in body:
@@ -45,7 +45,7 @@ macro autograd*(head, body: untyped): untyped =
       x.name = name
       forwardBody.add quote do:
         `resultIdent` = `forwardExpr`
-        let `forwardResultIdent` = `resultIdent`    
+        let `forwardResultIdent` {.used.} = `resultIdent`    
 
       # If parameters are non-concrete, captures them as concrete types (e.g. openarray -> seq)
       for i in 1 ..< x.params.len:
@@ -65,9 +65,14 @@ macro autograd*(head, body: untyped): untyped =
         continue
 
       # Simply assign non-tuples
-      var resultExpr: NimNode
+      var
+        resultExpr: NimNode
+        requiresGradExpr: NimNode
+
       if x[0].kind == nnkIdent:
+        let inputIdent = x[0]
         resultExpr = quote do: `resultIdent`[`resultIndex`] 
+        requiresGradExpr = quote do: `inputIdent`.requires_grad_internal
         inputIdents.add(x[0])
         inc resultIndex
 
@@ -81,6 +86,10 @@ macro autograd*(head, body: untyped): untyped =
         for i, inputIdent in x[0]:
           inputIdent.expectKind(nnkIdent)
           resultExpr.add quote do: `resultIdent`[`resultIndex`]
+          requiresGradExpr =
+            if requiresGradExpr == nil: quote do: `inputIdent`.requires_grad_internal
+            else: quote do: `requiresGradExpr` or `inputIdent`.requires_grad_internal
+
           inputIdents.add(inputIdent)
           backwardBody.add quote do:
             `gradInputMaskIdent`[`i`] = `inputIdent`.requires_grad_internal
@@ -89,11 +98,12 @@ macro autograd*(head, body: untyped): untyped =
       let gradExpr = x[1]
 
       backwardBody.add quote do:
-        when type(`gradExpr`) isnot TensorList:
-          #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
-          `resultExpr` = `gradExpr`
-        else:
-          `resultIdent`= `gradExpr`
+        if `requiresGradExpr`:
+          when type(`gradExpr`) isnot TensorList:
+            #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
+            `resultExpr` = `gradExpr`
+          else:
+            `resultIdent`= `gradExpr`
 
   # No grads required
   if inputIdents.len == 0:
@@ -101,16 +111,13 @@ macro autograd*(head, body: untyped): untyped =
 
   # Propagate whether gradient is needed or not
   var
-    requiresGradExpr: NimNode
+    requiresAnyGradExpr: NimNode
     addInputsStmts = newStmtList()
 
   for i, inputIdent in inputIdents:
-    if i == 0:
-      requiresGradExpr = quote do:
-        `inputIdent`.requires_grad_internal
-    else:
-      requiresGradExpr = quote do:
-        `requiresGradExpr` or `inputIdent`.requires_grad_internal
+    requiresAnyGradExpr =
+      if i == 0: quote do: `inputIdent`.requires_grad_internal
+      else: quote do: `requiresAnyGradExpr` or `inputIdent`.requires_grad_internal
 
     # Make statements to add the differential inputs to `grad_fn.inputs`
     # TODO: Optimize this, so it doesn't do multiple `add`s for single Tensors,
@@ -120,7 +127,7 @@ macro autograd*(head, body: untyped): untyped =
 
   forwardBody.add quote do:
     when not defined inference:
-      if is_grad_enabled() and `requiresGradExpr`:
+      if is_grad_enabled() and `requiresAnyGradExpr`:
 
         let `gradFnSym` = new BackwardFunction
         `gradFnSym`.apply = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =

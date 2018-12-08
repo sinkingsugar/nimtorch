@@ -99,6 +99,14 @@ const customNames = [
   "conv_transpose2d",
   "conv_transpose3d",
 
+  "thnn_conv_transpose2d",
+  "thnn_conv_transpose3d",
+  "thnn_conv2d",
+  "thnn_conv_depthwise2d",
+  "thnn_conv3d",
+  "thnn_conv_dilated2d",
+  "thnn_conv_dilated3d",
+
   "gru_cell",
 
   "max_pool1d",
@@ -321,7 +329,7 @@ block declarations:
         # For tensor procs we don't add `self` parameter to the native call
         if kind != Tensor or argName != "self":
           if nimType == "Tensor":
-            argsStr2 &= ", $1.tensor" % [argName]
+            argsStr2 &= ", $1.toATensor()" % [argName]
           elif nimType == "IntList":
             argsStr2 &= ", $1.toAIntList()" % [argName]
           elif nimType == "TensorList":
@@ -409,7 +417,11 @@ block declarations:
 
         if node.hasKey("inplace") and node["inplace"].getBool():
           procInfo.isInplace = true
-          convertStr = ".to(void); self"
+          # For inplace procs, return the input tensor, except if there is no return type
+          if procInfo.nimReturnType == "void":
+            convertStr = ".to(void)"
+          else:
+            convertStr = ".to(void); self"
 
         case kind:
           of Tensor:
@@ -665,10 +677,11 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
           # TODO: Properly handle "training ? A : B"
           nimLikeStr = nimLikeStr.replacef(re"^(.*)\?(.*):(.*)$", "$2")
 
-          if names.len == 1:
-            bodyText &= fmt"firstOrSelf({nimLikeStr})" & "\n"
-          else:
-            bodyText &= fmt"{nimLikeStr}" & "\n"
+          # Not needed anymore, it seems
+          # if names.len == 1:
+          #   bodyText &= fmt"firstOrSelf({nimLikeStr})" & "\n"
+          # else:
+          bodyText &= fmt"{nimLikeStr}" & "\n"
 
       if hasError:
         echo "Ignoring derivative (not implemented or error): ", name
@@ -731,10 +744,10 @@ template check(body: untyped): untyped =
 # nim c -r torch/generator.nim
 import math
 const M_PI = math.PI
-  
-template firstOrSelf(self: tuple): untyped = self[0]
-template firstOrSelf(self: not tuple): untyped = self
 """
+# template firstOrSelf(self: tuple): untyped = self[0]
+# template firstOrSelf(self: not tuple): untyped = self
+# """
 
   for info in generatedProcs:
     let pragma = if info.isInplace: ", discardable" else: ""

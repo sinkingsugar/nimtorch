@@ -2,10 +2,14 @@ import ../../torch
 import strformat
 
 proc linear*(input, weight: Tensor; bias: Tensor = nil): Tensor {.inline.} =
-  # Change from PyTorch: Transpose on the last 2 dimensions, so stacked models are supported
-  result = input.matmul(weight.transpose(-2, -1))
-  if not bias.isNil:
-    result = result + bias
+  if input.dim() == 2 and not bias.isNil:
+    # fused op is marginally faster
+    return addmm(bias, input, weight.t())
+  else:
+    # Change from PyTorch: Transpose on the last 2 dimensions, so stacked models are supported
+    result = input.matmul(weight.transpose(-2, -1))
+    if not bias.isNil:
+      result = result + bias
 
 proc bilinear*(input1, input2, weight: Tensor; bias: Tensor = nil): Tensor =
 
@@ -171,6 +175,7 @@ proc gru_cell*(input, hidden, w_ih, w_hh, b_ih, b_hh: Tensor): Tensor =
 
     reset_gate = sigmoid(chunked_igates[0] + chunked_hgates[0])
     input_gate = sigmoid(chunked_igates[1] + chunked_hgates[1])
+    #new_gate = tanh(chunked_igates[2] + reset_gate * chunked_hgates[2])
     new_gate = tanh(chunked_igates[2] + reset_gate * chunked_hgates[2])
 
   return new_gate + input_gate * (hidden - new_gate)
@@ -194,3 +199,27 @@ when isMainModule:
   
     res = linear(x, w_input)
   res.print()
+
+proc batch_norm(input, weight, bias, running_mean, running_var: Tensor; training: bool; momentum, eps: float; cudnn_enabled: bool): Tensor =
+  # let num_features = input.size(1)
+  # if (running_mean.defined()) {
+  #   check_dims_match_num_input_features("running_mean", num_features, running_mean.numel());
+  # } else if (!training) {
+  #   AT_ERROR("running_mean must be defined in evaluation mode");
+  # }
+  # if (running_var.defined()) {
+  #   check_dims_match_num_input_features("running_var", num_features, running_var.numel());
+  # } else if (!training) {
+  #   AT_ERROR("running_var must be defined in evaluation mode");
+  # }
+  # if (weight.defined()) {
+  #   check_dims_match_num_input_features("weight", num_features, weight.numel());
+  # }
+  # if (bias.defined()) {
+  #   check_dims_match_num_input_features("bias", num_features, bias.numel());
+  # }
+
+  return native_batch_norm(input, weight, bias, running_mean, running_var, training, momentum, eps)[0]
+
+proc batch_norm*(input, running_mean, running_var: Tensor; weight: Tensor = nil; bias: Tensor = nil; training: bool = false; momentum: float = 0.1; eps: float = 1e-5): Tensor =
+  batch_norm(input, weight, bias, running_mean, running_var, training, momentum, eps, false)

@@ -105,10 +105,13 @@ iterator items*(tensors: ATensors): ATensor {.inline.} =
   for i in 0 ..< tensors.len:
     yield tensors[i]
     
+proc toATensor*(self: Tensor): ATensor =
+  return if self.isNil: undefinedTensor else: self.tensor
+
 proc toATensors*(tensors: openarray[Tensor]): ATensors =
   result.resize(tensors.len.csize).to(void)
   for i, tensor in tensors:
-    result[i] = tensor.tensor
+    result[i] = tensor.toATensor()
 
 proc high*(v: AIntList): int {.inline.} = v.size().to(int) - 1
 
