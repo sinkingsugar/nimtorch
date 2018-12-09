@@ -182,7 +182,7 @@ when isMainModule:
     when defined cuda:
       if globalContext().hasCUDA().to(bool):
         echo "Cuda available"
-        echo "Cuda device ", globalContext().current_device().to(int)
+        doAssert dynamicCCall("at::detail::getCUDAHooks().getNumGPUs()").to(int) > 0
         var cudaTensor = zeros(@[7, 7, 7], device = device("cuda"), dtype = DoubleTensor)
         cudaTensor.print()
 
