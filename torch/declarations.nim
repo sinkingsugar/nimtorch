@@ -3358,6 +3358,12 @@ proc mm*(ty: TensorType; self: Tensor; mat2: Tensor): Tensor {.inline.}
 
 proc mm*(self: Tensor; mat2: Tensor): Tensor {.inline.}
 
+proc sparse_mm_impl*(ty: TensorType; sparse: Tensor; dense: Tensor): Tensor {.inline.} = 
+  check: ty[].atenMethod("_sparse_mm", sparse.toATensor(), dense.toATensor()).to(ATensor).newTensor()
+
+proc sparse_mm_impl*(sparse: Tensor; dense: Tensor): Tensor {.inline.} = 
+  check: atenFunction("at::_sparse_mm", sparse.toATensor(), dense.toATensor()).to(ATensor).newTensor()
+
 proc mode*(ty: TensorType; self: Tensor; dim: int = -1; keepdim: bool = false): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
   check: ty[].atenMethod("mode", self.toATensor(), dim, keepdim).to(StdTuple2[ATensor, ATensor]).toNimTuple().newTensors()
 
@@ -3878,11 +3884,11 @@ proc std*(ty: TensorType; self: Tensor; unbiased: bool = true): Tensor {.inline.
 proc std*(self: Tensor; unbiased: bool = true): Tensor {.inline.} = 
   check: self.tensor.atenMethod("std", unbiased).to(ATensor).newTensor()
 
-proc std*(ty: TensorType; self: Tensor; dim: int; unbiased: bool = true; keepdim: bool = false): Tensor {.inline.} = 
-  check: ty[].atenMethod("std", self.toATensor(), dim, unbiased, keepdim).to(ATensor).newTensor()
+proc std*(ty: TensorType; self: Tensor; dim: openarray[int]; unbiased: bool = true; keepdim: bool = false): Tensor {.inline.} = 
+  check: ty[].atenMethod("std", self.toATensor(), dim.toAIntList(), unbiased, keepdim).to(ATensor).newTensor()
 
-proc std*(self: Tensor; dim: int; unbiased: bool = true; keepdim: bool = false): Tensor {.inline.} = 
-  check: self.tensor.atenMethod("std", dim, unbiased, keepdim).to(ATensor).newTensor()
+proc std*(self: Tensor; dim: openarray[int]; unbiased: bool = true; keepdim: bool = false): Tensor {.inline.} = 
+  check: self.tensor.atenMethod("std", dim.toAIntList(), unbiased, keepdim).to(ATensor).newTensor()
 
 proc prod*(ty: TensorType; self: Tensor; dtype: ScalarType): Tensor {.inline.} = 
   check: ty[].atenMethod("prod", self.toATensor(), dtype).to(ATensor).newTensor()
@@ -4470,11 +4476,11 @@ proc meshgrid*(ty: TensorType; tensors: openarray[Tensor]): TensorList {.inline.
 proc meshgrid*(tensors: openarray[Tensor]): TensorList {.inline.} = 
   check: atenFunction("at::meshgrid", tensors.toATensors()).to(ATensors).newTensors()
 
-proc local_scalar_impl*(ty: TensorType; self: Tensor): float {.inline.} = 
-  check: ty[].atenMethod("_local_scalar", self.toATensor()).to(float)
+proc item*(ty: TensorType; self: Tensor): float {.inline.} = 
+  check: ty[].atenMethod("item", self.toATensor()).to(float)
 
-proc local_scalar_impl*(self: Tensor): float {.inline.} = 
-  check: self.tensor.atenMethod("_local_scalar").to(float)
+proc item*(self: Tensor): float {.inline.} = 
+  check: self.tensor.atenMethod("item").to(float)
 
 proc local_scalar_dense_impl*(ty: TensorType; self: Tensor): float {.inline.} = 
   check: ty[].atenMethod("_local_scalar_dense", self.toATensor()).to(float)
