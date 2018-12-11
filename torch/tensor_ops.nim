@@ -16,8 +16,6 @@ proc getIndex(self: Tensor; dim: int; index: BackwardsIndex): int {.inline.} =
 proc getIndex(self: Tensor; dim: int; index: int): int {.inline.} =
   return if index < 0: self.getIndex(dim, index.BackwardsIndex) else: index
 
-proc getIndex(self: Tensor; index: int): int = index 
-
 macro `[]`*(self: Tensor; args: varargs[typed]): Tensor =
   result = self
   for i, arg in args:
