@@ -3,7 +3,6 @@
 import fragments/ffi/cpp
 import torch_cpp
 import tensors
-import macros
 
 template atenMethod*(obj: CppObject, field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = obj.dynamicCppCall(field, args)
 template atenFunction*(field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = dynamicCCall(field, args)
@@ -12,16 +11,11 @@ template checkVoid(body: untyped): untyped =
   try: body
   except StdException as e: raiseAssert($e.what())
 
-macro check(body: untyped): untyped =
-  # We are generating the symbol here, so we can declare a var, and use it in a scope
-  # where it is not declared. This way, we can avoid explicitly specifying it's type
-  # with `type(body)`, significantly decreasing compilation time.
-  let r = genSym(nskVar)
-  return quote do:
-    try:
-      var `r` = `body`
-    except StdException as e: raiseAssert($e.what())
-    `r`
+template check(body: untyped): untyped =
+  var r: type(body)
+  try: r = body
+  except StdException as e: raiseAssert($e.what())
+  r
 
 proc th_set_impl_inplace*(ty: TensorType; self: Tensor; source: AStorage): Tensor {.inline, discardable.} = 
   check: ty[].atenMethod("_th_set_", self.toATensor(), source).to(void); self
