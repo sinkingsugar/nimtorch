@@ -7,7 +7,6 @@ include declarations
 
 type
   FullSlice* = distinct int
-  Index = int | BackwardsIndex | HSlice | FullSlice
   
 template _*: FullSlice = 0.FullSlice
 
@@ -23,32 +22,36 @@ macro `[]`*(self: Tensor; args: varargs[typed]): Tensor =
   result = self
   for i, arg in args:
     let argType = arg.getTypeInst()
-    result = quote do:
-      var x = `result`
-      when `argType` is int:
-        x = x.select(`i`, `arg`)
-      elif `argType` is BackwardsIndex:
-        x = x.select(`i`, `self`.getIndex(`i`, `arg`))
-      elif `argType` is HSlice:
+    
+    if argType == bindsym"int":
+      result = quote do: `result`.select(`i`, `arg`)
+
+    elif argType == bindSym"BackwardsIndex":
+      result = quote do: `result`.select(`i`, `self`.getIndex(`i`, `arg`))
+
+    elif argType == bindSym"FullSlice":
+      continue # Skip dimension
+
+    elif argType == bindSym"HSlice":
+      result = quote do:
         let a = `self`.getIndex(`i`, `arg`.a)
         let b = `self`.getIndex(`i`, `arg`.b)
-        x = x.narrow(`i`, a, b - a)
-      elif `argtype` isnot FullSlice:
-        # full slice, so skip dimension
-        {.error: "Unhandled type".}
-      x
+        `result`.narrow(`i`, a, b - a)      
 
-macro `[]=`*(self: Tensor; args: varargs[typed]; value: Tensor | SomeNumber): untyped =
+    else:
+      error("Invalid argument type " & (repr argType) & ". Expected int, BackwardsIndex, HSlice or _.", arg)
+
+macro `[]=`*(self: Tensor; args: varargs[typed]; value: Tensor): untyped =
   let viewExpr = nnkBracketExpr.newTree(self)
   for arg in args:
     viewExpr.add(arg)
+  return quote do: `viewExpr`.copy_inplace(`value`)
 
-  quote do:
-    let view = `viewExpr`
-    when type(`value`) is Tensor:
-      view.put_inplace(`value`)
-    else:
-      view.fill_inplace(`value`.float)
+macro `[]=`*(self: Tensor; args: varargs[typed]; value: SomeNumber): untyped =
+  let viewExpr = nnkBracketExpr.newTree(self)
+  for arg in args:
+    viewExpr.add(arg)
+  return quote do: `viewExpr`.fill_inplace(`value`.float)
 
 proc zeros*[T: int](size: varargs[T]): Tensor =
   zeros(size, defaultOptions())
