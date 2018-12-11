@@ -9,7 +9,7 @@ type
   FullSlice* = distinct int
   Index = int | BackwardsIndex | HSlice | FullSlice
   
-template _* = 0.FullSlice
+template _*: FullSlice = 0.FullSlice
 
 proc getIndex(self: Tensor; dim: int; index: BackwardsIndex): int {.inline.} =
   self.size(dim) - index.int
@@ -22,24 +22,33 @@ proc getIndex(self: Tensor; index: int): int = index
 macro `[]`*(self: Tensor; args: varargs[typed]): Tensor =
   result = self
   for i, arg in args:
+    let argType = arg.getTypeInst()
     result = quote do:
-      type argType = type(`arg`)
-      when argType is int:
-        `result`.select(`i`, `arg`)
-      elif argtype is BackwardsIndex:
-        `result`.select(`i`, `self`.getIndex(`i`, `arg`))
-      elif argtype is HSlice:
+      var x = `result`
+      when `argType` is int:
+        x = x.select(`i`, `arg`)
+      elif `argType` is BackwardsIndex:
+        x = x.select(`i`, `self`.getIndex(`i`, `arg`))
+      elif `argType` is HSlice:
         let a = `self`.getIndex(`i`, `arg`.a)
         let b = `self`.getIndex(`i`, `arg`.b)
-        `result`.narrow(`i`, a, b - a)
-      # else: full slice, so skip dimension
+        x = x.narrow(`i`, a, b - a)
+      elif `argtype` isnot FullSlice:
+        # full slice, so skip dimension
+        {.error: "Unhandled type".}
+      x
 
-template `[]=`*(self: Tensor; args: varargs[Index]; value: Tensor | SomeNumber): untyped =
-  let view = `self`[`args`]
-  when type(`value`) is Tensor:
-    view.put_inplace(`value`)
-  else:
-    view.fill_inplace(`value`.float)
+macro `[]=`*(self: Tensor; args: varargs[typed]; value: Tensor | SomeNumber): untyped =
+  let viewExpr = nnkBracketExpr.newTree(self)
+  for arg in args:
+    viewExpr.add(arg)
+
+  quote do:
+    let view = `viewExpr`
+    when type(`value`) is Tensor:
+      view.put_inplace(`value`)
+    else:
+      view.fill_inplace(`value`.float)
 
 proc zeros*[T: int](size: varargs[T]): Tensor =
   zeros(size, defaultOptions())
