@@ -6,9 +6,9 @@ import macros
 include declarations
 
 type
-  FullSlice* = distinct int
+  FullSlice* = object
   
-template _*: FullSlice = 0.FullSlice
+template _*: FullSlice = FullSlice()
 
 proc getIndex(self: Tensor; dim: int; index: BackwardsIndex): int {.inline.} =
   self.size(dim) - index.int
