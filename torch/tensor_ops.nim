@@ -5,6 +5,52 @@ import macros
 
 include declarations
 
+type
+  FullSlice* = object
+  
+template _*: FullSlice = FullSlice()
+
+proc getIndex(self: Tensor; dim: int; index: BackwardsIndex): int {.inline.} =
+  self.size(dim) - index.int
+
+proc getIndex(self: Tensor; dim: int; index: int): int {.inline.} =
+  return if index < 0: self.getIndex(dim, index.BackwardsIndex) else: index
+
+macro `[]`*(self: Tensor; args: varargs[typed]): Tensor =
+  result = self
+  for i, arg in args:
+    let argType = arg.getTypeInst()
+    
+    if argType == bindsym"int":
+      result = quote do: `result`.select(`i`, `arg`)
+
+    elif argType == bindSym"BackwardsIndex":
+      result = quote do: `result`.select(`i`, `self`.getIndex(`i`, `arg`))
+
+    elif argType == bindSym"FullSlice":
+      continue # Skip dimension
+
+    elif argType == bindSym"HSlice":
+      result = quote do:
+        let a = `self`.getIndex(`i`, `arg`.a)
+        let b = `self`.getIndex(`i`, `arg`.b)
+        `result`.narrow(`i`, a, b - a)      
+
+    else:
+      error("Invalid argument type " & (repr argType) & ". Expected int, BackwardsIndex, HSlice or _.", arg)
+
+macro `[]=`*(self: Tensor; args: varargs[typed]; value: Tensor): untyped =
+  let viewExpr = nnkBracketExpr.newTree(self)
+  for arg in args:
+    viewExpr.add(arg)
+  return quote do: `viewExpr`.copy_inplace(`value`)
+
+macro `[]=`*(self: Tensor; args: varargs[typed]; value: SomeNumber): untyped =
+  let viewExpr = nnkBracketExpr.newTree(self)
+  for arg in args:
+    viewExpr.add(arg)
+  return quote do: `viewExpr`.fill_inplace(`value`.float)
+
 proc zeros*[T: int](size: varargs[T]): Tensor =
   zeros(size, defaultOptions())
 
@@ -129,48 +175,11 @@ converter toFloat32*(a: Tensor): float32 {.inline, noinit.} =
   proc itemAsFloat(s: ATensor): float32 {.importcpp: "#.item<float>()".}
   return a.tensor.itemAsFloat() 
 
-template _*: int = -1
+proc `[]`*(self: Tensor; indices: Tensor): Tensor {.inline.} = self.toCpp()[indices].to(ATensor).newTensor()
+  #self.index_select([indices], indices)
 
-macro `[]`*(a: Tensor; args: varargs[int]): Tensor =
-  result = newStmtList()
-  
-  var resSym = gensym(nskVar)
-  result.add quote do:
-    var `resSym` = `a`
-  
-  var dimSkip = 0
-  for arg in args:
-    if arg.kind == nnkIntLit and arg.intVal == -1:
-      inc dimSkip
-    else:
-      result.add quote do:
-        `resSym` = `resSym`.select(`dimSkip`, `arg`)
-
-  result.add quote do:
-    `resSym`
-
-macro `[]=`*(a: Tensor; args: varargs[int]; value: Tensor | SomeNumber): untyped =
-  result = newStmtList()
-  
-  var resSym = gensym(nskVar)
-  result.add quote do:
-    var `resSym` = `a`
-  
-  var dimSkip = 0
-  for arg in args:
-    if arg.kind == nnkIntLit and arg.intVal == -1:
-      inc dimSkip
-    else:
-      result.add quote do:
-        `resSym` = `resSym`.select(`dimSkip`, `arg`)
-
-  result.add quote do:
-    # `arange` doesn't produce the right tensor type
-    let indexTensor = arange(0.float, `resSym`.size(0).float, LongTensor).toType(ScalarType.kLong)
-    when type(`value`) is Tensor:
-      `resSym`.index_put_inplace([indexTensor], `value`)
-    else:
-      `resSym`.index_put_inplace([indexTensor], full_like(`resSym`, `value`.float, `resSym`.options()))
+proc `[]=`*(self: Tensor; indices: Tensor; value: Tensor) {.inline.} =
+  self.index_put_inplace([indices], value)
 
 macro chunk*(self: Tensor; chunks: static int; dim: int): untyped =
   var tensors = genSym()

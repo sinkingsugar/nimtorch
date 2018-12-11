@@ -298,18 +298,6 @@ proc dim*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(i
 
 proc is_contiguous*(a: Tensor): bool {.inline.} = a.tensor.is_contiguous().to(bool)
 
-proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
-  newTensor a.tensor.toCpp()[index].to(ATensor)
-
-proc `[]=`*(a: Tensor; index: int; b: Tensor) {.inline.} =
-  a.tensor.toCpp()[index] = b.tensor
-
-proc `[]`*(a: Tensor; index: Tensor): Tensor {.inline, noinit.} =
-  newTensor a.tensor.toCpp()[index.tensor].to(ATensor)
-
-proc `[]=`*(a: Tensor; index: Tensor; b: Tensor) {.inline.} =
-  a.tensor.toCpp()[index.tensor] = b.tensor
-
 proc `$`*(a: Tensor): string {.inline, noinit.} =
   var sstream = cppinit(OStringStream)
   dynamicCCall("at::print", sstream, a.tensor, 80).to(void)
