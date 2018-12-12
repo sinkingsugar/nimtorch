@@ -48,7 +48,7 @@ proc BatchNorm*(num_features: int; eps: float = 1e-5; momentum: float = 0.1; aff
 
 method parameters*(m: BatchNormModule): seq[Tensor] =
   if m.affine:
-    result.add([m.weight, m.bias])
+    result.add([m.bias, m.weight]) # [beta, gamma]
   if m.track_running_stats:
     result.add([m.running_mean, m.running_var])
 
