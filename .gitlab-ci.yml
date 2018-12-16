@@ -53,7 +53,7 @@ prepare:aten:fast:
     variables:
       - $FETCH_PYTORCH == "false"
 
-build:aten:cuda9.2:
+build:aten:cuda10.0:
   stage: build
   script:
     # Clean up docker - make sure we got space
@@ -64,12 +64,11 @@ build:aten:cuda9.2:
     - cd docker
     - sed -i -r "s/const version\* = "'"'"[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+"'"'"/const version* = "'"'"`cat version.txt`"'"'"/g" ../torch/torch_cpp.nim
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_lite/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
-    - docker pull nvidia/cuda:9.2-devel-ubuntu18.04
-    - docker build -f Dockerfile-aten-cuda9.2 -t docker_aten_cuda92 --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+    - docker pull nvidia/cuda:10.0-devel-ubuntu18.04
+    - docker build -f Dockerfile-aten-cuda10.0 -t docker_aten_cuda10 --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   dependencies:
     - prepare:aten:merged
     - prepare:aten:fast
@@ -80,32 +79,9 @@ build:aten:cuda9.2:
       - torch/torch_cpp.nim
       - docker/version.txt
       - docker/conda/aten/meta.yaml
-      - docker/conda/aten_cuda10.0/meta.yaml
+      - docker/conda/aten_lite/meta.yaml
       - docker/conda/aten_wasm/meta.yaml
       - conda/nimtorch/meta.yaml
-  tags:
-    - LINUX, DOCKER
-  only:
-    refs:
-      - schedules
-    variables:
-      - $BUILD_PYTORCH == "true"
-
-build:aten:cuda10.0:
-  stage: build
-  script:
-    # Clean up docker - make sure we got space
-    - docker rm $(docker ps -q -f status=exited) || true
-    - docker volume rm $(docker volume ls -qf dangling=true) || true
-    - docker rmi $(docker images --filter "dangling=true" -q --no-trunc) || true
-    # Build
-    - cd docker
-    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_cuda10.0/meta.yaml
-    - docker pull nvidia/cuda:10.0-devel-ubuntu18.04
-    - docker build -f Dockerfile-aten-cuda10.0 -t docker_aten_cuda10 --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
-  dependencies:
-    - prepare:aten:merged
-    - prepare:aten:fast
   tags:
     - LINUX, DOCKER
   only:
@@ -218,16 +194,16 @@ build:aten:macos:
 test:nimtorch:native:
   stage: test
   script:
-    - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test-cuda9.2 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - docker run --name test_nimtorch_native -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test
-    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_clang
+    - docker build -f docker/Dockerfile-tests-cuda10.0 -t nimtorch-test-cuda10.0 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
+    - docker run --name test_nimtorch_native -t -u`id -u`:`id -g` nimtorch-test-cuda10.0:latest nimble test
+    - docker run --rm -t -u`id -u`:`id -g` nimtorch-test-cuda10.0:latest nimble test_clang
     - docker cp test_nimtorch_native:/home/tester/nimtorch/torch `pwd`/
   after_script:
     - git clean -x -d -f
     - docker stop test_nimtorch_native || true
     - docker rm test_nimtorch_native || true
   dependencies:
-    - build:aten:cuda9.2
+    - build:aten:cuda10.0
   artifacts:
     paths:
       - torch/
@@ -239,10 +215,6 @@ test:nimtorch:native:
 test:nimtorch:cuda:
   stage: test
   script:
-    # Cuda 9.2
-    - docker build -f docker/Dockerfile-tests-cuda9.2 -t nimtorch-test-cuda9.2 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
-    - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_cuda
-    - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` nimtorch-test-cuda9.2:latest nimble test_clang_cuda
     # Cuda 10.0
     - docker build -f docker/Dockerfile-tests-cuda10.0 -t nimtorch-test-cuda10.0 --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
     - docker run --runtime=nvidia --rm -t -u`id -u`:`id -g` nimtorch-test-cuda10.0:latest nimble test_cuda
@@ -250,7 +222,6 @@ test:nimtorch:cuda:
   after_script:
     - git clean -x -d -f
   dependencies:
-    - build:aten:cuda9.2
     - build:aten:cuda10.0
   tags:
     - LINUX, DOCKER, DOCKERNVIDIA

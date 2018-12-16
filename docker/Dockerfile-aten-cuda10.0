@@ -55,7 +55,7 @@ RUN cd && cd conda && \
 source activate deps && \
 export PATH=$PATH:/root/miniconda3/bin && \
 export ATEN=/root/pytorch/built/output && \
-conda build aten_cuda10.0
+conda build aten
 
 ARG TOKEN
 
