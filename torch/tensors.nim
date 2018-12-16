@@ -191,7 +191,6 @@ proc toATenType*(kind: TensorKind): ScalarType {.inline.} =
   of ShortTensor: return ScalarType.kShort
   of IntTensor: return ScalarType.kInt
   of LongTensor: return ScalarType.kLong
-  else: raiseAssert("Unknown type")
 
 proc defaultOptions*(): TensorOptions =
   var opts: TensorOptions
