@@ -1606,18 +1606,6 @@ proc thnn_softshrink_backward_impl*(ty: TensorType; grad_output: Tensor; self: T
 proc thnn_softshrink_backward_impl*(grad_output: Tensor; self: Tensor; lambd: float): Tensor {.inline.} = 
   atenFunction(ATensor, "at::_thnn_softshrink_backward", grad_output.toATensor(), self.toATensor(), lambd).newTensor()
 
-proc thnn_adaptive_avg_pool2d_impl*(ty: TensorType; self: Tensor; output_size: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_thnn_adaptive_avg_pool2d_forward", self.toATensor(), output_size.toAIntList()).newTensor()
-
-proc thnn_adaptive_avg_pool2d_impl*(self: Tensor; output_size: openarray[int]): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_thnn_adaptive_avg_pool2d_forward", self.toATensor(), output_size.toAIntList()).newTensor()
-
-proc thnn_adaptive_avg_pool2d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_thnn_adaptive_avg_pool2d_backward", grad_output.toATensor(), self.toATensor()).newTensor()
-
-proc thnn_adaptive_avg_pool2d_backward_impl*(grad_output: Tensor; self: Tensor): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_thnn_adaptive_avg_pool2d_backward", grad_output.toATensor(), self.toATensor()).newTensor()
-
 proc thnn_adaptive_avg_pool3d_impl*(ty: TensorType; self: Tensor; output_size: openarray[int]): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "_thnn_adaptive_avg_pool3d_forward", self.toATensor(), output_size.toAIntList()).newTensor()
 
@@ -3506,6 +3494,12 @@ proc pinverse*(ty: TensorType; self: Tensor; rcond: float64): Tensor {.inline.} 
 proc pinverse*(self: Tensor; rcond: float64): Tensor {.inline.} = 
   self.tensor.atenMethod(ATensor, "pinverse", rcond).newTensor()
 
+proc scalar_tensor*(ty: TensorType; s: float; options: TensorOptions = defaultOptions()): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "scalar_tensor", s, options).newTensor()
+
+proc scalar_tensor*(s: float; options: TensorOptions = defaultOptions()): Tensor {.inline.} = 
+  atenFunction(ATensor, "at::scalar_tensor", s, options).newTensor()
+
 proc rand*(ty: TensorType; size: openarray[int]; options: TensorOptions = defaultOptions()): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "rand", size.toAIntList(), options).newTensor()
 
@@ -5037,6 +5031,18 @@ proc triu*(self: Tensor; diagonal: int = 0): Tensor {.inline.}
 proc tril*(ty: TensorType; self: Tensor; diagonal: int = 0): Tensor {.inline.}
 
 proc tril*(self: Tensor; diagonal: int = 0): Tensor {.inline.}
+
+proc tril_indices*(ty: TensorType; row: int; col: int; offset: int = 0; options: TensorOptions): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "tril_indices", row, col, offset, options).newTensor()
+
+proc tril_indices*(row: int; col: int; offset: int = 0; options: TensorOptions): Tensor {.inline.} = 
+  atenFunction(ATensor, "at::tril_indices", row, col, offset, options).newTensor()
+
+proc triu_indices*(ty: TensorType; row: int; col: int; offset: int = 0; options: TensorOptions): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "triu_indices", row, col, offset, options).newTensor()
+
+proc triu_indices*(row: int; col: int; offset: int = 0; options: TensorOptions): Tensor {.inline.} = 
+  atenFunction(ATensor, "at::triu_indices", row, col, offset, options).newTensor()
 
 proc trace*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "trace", self.toATensor()).newTensor()
