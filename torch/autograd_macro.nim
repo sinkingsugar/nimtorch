@@ -19,6 +19,7 @@ macro autograd*(head, body: untyped): untyped =
 
   let
     name = head
+    nameText = $name
     gradFnSym = genSym(nskLet)
     resultIdent = ident"result"
     forwardResultIdent = ident"fwd_result"
@@ -79,6 +80,8 @@ macro autograd*(head, body: untyped): untyped =
         backwardBody.add quote do:
           if `requiresGradExpr`:
             `resultIdent`.add(`gradExpr`)
+          else:
+            `resultIdent`.add(nil)
 
         inc resultIndex
 
