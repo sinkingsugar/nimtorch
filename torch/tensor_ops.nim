@@ -18,7 +18,11 @@ proc getIndex(self: Tensor; dim: int; index: int): int {.inline.} =
 
 macro `[]`*(self: Tensor; args: varargs[typed]): Tensor =
   result = self
-  for i, arg in args:
+
+  # `slice` squeezes one dimension, while `narrow`/skipping don't
+  var i = 0
+
+  for arg in args:
     let argType = arg.getTypeInst()
     
     if argType == bindsym"int":
@@ -28,13 +32,15 @@ macro `[]`*(self: Tensor; args: varargs[typed]): Tensor =
       result = quote do: `result`.select(`i`, `self`.getIndex(`i`, `arg`))
 
     elif argType == bindSym"FullSlice":
+      inc i
       continue # Skip dimension
 
     elif argType == bindSym"HSlice":
       result = quote do:
         let a = `self`.getIndex(`i`, `arg`.a)
         let b = `self`.getIndex(`i`, `arg`.b)
-        `result`.narrow(`i`, a, b - a)      
+        `result`.narrow(`i`, a, b - a)
+      inc i  
 
     else:
       error("Invalid argument type " & (repr argType) & ". Expected int, BackwardsIndex, HSlice or _.", arg)

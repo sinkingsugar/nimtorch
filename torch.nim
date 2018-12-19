@@ -171,6 +171,7 @@ when isMainModule:
     assert equal(sliceTest[_, 0], tensor([1.0, 4.0]))
     assert equal(sliceTest[_, ^1], tensor([3.0, 6.0]))
     assert equal(sliceTest[_, 1..^1], tensor([[2.0], [5.0]]))
+    assert sliceTest[1, 1].toFloat32 == 5.0
 
     # Test copying to slice
     var putTest = zeros_like(sliceTest)
