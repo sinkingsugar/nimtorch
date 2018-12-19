@@ -7,9 +7,9 @@ source:
 
 requirements:
   run:
-    - mkl # [linux or win]
-    - mkl-include # [linux or win]
-    - intel-openmp # [linux or win]
+    - mkl # [linux]
+    - mkl-include # [linux]
+    - intel-openmp # [linux]
 
 build:
   script_env:
