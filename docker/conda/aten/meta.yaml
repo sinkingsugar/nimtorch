@@ -1,15 +1,13 @@
 package:
   name: aten
-  version: "2018.12.01.1763"
+  version: "2018.12.19.1881"
 
 source:
   path: ./
 
 requirements:
   run:
-    - mkl # [linux]
-    - mkl-include # [linux]
-    - intel-openmp # [linux]
+    - mkl # [linux or win]
 
 build:
   script_env:

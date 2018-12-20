@@ -191,7 +191,6 @@ proc toATenType*(kind: TensorKind): ScalarType {.inline.} =
   of ShortTensor: return ScalarType.kShort
   of IntTensor: return ScalarType.kInt
   of LongTensor: return ScalarType.kLong
-  else: raiseAssert("Unknown type")
 
 proc defaultOptions*(): TensorOptions =
   var opts: TensorOptions
@@ -298,18 +297,6 @@ proc dim*(a: Tensor): int {.inline, noinit.} = a.tensor.dynamicCppCall(dim).to(i
 
 proc is_contiguous*(a: Tensor): bool {.inline.} = a.tensor.is_contiguous().to(bool)
 
-proc `[]`*(a: Tensor; index: int): Tensor {.inline, noinit.} =
-  newTensor a.tensor.toCpp()[index].to(ATensor)
-
-proc `[]=`*(a: Tensor; index: int; b: Tensor) {.inline.} =
-  a.tensor.toCpp()[index] = b.tensor
-
-proc `[]`*(a: Tensor; index: Tensor): Tensor {.inline, noinit.} =
-  newTensor a.tensor.toCpp()[index.tensor].to(ATensor)
-
-proc `[]=`*(a: Tensor; index: Tensor; b: Tensor) {.inline.} =
-  a.tensor.toCpp()[index.tensor] = b.tensor
-
 proc `$`*(a: Tensor): string {.inline, noinit.} =
   var sstream = cppinit(OStringStream)
   dynamicCCall("at::print", sstream, a.tensor, 80).to(void)
@@ -320,42 +307,50 @@ proc `$`*(a: Tensor): string {.inline, noinit.} =
 
 proc print*(a: Tensor) = echo a
 
-proc toTensor*[T](s: openarray[T], size: varargs[int]): Tensor {.inline.} =
+proc toTensor*[T](p: ptr T, size: varargs[int]): Tensor {.inline.} =
   let shape = size.toAIntList()
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, unsafeAddr(s[0]), shape).to(ATensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, p, shape).to(ATensor)
   
   result = newTensor ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc toTensor*[T](s: openarray[T], size: varargs[int]; device: Device): Tensor {.inline.} =
+proc toTensor*[T](p: ptr T, size: varargs[int]; device: Device): Tensor {.inline.} =
   let shape = size.toAIntList()
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, unsafeAddr(s[0]), shape).to(ATensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, p, shape).to(ATensor)
   
   # finally write into a tensor
   case device:
   of Device.CUDA: result = newTensor ACUDA(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
   of Device.CPU: result = newTensor ACPU(T.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc toTensor*[T](s: openarray[T], size: varargs[int]; dtype: TensorKind): Tensor {.inline.} =
+proc toTensor*[T](p: ptr T, size: varargs[int]; dtype: TensorKind): Tensor {.inline.} =
   let shape = size.toAIntList()
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, unsafeAddr(s[0]), shape).to(ATensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, p, shape).to(ATensor)
 
   result = newTensor ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
 
-proc toTensor*[T](s: openarray[T], size: varargs[int]; dtype: TensorKind; device: Device): Tensor {.inline.} =
+proc toTensor*[T](p: ptr T, size: varargs[int]; dtype: TensorKind; device: Device): Tensor {.inline.} =
   let shape = size.toAIntList()
   
   # create a temporary CPU tensor with our GCed data
-  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, unsafeAddr(s[0]), shape).to(ATensor)
+  var tmp = ACPU(T.toATenType()).dynamicCppCall(tensorFromBlob, p, shape).to(ATensor)
   
   case device:
     of Device.CUDA: result = newTensor ACUDA(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
     of Device.CPU: result = newTensor ACPU(dtype.toATenType()).dynamicCppCall(copy, tmp).to(ATensor)
+
+proc toTensor*[T](s: openarray[T], size: varargs[int]): Tensor {.inline.} = toTensor(unsafeAddr(s[0]), size)
+
+proc toTensor*[T](s: openarray[T], size: varargs[int]; device: Device): Tensor {.inline.} = toTensor(unsafeAddr(s[0]), size, device)
+
+proc toTensor*[T](s: openarray[T], size: varargs[int]; dtype: TensorKind): Tensor {.inline.} = toTensor(unsafeAddr(s[0]), size, dtype)
+
+proc toTensor*[T](s: openarray[T], size: varargs[int]; dtype: TensorKind; device: Device): Tensor {.inline.} = toTensor(unsafeAddr(s[0]), size, dtype, device)
 
 proc internalManualSeed(seed: int) =
   globalContext().defaultGenerator(DeviceTypeCPU).manualSeed(seed).to(void)

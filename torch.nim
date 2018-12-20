@@ -187,25 +187,31 @@ when isMainModule:
     
     echo tos
     froms.print()
+    
+    # Test slicing
+    let sliceTest = tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+    assert equal(sliceTest[0], tensor([1.0, 2.0, 3.0]))
+    assert equal(sliceTest[_, 0], tensor([1.0, 4.0]))
+    assert equal(sliceTest[_, ^1], tensor([3.0, 6.0]))
+    assert equal(sliceTest[_, 1..^1], tensor([[2.0], [5.0]]))
+    assert sliceTest[1, 1].toFloat32 == 5.0
 
-    var accessorsTest = zeros(@[5, 2, 3])
-    # echo accessorsTest.sizes()[0]
-    # var act1s = accessorsTest.select(1, 0)
-    # var act2s = accessorsTest.select(1, 1)
-    var act1 = accessorsTest[_, 0]
-    var act2 = accessorsTest[_, 1]
-    # var indexTensor = range(0.float, 4.float, LongTensor)
-    # act1.index_put_inplace([indexTensor], full_like(act1, 10.float))
-    # act2.index_put_inplace([indexTensor], full_like(act1, 100.float))
-    accessorsTest[_, 0] = 10
-    accessorsTest[_, 1] = 100
-    accessorsTest[_, _, 2] = 1020
-    echo accessorsTest
+    # Test copying to slice
+    var putTest = zeros_like(sliceTest)
+    putTest[0] = tensor([1.0, 2.0, 3.0])
+    putTest[_, 0] = tensor([1.0, 4.0])
+    putTest[_, ^1] = tensor([3.0, 6.0])
+    putTest[_, 1..^1] = tensor([[2.0], [5.0]])
+    assert equal(sliceTest, putTest)
+
+    # Test filling slice
+    putTest[1] = 7.0
+    assert equal(putTest, tensor([[1.0, 2.0, 3.0], [7.0, 7.0, 7.0]]))
     
     when defined cuda:
       if globalContext().hasCUDA().to(bool):
         echo "Cuda available"
-        echo "Cuda device ", globalContext().current_device().to(int)
+        doAssert dynamicCCall("at::detail::getCUDAHooks().getNumGPUs").to(int) > 0
         var cudaTensor = zeros(@[7, 7, 7], device = device("cuda"), dtype = DoubleTensor)
         cudaTensor.print()
 

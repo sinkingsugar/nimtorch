@@ -1,6 +1,9 @@
 import ../../torch
 import strformat
 
+proc relu6*(input: Tensor): Tensor {.inline.} =
+  input.hardtanh(0.0, 6.0)
+
 proc linear*(input, weight: Tensor; bias: Tensor = nil): Tensor {.inline.} =
   if input.dim() == 2 and not bias.isNil:
     # fused op is marginally faster
@@ -218,7 +221,7 @@ proc batch_norm(input, weight, bias, running_mean, running_var: Tensor; training
   # if (bias.defined()) {
   #   check_dims_match_num_input_features("bias", num_features, bias.numel());
   # }
-
+  
   return native_batch_norm(input, weight, bias, running_mean, running_var, training, momentum, eps)[0]
 
 proc batch_norm*(input, running_mean, running_var: Tensor; weight: Tensor = nil; bias: Tensor = nil; training: bool = false; momentum: float = 0.1; eps: float = 1e-5): Tensor =
