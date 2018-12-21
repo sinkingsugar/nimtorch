@@ -9,7 +9,7 @@ skipFiles   = @[".gitlab-ci.yml", ".travis.yml"]
 
 # Deps
 
-requires "nim >= 0.19.1"
+requires "nim >= 0.19.9"
 requires "fragments >= 0.1.23"
 
 task test, "Run cpu tests":
