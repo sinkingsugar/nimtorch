@@ -142,6 +142,8 @@ proc toAIntList*(self: openarray[int]): AIntList =
     let temp = cppinit(AIntList, cast[ptr AInt64](unsafeaddr(converted[0])), self.len.csize)
     return temp
 
+proc newTensors*(value: SomeNumber): SomeNumber {.inline.} = value
+
 proc newTensors*(nativeTensor: ATensor): Tensor {.inline.} = nativeTensor.newTensor()
 
 proc newTensors*(nativeTensors: ATensors): TensorList {.inline.} =
