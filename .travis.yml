@@ -43,7 +43,7 @@ matrix:
     # Useful for debugging any issues with conda
     - conda info -a
     - export MACOSX_DEPLOYMENT_TARGET=10.13
-    - conda create -n nimtorch_testing -c fragcolor pyyaml pip nim=0.19.9 fragments=0.1.23 `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -E "s/aten /aten/g"`
+    - conda create -n nimtorch_testing -c fragcolor pyyaml pip nim=0.19.9 fragments=0.1.25 `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -E "s/aten /aten/g"`
     - export ATEN=$HOME/miniconda/envs/nimtorch_testing
     - export PATH="$PATH:$HOME/miniconda/envs/nimtorch_testing/bin"
     - pip install pyyaml # seems needed
