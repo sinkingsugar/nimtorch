@@ -23,7 +23,7 @@ ENV PATH=$PATH:/home/tester/miniconda3/bin
 
 ARG ATEN
 
-RUN conda install -c fragcolor nim=0.19.9 fragments=0.1.25 ${ATEN} wasm
+RUN conda install -c fragcolor nim=0.19.9.1 fragments=0.1.25 ${ATEN} wasm
 
 ENV ATEN=/home/tester/miniconda3
 
