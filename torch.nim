@@ -19,9 +19,10 @@ macro exportTorch*(procDef: untyped): untyped =
     )
 
   return quote do:
-    {.emit: """/*INCLUDESECTION*/
-    #include <emscripten.h>
-    """.}
+    when defined wasm:
+      {.emit: """/*INCLUDESECTION*/
+      #include <emscripten.h>
+      """.}
     `procDef`
 
 when defined cuda:
