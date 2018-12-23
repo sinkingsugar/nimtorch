@@ -1,0 +1,30 @@
+<html>
+    <head>
+        <script src="xor.js" async></script>
+    </head>
+    <body>
+        <script>
+            function torchLoaded() {
+                _xor_run();
+
+                var sizeofFloat = 4;
+
+                var inBuf = _malloc(2 * sizeofFloat);
+                var inWasmArray = HEAPF32.subarray(inBuf / 4, inBuf / 4 + 2);
+                inWasmArray[0] = 1.0;
+                inWasmArray[1] = 0.0;
+
+                var outBuf = _malloc(1 * sizeofFloat);
+                
+                _activate(inBuf, 2, outBuf, 1);
+                
+                var outWasmArray = HEAPF32.subarray(outBuf / 4, outBuf / 4 + 1);
+                console.log(outWasmArray);
+
+                _free(inBuf);
+                _free(outBuf);
+            }
+        </script>
+        <a>Open the debug console to see console output. (F12 in chrome)</a>
+    </body>
+</html>
