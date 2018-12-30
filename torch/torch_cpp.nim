@@ -117,9 +117,9 @@ else:
   when defined cuda:
     const hasMagma = staticExec("[ -f '" & atenPath & "/lib/libmagma.so" & "' ] && echo 'true' || echo 'false'")
     when hasMagma == "true":
-      {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda -lmagma -lcublas".}
+      {.passL: "-lcuda -lcublas -lmagma -lc10_cuda -lcaffe2_gpu -Wl,--no-as-needed".}
     else:
-      {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda".}
+      {.passL: "-lcuda -lc10_cuda -lcaffe2_gpu -Wl,--no-as-needed".}
   
   # Make sure we allow users to use rpath and be able find ATEN easier
   const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""

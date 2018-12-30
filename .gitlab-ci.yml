@@ -271,16 +271,16 @@ deploy:nimtorch:
     - sh scripts/diffcheck.sh
     # Commit and push on this branch
     - git commit --allow-empty -a -m "PyTorch upstream nightly success"
-    - git push ssh://git@gitlab.fragcolor.xyz/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
+    - git push ssh://git@git.fragcolor.xyz/fragcolor/nimtorch.git $CI_COMMIT_REF_NAME
     # Merge master on release
     - git checkout release
     - git reset --hard origin/release
     - git merge master
-    - git push ssh://git@gitlab.fragcolor.xyz/fragcolor/nimtorch.git release
+    - git push ssh://git@git.fragcolor.xyz/fragcolor/nimtorch.git release
     # Also push release on github
     - git push https://$GITHUB_LOGIN@github.com/fragcolor-xyz/nimtorch.git release
     # Finally trigger conda automations, aka: windows and macOS release builds
-    - curl -X POST -F token=$TRIGGER_TOKEN -F "ref=$CI_COMMIT_REF_NAME" -F "variables[TRIGGER]=CondaDeploy" -F "variables[PYTORCH_COMMIT]=`cat torch/commit.txt`" -F "variables[NIMTORCH_COMMIT]=`git rev-parse HEAD`" https://gitlab.fragcolor.xyz/api/v4/projects/32/trigger/pipeline
+    - curl -X POST -F token=$TRIGGER_TOKEN -F "ref=$CI_COMMIT_REF_NAME" -F "variables[TRIGGER]=CondaDeploy" -F "variables[PYTORCH_COMMIT]=`cat torch/commit.txt`" -F "variables[NIMTORCH_COMMIT]=`git rev-parse HEAD`" https://git.fragcolor.xyz/api/v4/projects/32/trigger/pipeline
   dependencies:
     - test:nimtorch:native
   tags:
