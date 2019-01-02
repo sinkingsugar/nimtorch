@@ -5,10 +5,6 @@ package:
 source:
   path: ./
 
-requirements:
-  run:
-    - openblas # [linux]
-
 build:
   script_env:
     - ATEN

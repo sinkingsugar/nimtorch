@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 RUN apt-get update && apt-get install -y build-essential git python3-pip libmpfr-dev libgmp-dev wget
 
@@ -31,7 +31,7 @@ git submodule update
 
 ENV PYTORCH_PYTHON=python3
 
-RUN conda create -n deps openblas cmake
+RUN conda create -n deps cmake
 
 RUN cd && \
 cd pytorch && \
