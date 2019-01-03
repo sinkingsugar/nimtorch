@@ -59,9 +59,6 @@ matrix:
     - mkdir cache
     - docker save docker_aten_pre | gzip > cache/cuda_prepared.tar.gz
     - aws s3 sync s3://cache.fragcolor.xyz/nimtorch-cache-cuda cache
-    cache:
-      directories:
-      - docker
   - stage: compile
     # if: branch = release
     name: "Compile ATEN static-cuda compile"
