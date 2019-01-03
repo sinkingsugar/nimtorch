@@ -50,8 +50,6 @@ matrix:
     name: "Compile ATEN static-lite"
     os: osx
     script:
-    - set -e
-    - set -v
     # go home
     - cd 
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
