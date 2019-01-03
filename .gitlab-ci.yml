@@ -138,12 +138,11 @@ build:aten:macos:
     - git clone -b fragcolor-devel "$PYTORCH" "pytorch" 2> /dev/null || (cd "pytorch"; git reset --hard HEAD; git clean -x -d -f; git pull)
     - cd pytorch
     - git reset --hard $PYTORCH_COMMIT
-    - git submodule init
-    - git submodule update
+    - git submodule update --init --recursive
     - mkdir built || true
     - cd built
     - cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
-    - make
+    - make -j 5
     - make install
     - make clean
     - cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
