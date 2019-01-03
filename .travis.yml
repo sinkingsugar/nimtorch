@@ -2,7 +2,7 @@ sudo: required
 
 env:
   global:
-    # include $HOME/.local/bin for `aws`
+    # for pip (--user)
     - PATH=$HOME/.local/bin:$PATH
 
 services:
@@ -17,7 +17,6 @@ cache:
   - $HOME/.conda/
 
 stages:
-  - prepare
   - compile
   - test
   - deploy
@@ -46,31 +45,6 @@ matrix:
     # Build
     - cd docker
     - docker build -f Dockerfile-aten-static-mkl -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
-  - stage: prepare
-    # if: branch = release
-    name: "Compile ATEN static-cuda prepare"
-    os: linux
-    script:
-    - set -e
-    - pip install --user awscli
-    # Build
-    - cd docker
-    - docker build -f Dockerfile-aten-static-cuda-prepare -t docker_aten_pre --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
-    - docker save docker_aten_pre | gzip > cuda_prepared.tar.gz
-    - aws --endpoint-url https://cache.fragcolor.xyz s3 cp cuda_prepared.tar.gz s3://nimtorch-cache-cuda/cuda_prepared.tar.gz
-  - stage: compile
-    # if: branch = release
-    name: "Compile ATEN static-cuda compile"
-    os: linux
-    script:
-    - set -e
-    - pip install --user awscli
-    # Build
-    - cd docker
-    - aws --endpoint-url https://cache.fragcolor.xyz s3 cp s3://nimtorch-cache-cuda/cuda_prepared.tar.gz cuda_prepared.tar.gz
-    - gzip -dc cuda_prepared.tar.gz | docker load
-    - docker build -f Dockerfile-aten-static-cuda-build -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
-    - aws --endpoint-url https://cache.fragcolor.xyz s3 rm s3://nimtorch-cache-cuda/cuda_prepared.tar.gz
   - stage: test
     name: "CPU Linux Tests"
     os: linux

@@ -43,4 +43,21 @@ RUN cd && \
 cd pytorch && \
 mkdir built && \
 cd built && \
-cmake -DUSE_MKLDNN=OFF -DUSE_MKL=OFF -DUSE_OPENMP=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
+cmake -DUSE_MKLDNN=OFF -DUSE_MKL=OFF -DUSE_OPENMP=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
+make install -j10 && \
+make clean && \
+cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
+
+# merge with magma
+RUN cp -r $MAGMA_HOME/* /root/pytorch/built/output/
+
+COPY conda /root/conda
+
+RUN cd && cd conda && \
+export PATH=$PATH:/root/miniconda3/bin && \
+export ATEN=/root/pytorch/built/output && \
+conda build aten
+
+ARG TOKEN
+
+RUN anaconda -t ${TOKEN} upload /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2

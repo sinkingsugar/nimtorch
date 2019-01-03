@@ -56,7 +56,7 @@ COPY conda /root/conda
 RUN cd && cd conda && \
 export PATH=$PATH:/root/miniconda3/bin && \
 export ATEN=/root/pytorch/built/output && \
-conda build aten
+conda build aten_cpu-static
 
 ARG TOKEN
 
