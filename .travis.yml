@@ -51,7 +51,7 @@ matrix:
     os: osx
     script:
     # go home
-    - cd 
+    - set +e && cd && set -e
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
@@ -64,21 +64,21 @@ matrix:
     - export PYTORCH_COMMIT=`cat torch/commit.txt`
     - export MACOSX_DEPLOYMENT_TARGET=10.13
     - git clone -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git
-    - cd pytorch
+    - set +e && cd pytorch && set -e
     - git reset --hard $PYTORCH_COMMIT
     - git submodule update --init --recursive
     - mkdir built
-    - cd built
+    - set +e && cd built && set -e
     - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
     - make -j 10
     - make install
     - make clean
     - cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
-    - cd ../..
+    - set +e && cd ../.. && set -e
     - export ATEN=`pwd`/pytorch/built/output
     # go back and build conda pkg + upload
-    - cd $TRAVIS_BUILD_DIR
-    - cd docker/conda
+    - set +e && cd $TRAVIS_BUILD_DIR && set -e
+    - set +e && cd docker/conda && set -e
     - conda build aten_lite
     - anaconda -t $CONDA_TOKEN upload ~/miniconda3/conda-bld/osx-64/aten-*.tar.bz2
   - stage: test
