@@ -12,6 +12,7 @@ cache:
   - $HOME/.conda/
 
 stages:
+  - prepare
   - compile
   - test
   - deploy
@@ -29,7 +30,6 @@ matrix:
     - set -e
     # Build
     - cd docker
-    - docker pull ubuntu:14.04
     - docker build -f Dockerfile-aten-static-lite -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   - stage: compile
     name: "Compile ATEN static-mkl"
@@ -38,17 +38,28 @@ matrix:
     - set -e
     # Build
     - cd docker
-    - docker pull ubuntu:16.04
     - docker build -f Dockerfile-aten-static-mkl -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
-  - stage: compile
-    name: "Compile ATEN static-cuda"
+  - stage: prepare
+    name: "Compile ATEN static-cuda prepare"
     os: linux
     script:
     - set -e
     # Build
     - cd docker
-    - docker pull nvidia/cuda:10.0-devel-ubuntu16.04
-    - docker build -f Dockerfile-aten-static-cuda -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+    - docker build -f Dockerfile-aten-static-cuda-prepare -t docker_aten_pre --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+    - docker save docker_aten_pre | gzip > docker/prepared.tar.gz
+    cache:
+      directories:
+      - docker
+  - stage: compile
+    name: "Compile ATEN static-cuda compile"
+    os: linux
+    script:
+    - set -e
+    # Build
+    - cd docker
+    - gzip -dc docker/prepared.tar.gz | docker load
+    - docker build -f Dockerfile-aten-static-cuda-build -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   - stage: test
     name: "CPU Linux Tests"
     os: linux

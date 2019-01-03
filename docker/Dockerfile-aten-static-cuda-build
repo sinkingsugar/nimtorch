@@ -1,0 +1,23 @@
+FROM docker_aten_pre
+
+# -DUSE_MKLDNN=OFF is off due to buggy JIT on my VM PC :-(
+RUN cd && \
+cd pytorch && \
+cd built && \
+make install -j10 && \
+make clean && \
+cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
+
+# merge with magma
+RUN cp -r $MAGMA_HOME/* /root/pytorch/built/output/
+
+COPY conda /root/conda
+
+RUN cd && cd conda && \
+export PATH=$PATH:/root/miniconda3/bin && \
+export ATEN=/root/pytorch/built/output && \
+conda build aten
+
+ARG TOKEN
+
+RUN anaconda -t ${TOKEN} upload /root/miniconda3/conda-bld/linux-64/aten-*.tar.bz2
