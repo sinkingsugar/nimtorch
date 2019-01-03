@@ -5,10 +5,6 @@ services:
 
 language: generic
 
-# os:
-#   - linux
-#   - osx
-
 cache:
   directories:
   - $HOME/.nimtorch/
