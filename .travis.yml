@@ -68,7 +68,7 @@ matrix:
     # Build
     - cd docker
     - aws --endpoint-url https://cache.fragcolor.xyz s3 cp s3://nimtorch-cache-cuda/cuda_prepared.tar.gz cuda_prepared.tar.gz
-    - gzip -dc cache/cuda_prepared.tar.gz | docker load
+    - gzip -dc cuda_prepared.tar.gz | docker load
     - docker build -f Dockerfile-aten-static-cuda-build -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
     - aws --endpoint-url https://cache.fragcolor.xyz s3 rm s3://nimtorch-cache-cuda/cuda_prepared.tar.gz
   - stage: test
