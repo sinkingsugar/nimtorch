@@ -51,6 +51,8 @@ matrix:
     os: osx
     script:
     - set -e
+    # go home
+    - cd 
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
@@ -62,9 +64,7 @@ matrix:
     - pip install typing
     - export PYTORCH_COMMIT=`cat torch/commit.txt`
     - export MACOSX_DEPLOYMENT_TARGET=10.13
-    - export PYTORCH=https://github.com/fragcolor-xyz/pytorch.git
-    - git clone -b fragcolor-devel "$PYTORCH" "pytorch" 2> /dev/null
-    - ls
+    - git clone -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git
     - cd pytorch
     - git reset --hard $PYTORCH_COMMIT
     - git submodule update --init --recursive
@@ -77,6 +77,8 @@ matrix:
     - cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
     - cd ../..
     - export ATEN=`pwd`/pytorch/built/output
+    # go back and build conda pkg + upload
+    - cd $TRAVIS_BUILD_DIR
     - cd docker/conda
     - conda build aten_lite
     - anaconda -t $CONDA_TOKEN upload ~/miniconda3/conda-bld/osx-64/aten-*.tar.bz2
