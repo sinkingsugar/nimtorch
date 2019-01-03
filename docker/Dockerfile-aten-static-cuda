@@ -1,4 +1,4 @@
-FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
+FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04
 
 RUN apt-get update && apt-get install -y build-essential git cmake python3-pip libmpfr-dev libgmp-dev wget curl
 
@@ -30,29 +30,26 @@ git submodule update --init --recursive
 
 ENV PYTORCH_PYTHON=python3
 
-RUN conda create -n deps mkl mkl-include intel-openmp
+# download magma 2.4.0 pre built using same docker images - static version
+RUN cd && curl -L -o magmalib.tar.gz "https://drive.google.com/uc?export=download&id=1xY1pDwlzKum55gH9tjzKG26DJR6lP_uX" && tar xzf magmalib.tar.gz
+ENV MAGMA_HOME=/root/libmagma
 
-# download magma 2.4.0 pre built using same docker images - dynamic version
-RUN cd && curl -L -o magmalib.tar.gz "https://drive.google.com/uc?export=download&id=1ABrWQxC9FxVSxa9tBx340jhsfg-4etjJ" && tar xzf magmalib.tar.gz
-ENV MAGMA_HOME=/root/output
-
+# -DUSE_MKLDNN=OFF is off due to buggy JIT on my VM PC :-(
 RUN cd && \
 cd pytorch && \
 mkdir built && \
 cd built && \
-source activate deps && \
-cmake -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DOpenMP_libiomp5_LIBRARY="libiomp5" -DOpenMP_CXX_LIB_NAMES="libiomp5" -DOpenMP_C_LIB_NAMES="libiomp5" -DOpenMP_EXE_LINKER_FLAGS="-liomp5 -L$CONDA_PREFIX/lib" -DOpenMP_CXX_FLAGS="-fopenmp" -DOpenMP_C_FLAGS="-fopenmp" -DUSE_MKLDNN=OFF -DUSE_MKL=ON -DBLAS=MKL -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
+cmake -DUSE_MKLDNN=OFF -DUSE_MKL=OFF -DUSE_OPENMP=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
 make install -j10 && \
 make clean && \
 cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
 
-# merge with magma lib
-RUN cp -r /root/output/* /root/pytorch/built/output/
+# merge with magma
+RUN cp -r $MAGMA_HOME/* /root/pytorch/built/output/
 
 COPY conda /root/conda
 
 RUN cd && cd conda && \
-source activate deps && \
 export PATH=$PATH:/root/miniconda3/bin && \
 export ATEN=/root/pytorch/built/output && \
 conda build aten

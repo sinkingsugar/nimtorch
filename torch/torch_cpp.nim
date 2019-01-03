@@ -55,11 +55,27 @@ else:
   when atenPath == "":
     {.error: "Please set $ATEN environment variable to point to the ATen installation path".}
 
+static:
+  # in any case, lets put aten in the path 
+  putEnv("ATEN", atenPath)
+
 cppincludes(atenPath & """/include""")
 cpplibpaths(atenPath & """/lib""")
 cpplibpaths(atenPath & """/lib64""")
 
 type AInt64* {.importcpp: "int64_t", header: "<stdint.h>".} = object
+
+when defined staticlibs:
+  # we use static libraries so the following code is needed to initialize at runtime properly
+  {.emit:"""
+#include <ATen/detail/CPUGuardImpl.h>
+namespace at {
+namespace detail {
+
+C10_REGISTER_GUARD_IMPL(CPU, CPUGuardImpl);
+
+}} // namespace at::detail
+  """.}
 
 when defined wasm:
   {.passC: "-std=c++11".}
@@ -108,23 +124,33 @@ elif defined osx:
 else:
   {.passC: "-std=c++11".}
 
-  const hasMkldnn = staticExec("[ -f '" & atenPath & "/lib/libmkldnn.so" & "' ] && echo 'true' || echo 'false'")
-  when hasMkldnn == "true":
-    {.passL: "-lcpuinfo -lsleef -pthread -lrt -lmkldnn -lc10 -lcaffe2".}
-  else:
+  when not defined staticlibs: # building using dynamic libraries
+    # MKLDNN is optional, let's check if it's available
+    when staticExec("[ -f '$ATEN/lib/libmkldnn.so' ] && echo 'true' || echo 'false'") == "true":
+      {.passL: "-lmkldnn".}
+    
+    # REQUIRED LIBS
     {.passL: "-lcpuinfo -lsleef -pthread -lrt -lc10 -lcaffe2".}
+
+    # Make sure we allow users to use rpath and be able find ATEN easier
+    const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
+    {.passL: atenEnvRpath.}
+    {.passL: """-Wl,-rpath,'$ORIGIN'""".}
   
-  when defined cuda:
-    const hasMagma = staticExec("[ -f '" & atenPath & "/lib/libmagma.so" & "' ] && echo 'true' || echo 'false'")
-    when hasMagma == "true":
-      {.passL: "-lcuda -lcublas -lmagma -lc10_cuda -lcaffe2_gpu -Wl,--no-as-needed".}
-    else:
-      {.passL: "-lcuda -lc10_cuda -lcaffe2_gpu -Wl,--no-as-needed".}
-  
-  # Make sure we allow users to use rpath and be able find ATEN easier
-  const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
-  {.passL: atenEnvRpath.}
-  {.passL: """-Wl,-rpath,'$ORIGIN'""".}
+  else: # building big static binary
+    # REQUIRED LIBS
+    {.passL: "$ATEN/lib/libcaffe2.a $ATEN/lib/libc10.a $ATEN/lib/libcpuinfo.a $ATEN/lib/libsleef.a $ATEN/lib/libclog.a".}
+    
+    # MKLDNN is optional, let's check if it's available
+    when staticExec("""[ -f "$ATEN/lib/libmkldnn.a" ] && echo 'true' || echo 'false'""") == "true":
+      {.passL: "$ATEN/lib/libmkldnn.a".}
+    
+    # MKL is very needed (no good performance without it) but optional, let's check if it's available
+    when staticExec("""[ -f "$ATEN/lib/libmkl_core.a" ] && echo 'true' || echo 'false'""") == "true":
+      {.passL: "-Wl,--start-group $ATEN/lib/libmkl_intel_lp64.a $ATEN/lib/libmkl_gnu_thread.a $ATEN/lib/libmkl_core.a -Wl,--end-group".}
+    
+    # REQUIRED FLAGS
+    {.passL: "-pthread -lrt -fopenmp".}
 
   when defined gperftools:
     {.passC: "-DWITHGPERFTOOLS -g".}

@@ -21,6 +21,33 @@ notifications:
 
 matrix:
   include:
+  - stage: compile
+    name: "Compile ATEN static-lite"
+    os: linux
+    script:
+    - set -e
+    # Build
+    - cd docker
+    - docker pull ubuntu:14.04
+    - docker build -f Dockerfile-aten-static-lite -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+  - stage: compile
+    name: "Compile ATEN static-mkl"
+    os: linux
+    script:
+    - set -e
+    # Build
+    - cd docker
+    - docker pull ubuntu:16.04
+    - docker build -f Dockerfile-aten-static-mkl -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
+  - stage: compile
+    name: "Compile ATEN static-cuda"
+    os: linux
+    script:
+    - set -e
+    # Build
+    - cd docker
+    - docker pull nvidia/cuda:10.0-devel-ubuntu16.04
+    - docker build -f Dockerfile-aten-static-cuda -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   - stage: test
     name: "CPU Linux Tests"
     os: linux
