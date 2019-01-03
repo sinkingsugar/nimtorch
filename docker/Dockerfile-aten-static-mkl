@@ -31,7 +31,7 @@ git submodule update --init --recursive
 ENV PYTORCH_PYTHON=python3
 
 RUN cd && \
-wget https://dist.ipfs.io/go-ipfs/v0.4.18/go-ipfs_v0.4.18_linux-arm64.tar.gz && \
+wget https://dist.ipfs.io/go-ipfs/v0.4.18/go-ipfs_v0.4.18_linux-amd64.tar.gz && \
 tar xzf go-ipfs_v0.4.18_linux-amd64.tar.gz && \
 go-ipfs/./ipfs init
 
