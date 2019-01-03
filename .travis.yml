@@ -5,15 +5,20 @@ services:
 
 language: generic
 
-os:
-  - linux
-  - osx
+# os:
+#   - linux
+#   - osx
 
 cache:
   directories:
   - $HOME/.nimtorch/
   - $HOME/.torch-folder/
   - $HOME/.conda/
+
+stages:
+  - compile
+  - test
+  - deploy
 
 notifications:
   slack:
