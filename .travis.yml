@@ -58,7 +58,7 @@ matrix:
     - docker build -f Dockerfile-aten-static-cuda-prepare -t docker_aten_pre --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
     - mkdir cache
     - docker save docker_aten_pre | gzip > cache/cuda_prepared.tar.gz
-    - aws s3 sync s3://cache.fragcolor.xyz/nimtorch-cache-cuda cache
+    - aws --endpoint-url https://cache.fragcolor.xyz s3 sync s3://nimtorch-cache-cuda cache
   - stage: compile
     # if: branch = release
     name: "Compile ATEN static-cuda compile"
@@ -69,10 +69,10 @@ matrix:
     # Build
     - cd docker
     - mkdir cache
-    - aws s3 sync s3://cache.fragcolor.xyz/nimtorch-cache-cuda cache
+    - aws --endpoint-url https://cache.fragcolor.xyz s3 sync s3://nimtorch-cache-cuda cache
     - gzip -dc cache/cuda_prepared.tar.gz | docker load
     - docker build -f Dockerfile-aten-static-cuda-build -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
-    - aws s3 rm --recursive s3://cache.fragcolor.xyz/nimtorch-cache-cuda
+    - aws --endpoint-url https://cache.fragcolor.xyz s3 rm --recursive s3://nimtorch-cache-cuda
   - stage: test
     name: "CPU Linux Tests"
     os: linux
