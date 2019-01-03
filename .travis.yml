@@ -58,7 +58,7 @@ matrix:
     - hash -r
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
-    - conda install pip cmake
+    - conda install pip cmake conda-build anaconda-client
     - pip install pyyaml
     - pip install typing
     - export PYTORCH_COMMIT=`cat torch/commit.txt`
