@@ -62,7 +62,8 @@ matrix:
     - pip install typing
     - export PYTORCH_COMMIT=`cat torch/commit.txt`
     - export MACOSX_DEPLOYMENT_TARGET=10.13
-    - git clone -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git
+    - export PYTORCH=https://github.com/fragcolor-xyz/pytorch.git
+    - git clone -b fragcolor-devel "$PYTORCH" "pytorch" 2> /dev/null
     - cd pytorch
     - git reset --hard $PYTORCH_COMMIT
     - git submodule update --init --recursive
