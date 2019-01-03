@@ -47,7 +47,7 @@ matrix:
     # Build
     - cd docker
     - docker build -f Dockerfile-aten-static-cuda-prepare -t docker_aten_pre --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
-    - docker save docker_aten_pre | gzip > docker/prepared.tar.gz
+    - docker save docker_aten_pre | gzip > prepared.tar.gz
     cache:
       directories:
       - docker
@@ -58,7 +58,7 @@ matrix:
     - set -e
     # Build
     - cd docker
-    - gzip -dc docker/prepared.tar.gz | docker load
+    - gzip -dc prepared.tar.gz | docker load
     - docker build -f Dockerfile-aten-static-cuda-build -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   - stage: test
     name: "CPU Linux Tests"
