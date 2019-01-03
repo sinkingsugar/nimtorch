@@ -188,6 +188,9 @@ test:nimtorch:native:
       - docker/
   tags:
     - LINUX, DOCKER
+  except:
+    changes:
+      - .travis.yml
 
 test:nimtorch:cuda:
   stage: test
@@ -202,6 +205,9 @@ test:nimtorch:cuda:
     - build:aten:cuda10.0
   tags:
     - LINUX, DOCKER, DOCKERNVIDIA
+  except:
+    changes:
+      - .travis.yml
 
 test:nimtorch:wasm:
   stage: test
@@ -214,6 +220,9 @@ test:nimtorch:wasm:
     - build:aten:wasm
   tags:
     - LINUX, DOCKER
+  except:
+    changes:
+      - .travis.yml
 
 test:nimtorch:macos:
   stage: test
@@ -232,6 +241,9 @@ test:nimtorch:macos:
     - build:aten:macos
   tags:
     - MACOS, CMAKE, PYTHON, PYYAML, CONDA
+  except:
+    changes:
+      - .travis.yml
 
 deploy:nimtorch:
   stage: deploy
