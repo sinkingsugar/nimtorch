@@ -31,12 +31,11 @@ git submodule update --init --recursive
 ENV PYTORCH_PYTHON=python3
 
 RUN cd && \
-wget https://dist.ipfs.io/go-ipfs/v0.4.18/go-ipfs_v0.4.18_linux-amd64.tar.gz && \
-tar xzf go-ipfs_v0.4.18_linux-amd64.tar.gz && \
-go-ipfs/./ipfs init
+wget https://dist.ipfs.io/ipget/v0.3.0/ipget_v0.3.0_linux-amd64.tar.gz && \
+tar xzf ipget_v0.3.0_linux-amd64.tar.gz
 
 # download mkl 2019.1
-RUN cd && go-ipfs/./ipfs daemon & go-ipfs/./ipfs cat QmeV3mKLyf5FYYipRD5JGTK7DZcFEVb1kHaBmB1mMMzyu5 > mkl.tar.gz && tar xzf mkl.tar.gz
+RUN cd && ipget/./ipget QmeV3mKLyf5FYYipRD5JGTK7DZcFEVb1kHaBmB1mMMzyu5 -o mkl.tar.gz && tar xzf mkl.tar.gz
 ENV MKL_DIR=/root/intel-mkl-2019.1/
 
 # -DUSE_MKLDNN=OFF is off due to buggy JIT on my VM PC :-(
