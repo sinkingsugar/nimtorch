@@ -56,9 +56,8 @@ matrix:
     # Build
     - cd docker
     - docker build -f Dockerfile-aten-static-cuda-prepare -t docker_aten_pre --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
-    - mkdir cache
-    - docker save docker_aten_pre | gzip > cache/cuda_prepared.tar.gz
-    - aws --endpoint-url https://cache.fragcolor.xyz s3 sync s3://nimtorch-cache-cuda cache
+    - docker save docker_aten_pre | gzip > cuda_prepared.tar.gz
+    - aws --endpoint-url https://cache.fragcolor.xyz s3 cp cuda_prepared.tar.gz s3://nimtorch-cache-cuda/cuda_prepared.tar.gz
   - stage: compile
     # if: branch = release
     name: "Compile ATEN static-cuda compile"
@@ -68,11 +67,10 @@ matrix:
     - pip install --user awscli
     # Build
     - cd docker
-    - mkdir cache
-    - aws --endpoint-url https://cache.fragcolor.xyz s3 sync s3://nimtorch-cache-cuda cache
+    - aws --endpoint-url https://cache.fragcolor.xyz s3 cp s3://nimtorch-cache-cuda/cuda_prepared.tar.gz cuda_prepared.tar.gz
     - gzip -dc cache/cuda_prepared.tar.gz | docker load
     - docker build -f Dockerfile-aten-static-cuda-build -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
-    - aws --endpoint-url https://cache.fragcolor.xyz s3 rm --recursive s3://nimtorch-cache-cuda
+    - aws --endpoint-url https://cache.fragcolor.xyz s3 rm s3://nimtorch-cache-cuda/cuda_prepared.tar.gz
   - stage: test
     name: "CPU Linux Tests"
     os: linux
