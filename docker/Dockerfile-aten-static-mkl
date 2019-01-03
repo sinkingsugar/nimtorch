@@ -36,7 +36,7 @@ tar xzf go-ipfs_v0.4.18_linux-amd64.tar.gz && \
 go-ipfs/./ipfs init
 
 # download mkl 2019.1
-RUN cd && go-ipfs/./ipfs cat QmeV3mKLyf5FYYipRD5JGTK7DZcFEVb1kHaBmB1mMMzyu5 > mkl.tar.gz && tar xzf mkl.tar.gz
+RUN cd && go-ipfs/./ipfs daemon & go-ipfs/./ipfs cat QmeV3mKLyf5FYYipRD5JGTK7DZcFEVb1kHaBmB1mMMzyu5 > mkl.tar.gz && tar xzf mkl.tar.gz
 ENV MKL_DIR=/root/intel-mkl-2019.1/
 
 # -DUSE_MKLDNN=OFF is off due to buggy JIT on my VM PC :-(

@@ -36,7 +36,7 @@ tar xzf go-ipfs_v0.4.18_linux-amd64.tar.gz && \
 go-ipfs/./ipfs init
 
 # download magma 2.4.0 pre built using same docker images - static version
-RUN cd && go-ipfs/./ipfs cat QmPJzXEGzphTzogPsS6uQRYNxNaqF1i5fdi34SE2DL6v4i > magmalib.tar.gz && tar xzf magmalib.tar.gz
+RUN cd && go-ipfs/./ipfs daemon & go-ipfs/./ipfs cat QmPJzXEGzphTzogPsS6uQRYNxNaqF1i5fdi34SE2DL6v4i > magmalib.tar.gz && tar xzf magmalib.tar.gz
 ENV MAGMA_HOME=/root/libmagma
 
 # -DUSE_MKLDNN=OFF is off due to buggy JIT on my VM PC :-(
