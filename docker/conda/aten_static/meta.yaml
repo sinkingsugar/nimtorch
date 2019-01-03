@@ -9,4 +9,4 @@ build:
   script_env:
     - ATEN
   features:
-    - cpu-static
+    - static

@@ -1,11 +1,11 @@
 package:
   # This name doesn't have to be the same as the feature, but can avoid confusion if it is
-  name: cpu-static
+  name: static
   # This need not relate to the version of any of the packages with the
   # feature. It is just a version for this metapackage.
   version: 1.0
 
 build:
   track_features:
-    - cpu-static
+    - static
   noarch: generic
