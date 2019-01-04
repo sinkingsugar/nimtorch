@@ -104,11 +104,14 @@ elif defined windows:
 elif defined osx:
   {.passC: "-std=c++11".}
 
+  when defined staticlibs:
+    {.passL: "-framework Accelerate".}
+
   when not defined ios:
-    {.passL: "-lcpuinfo -lsleef -pthread -lc10 -lcaffe2".}
+    {.passL: "-lcpuinfo -lsleef -lclog -pthread -lc10 -lcaffe2".}
   else:
     import fragments/ffi/ios
-    {.passL: "-lcpuinfo -pthread -lc10 -lcaffe2 ".}
+    {.passL: "-lcpuinfo -lclog -pthread -lc10 -lcaffe2 ".}
   
   # Make sure we allow users to use rpath and be able find ATEN easier
   const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
