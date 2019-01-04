@@ -66,6 +66,20 @@ task test_clang, "Run clang tests":
   exec """nim cpp --define:useRealtimeGC --cc:clang -r -o:test tests/test_xor.nim"""
   exec """nim cpp --define:useRealtimeGC -d:release --cc:clang -r -o:test tests/test_xor.nim"""
 
+task test_static, "Run clang tests":
+  exec """nim torch -d:staticlibs -r -o:test torch"""
+  exec """nim torch -d:staticlibs -d:release -r -o:test torch"""
+  exec """nim torch -d:staticlibs -r -o:test torch/nn/modules.nim"""
+  exec """nim torch -d:staticlibs -d:release -r -o:test torch/nn/modules.nim"""
+  exec """nim torch -d:staticlibs -r -o:test torch/nn/init.nim"""
+  exec """nim torch -d:staticlibs -d:release -r -o:test torch/nn/init.nim"""
+  exec """nim torch -d:staticlibs -r -o:test torch/nn/functional.nim"""
+  exec """nim torch -d:staticlibs -d:release -r -o:test torch/nn/functional.nim"""
+  exec """nim torch -d:staticlibs -r -o:test tests/test_autograd.nim"""
+  exec """nim torch -d:staticlibs -d:release -r -o:test tests/test_autograd.nim"""
+  exec """nim torch -d:staticlibs -r -o:test tests/test_xor.nim"""
+  exec """nim torch -d:staticlibs -d:release -r -o:test tests/test_xor.nim"""
+
 task test_clang_cuda, "Run clang cuda gpu tests":
   exec """nim cpp -r -o:test torch/generator.nim"""
   exec """nim cpp --cc:clang -r -o:test -d:cuda torch"""

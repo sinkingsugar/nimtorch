@@ -109,6 +109,20 @@ matrix:
     - pip install pyyaml # seems needed
     - nimble test --nimcache:./nimcache
   - stage: test
+    name: "CPU macOS Tests lite"
+    os: osx
+    script:
+    - set -e
+    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
+    - bash miniconda.sh -b -p $HOME/miniconda
+    - export PATH="$HOME/miniconda/bin:$PATH"
+    - hash -r
+    - conda config --set always_yes yes --set changeps1 no
+    - conda update -q conda
+    - export MACOSX_DEPLOYMENT_TARGET=10.13
+    - conda install -c fragcolor nim=0.19.9.1 fragments=0.1.25 lite `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -E "s/aten /aten/g"`
+    - nimble test_static --nimcache:./nimcache
+  - stage: test
     name: "WASM Tests"
     os: linux
     script:
