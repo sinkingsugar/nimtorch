@@ -37,7 +37,7 @@ matrix:
     - cd docker
     - docker build -f Dockerfile-aten-static-lite -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   - stage: compile
-    # if: branch = release
+    if: branch = release
     name: "Compile ATEN static-mkl"
     os: linux
     script:
@@ -46,7 +46,7 @@ matrix:
     - cd docker
     - docker build -f Dockerfile-aten-static-mkl -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
   - stage: compile
-    # if: branch = release
+    if: branch = release
     name: "Compile ATEN static-lite"
     os: osx
     script:
