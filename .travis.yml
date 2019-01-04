@@ -130,6 +130,7 @@ matrix:
     - conda update -q conda
     - export MACOSX_DEPLOYMENT_TARGET=10.13
     - conda install -c fragcolor nim=0.19.9.1 fragments=0.1.25 lite `cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -E "s/aten /aten/g"`
+    - export ATEN=$HOME/miniconda
     - nimble test_static --nimcache:./nimcache
   - stage: test
     name: "WASM Tests"
