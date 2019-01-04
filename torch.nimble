@@ -66,7 +66,7 @@ task test_clang, "Run clang tests":
   exec """nim cpp --define:useRealtimeGC --cc:clang -r -o:test tests/test_xor.nim"""
   exec """nim cpp --define:useRealtimeGC -d:release --cc:clang -r -o:test tests/test_xor.nim"""
 
-task test_static, "Run clang tests":
+task test_static, "Run static tests":
   exec """nim torch -d:staticlibs -r -o:test torch"""
   exec """nim torch -d:staticlibs -d:release -r -o:test torch"""
   exec """nim torch -d:staticlibs -r -o:test torch/nn/modules.nim"""
