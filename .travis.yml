@@ -41,7 +41,6 @@ matrix:
     name: "Compile ATEN static-lite"
     os: linux
     script:
-    - set -e
     # Build
     - cd docker
     - docker build -f Dockerfile-aten-static-lite -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
@@ -50,7 +49,6 @@ matrix:
     name: "Compile ATEN static-mkl"
     os: linux
     script:
-    - set -e
     # Build
     - cd docker
     - docker build -f Dockerfile-aten-static-mkl -t docker_aten --build-arg TOKEN=$CONDA_TOKEN --build-arg PYTORCH_COMMIT=`cat ../torch/commit.txt` .
@@ -60,7 +58,7 @@ matrix:
     os: osx
     script:
     # go home
-    - set +e && cd && set -e
+    - cd
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
@@ -73,28 +71,27 @@ matrix:
     - export PYTORCH_COMMIT=`cat torch/commit.txt`
     - export MACOSX_DEPLOYMENT_TARGET=10.13
     - git clone -b fragcolor-devel https://github.com/fragcolor-xyz/pytorch.git
-    - set +e && cd pytorch && set -e
+    - cd pytorch
     - git reset --hard $PYTORCH_COMMIT
     - git submodule update --init --recursive
     - mkdir built
-    - set +e && cd built && set -e
+    - cd built
     - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
     - make -j 10
     - make install
     - make clean
     - cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
-    - set +e && cd ../.. && set -e
+    - cd ../..
     - export ATEN=`pwd`/pytorch/built/output
     # go back and build conda pkg + upload
-    - set +e && cd $TRAVIS_BUILD_DIR && set -e
-    - set +e && cd docker/conda && set -e
+    - cd $TRAVIS_BUILD_DIR
+    - cd docker/conda
     - conda build aten_lite
     - anaconda -t $CONDA_TOKEN upload --skip ~/miniconda/conda-bld/osx-64/aten-*.tar.bz2
   - stage: test
     name: "CPU Linux Tests"
     os: linux
     script:
-    - set -e
     - docker build -f docker/Dockerfile-tests-cuda10.0 -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
     - docker run --name test_nimtorch_native -t -u`id -u`:`id -g` nimtorch-test:latest nimble test
     - docker run --rm -t -u`id -u`:`id -g` nimtorch-test:latest nimble test_clang
@@ -102,7 +99,6 @@ matrix:
     name: "CPU macOS Tests"
     os: osx
     script:
-    - set -e
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
@@ -121,7 +117,6 @@ matrix:
     name: "CPU macOS Tests lite"
     os: osx
     script:
-    - set -e
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
@@ -136,6 +131,5 @@ matrix:
     name: "WASM Tests"
     os: linux
     script:
-    - set -e
     - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
     - docker run --rm -t -u`id -u`:`id -g` nimtorch-test:latest /bin/bash -c "source /etc/profile.d/emscripten.sh && nimble test_wasm"
