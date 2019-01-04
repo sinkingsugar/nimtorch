@@ -100,6 +100,8 @@ elif defined windows:
       atenPath & "/lib/libiomp5md.lib",
     )
 
+    {.passL: "/MT /Qopenmp-link:static".}
+
   cppdefines("NOMINMAX")
 
   when defined cuda:
