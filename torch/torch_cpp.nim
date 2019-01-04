@@ -124,6 +124,11 @@ elif defined osx:
 else:
   {.passC: "-std=c++11".}
 
+  # If we built ATEN with GCC version < 5.0 we might need this
+  # We detect this if we have linking issues with std::string types
+  when defined noCxx11Abi:
+    {.passC: "-D_GLIBCXX_USE_CXX11_ABI=0".}
+
   when not defined staticlibs: # building using dynamic libraries
     # MKLDNN is optional, let's check if it's available
     when staticExec("[ -f '$ATEN/lib/libmkldnn.so' ] && echo 'true' || echo 'false'") == "true":
@@ -139,14 +144,18 @@ else:
   
   else: # building big static binary
     # REQUIRED LIBS
-    {.passL: "$ATEN/lib/libcaffe2.a $ATEN/lib/libc10.a $ATEN/lib/libcpuinfo.a $ATEN/lib/libsleef.a $ATEN/lib/libclog.a".}
+    {.passL: "-Wl,--start-group $ATEN/lib/libcaffe2.a $ATEN/lib/libc10.a $ATEN/lib/libcpuinfo.a $ATEN/lib/libsleef.a $ATEN/lib/libclog.a -Wl,--end-group".}
     
     # MKLDNN is optional, let's check if it's available
     when staticExec("""[ -f "$ATEN/lib/libmkldnn.a" ] && echo 'true' || echo 'false'""") == "true":
+      static:
+        echo "Using MKL-DNN"
       {.passL: "$ATEN/lib/libmkldnn.a".}
     
     # MKL is very needed (no good performance without it) but optional, let's check if it's available
     when staticExec("""[ -f "$ATEN/lib/libmkl_core.a" ] && echo 'true' || echo 'false'""") == "true":
+      static:
+        echo "Using Intel MKL"
       {.passL: "-Wl,--start-group $ATEN/lib/libmkl_intel_lp64.a $ATEN/lib/libmkl_gnu_thread.a $ATEN/lib/libmkl_core.a -Wl,--end-group".}
     
     # REQUIRED FLAGS
