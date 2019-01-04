@@ -92,6 +92,7 @@ matrix:
     # if: branch = release
     name: "Compile ATEN static-lite"
     os: windows
+    language: c
     script:
     # go home
     - cd
