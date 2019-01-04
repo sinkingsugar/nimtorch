@@ -80,7 +80,7 @@ matrix:
     - set +e && cd $TRAVIS_BUILD_DIR && set -e
     - set +e && cd docker/conda && set -e
     - conda build aten_lite
-    - anaconda -t $CONDA_TOKEN upload ~/miniconda/conda-bld/osx-64/aten-*.tar.bz2
+    - anaconda -t $CONDA_TOKEN upload --skip ~/miniconda/conda-bld/osx-64/aten-*.tar.bz2
   - stage: test
     name: "CPU Linux Tests"
     os: linux
