@@ -82,11 +82,23 @@ when defined wasm:
   {.passL: "-lc10 -lcaffe2".}
 
 elif defined windows:
-  cpplibs(
-    atenPath & "/lib/cpuinfo.lib",
-    atenPath & "/lib/c10.lib",
-    atenPath & "/lib/caffe2.lib"
-  )
+  when not defined staticlibs:
+    cpplibs(
+      atenPath & "/lib/cpuinfo.lib",
+      atenPath & "/lib/c10.lib",
+      atenPath & "/lib/caffe2.lib"
+    )
+  else:
+    cpplibs(
+      atenPath & "/lib/cpuinfo.lib",
+      atenPath & "/lib/clog.lib",
+      atenPath & "/lib/c10.lib",
+      atenPath & "/lib/caffe2.lib",
+      atenPath & "/lib/mkl_core.lib",
+      atenPath & "/lib/mkl_intel_thread.lib",
+      atenPath & "/lib/mkl_intel_lp64.lib",
+      atenPath & "/lib/libiomp5md.lib",
+    )
 
   cppdefines("NOMINMAX")
 
