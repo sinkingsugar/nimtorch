@@ -29,7 +29,7 @@ proc maxMemoryCached*(device: cint): uint64 {.importc: "THCCachingAllocator_maxM
 
 when defined staticlibs:
 # we use static libraries so the following code is needed to initialize at runtime properly
-  {.emit:"""
+  {.emit:"""/*INCLUDESECTION*/
 #include <c10/cuda/impl/CUDAGuardImpl.h>
 
 namespace c10 {

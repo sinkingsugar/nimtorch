@@ -68,7 +68,7 @@ type AInt64* {.importcpp: "int64_t", header: "<stdint.h>".} = object
 
 when defined staticlibs:
   # we use static libraries so the following code is needed to initialize at runtime properly
-  {.emit:"""
+  {.emit:"""/*INCLUDESECTION*/
 #include <ATen/detail/CPUGuardImpl.h>
 namespace at {
 namespace detail {
