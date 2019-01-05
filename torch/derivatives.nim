@@ -2532,22 +2532,22 @@ autograd upsample_bilinear2d_backward:
 
 autograd upsample_bicubic2d:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[int]; align_corners: bool): Tensor {.inline.} = 
-    check: ty[].atenMethod("upsample_bicubic2d", self.toATensor(), output_size.toAIntList(), align_corners).to(ATensor).newTensor()
+    ty[].atenMethod(ATensor, "upsample_bicubic2d", self.toATensor(), output_size.toAIntList(), align_corners).newTensor()
   self: upsample_bicubic2d_backward(grad, output_size, self.sizes(), align_corners)
 
 autograd upsample_bicubic2d:
   proc forward*(self: Tensor; output_size: openarray[int]; align_corners: bool): Tensor {.inline.} = 
-    check: atenFunction("at::upsample_bicubic2d", self.toATensor(), output_size.toAIntList(), align_corners).to(ATensor).newTensor()
+    atenFunction(ATensor, "at::upsample_bicubic2d", self.toATensor(), output_size.toAIntList(), align_corners).newTensor()
   self: upsample_bicubic2d_backward(grad, output_size, self.sizes(), align_corners)
 
 autograd upsample_bicubic2d_backward:
   proc forward*(ty: TensorType; grad_output: Tensor; output_size: openarray[int]; input_size: openarray[int]; align_corners: bool): Tensor {.inline.} = 
-    check: ty[].atenMethod("upsample_bicubic2d_backward", grad_output.toATensor(), output_size.toAIntList(), input_size.toAIntList(), align_corners).to(ATensor).newTensor()
+    ty[].atenMethod(ATensor, "upsample_bicubic2d_backward", grad_output.toATensor(), output_size.toAIntList(), input_size.toAIntList(), align_corners).newTensor()
   grad_output: upsample_bicubic2d(grad, output_size, align_corners)
 
 autograd upsample_bicubic2d_backward:
   proc forward*(grad_output: Tensor; output_size: openarray[int]; input_size: openarray[int]; align_corners: bool): Tensor {.inline.} = 
-    check: atenFunction("at::upsample_bicubic2d_backward", grad_output.toATensor(), output_size.toAIntList(), input_size.toAIntList(), align_corners).to(ATensor).newTensor()
+    atenFunction(ATensor, "at::upsample_bicubic2d_backward", grad_output.toATensor(), output_size.toAIntList(), input_size.toAIntList(), align_corners).newTensor()
   grad_output: upsample_bicubic2d(grad, output_size, align_corners)
 
 autograd upsample_trilinear3d:
@@ -2728,21 +2728,21 @@ autograd thnn_conv_dilated3d_forward:
 
 autograd thnn_col2im:
   proc forward*(ty: TensorType; self: Tensor; output_size: openarray[int]; kernel_size: openarray[int]; dilation: openarray[int]; padding: openarray[int]; stride: openarray[int]): Tensor {.inline.} = 
-    check: ty[].atenMethod("thnn_col2im", self.toATensor(), output_size.toAIntList(), kernel_size.toAIntList(), dilation.toAIntList(), padding.toAIntList(), stride.toAIntList()).to(ATensor).newTensor()
+    ty[].atenMethod(ATensor, "thnn_col2im", self.toATensor(), output_size.toAIntList(), kernel_size.toAIntList(), dilation.toAIntList(), padding.toAIntList(), stride.toAIntList()).newTensor()
   self: thnn_col2im_backward(grad, kernel_size, dilation, padding, stride)
 
 autograd thnn_col2im:
   proc forward*(self: Tensor; output_size: openarray[int]; kernel_size: openarray[int]; dilation: openarray[int]; padding: openarray[int]; stride: openarray[int]): Tensor {.inline.} = 
-    check: atenFunction("at::thnn_col2im", self.toATensor(), output_size.toAIntList(), kernel_size.toAIntList(), dilation.toAIntList(), padding.toAIntList(), stride.toAIntList()).to(ATensor).newTensor()
+    atenFunction(ATensor, "at::thnn_col2im", self.toATensor(), output_size.toAIntList(), kernel_size.toAIntList(), dilation.toAIntList(), padding.toAIntList(), stride.toAIntList()).newTensor()
   self: thnn_col2im_backward(grad, kernel_size, dilation, padding, stride)
 
 autograd thnn_im2col:
   proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; dilation: openarray[int]; padding: openarray[int]; stride: openarray[int]): Tensor {.inline.} = 
-    check: ty[].atenMethod("thnn_im2col", self.toATensor(), kernel_size.toAIntList(), dilation.toAIntList(), padding.toAIntList(), stride.toAIntList()).to(ATensor).newTensor()
+    ty[].atenMethod(ATensor, "thnn_im2col", self.toATensor(), kernel_size.toAIntList(), dilation.toAIntList(), padding.toAIntList(), stride.toAIntList()).newTensor()
   self: thnn_im2col_backward(grad, [self.size(2), self.size(3)], kernel_size, dilation, padding, stride)
 
 autograd thnn_im2col:
   proc forward*(self: Tensor; kernel_size: openarray[int]; dilation: openarray[int]; padding: openarray[int]; stride: openarray[int]): Tensor {.inline.} = 
-    check: atenFunction("at::thnn_im2col", self.toATensor(), kernel_size.toAIntList(), dilation.toAIntList(), padding.toAIntList(), stride.toAIntList()).to(ATensor).newTensor()
+    atenFunction(ATensor, "at::thnn_im2col", self.toATensor(), kernel_size.toAIntList(), dilation.toAIntList(), padding.toAIntList(), stride.toAIntList()).newTensor()
   self: thnn_im2col_backward(grad, [self.size(2), self.size(3)], kernel_size, dilation, padding, stride)
 
