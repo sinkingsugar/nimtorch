@@ -5,6 +5,10 @@ package:
 source:
   path: ./
 
+requirements:
+  run:
+    - intel-openmp # [win]
+
 build:
   script_env:
     - ATEN

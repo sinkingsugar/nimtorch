@@ -1,6 +1,7 @@
 import fragments/ffi/cpp as cpp
 export cpp
 import os
+from os import fileExists
 
 const version* = "2018.12.30.1989"
 
@@ -88,19 +89,25 @@ elif defined windows:
       atenPath & "/lib/c10.lib",
       atenPath & "/lib/caffe2.lib"
     )
+  
   else:
     cpplibs(
       atenPath & "/lib/cpuinfo.lib",
       atenPath & "/lib/clog.lib",
       atenPath & "/lib/c10.lib",
-      atenPath & "/lib/caffe2.lib",
-      atenPath & "/lib/mkl_core.lib",
-      atenPath & "/lib/mkl_intel_thread.lib",
-      atenPath & "/lib/mkl_intel_lp64.lib",
-      atenPath & "/lib/libiomp5md.lib",
+      atenPath & "/lib/caffe2.lib"
     )
+  
+    # ADD MKL if avail, it will need the dll for openmp tho sadly anyway (blame intel MKL team)
+    when fileExists(atenPath & "/lib/mkl_core.lib"):
+      cpplibs(
+        atenPath & "/lib/mkl_core.lib",
+        atenPath & "/lib/mkl_intel_thread.lib",
+        atenPath & "/lib/mkl_intel_lp64.lib",
+        atenPath & "/lib/libiomp5md.lib",
+      )
 
-    {.passL: "/MT /Qopenmp-link:static".}
+    {.passL: "/MT".}
 
   cppdefines("NOMINMAX")
 
@@ -148,7 +155,7 @@ else:
 
   when not defined staticlibs: # building using dynamic libraries
     # MKLDNN is optional, let's check if it's available
-    when staticExec("[ -f '$ATEN/lib/libmkldnn.so' ] && echo 'true' || echo 'false'") == "true":
+    when fileExists(atenPath & "/lib/libmkldnn.so"):
       {.passL: "-lmkldnn".}
     
     # REQUIRED LIBS
@@ -164,13 +171,13 @@ else:
     {.passL: "-Wl,--start-group $ATEN/lib/libcaffe2.a $ATEN/lib/libc10.a $ATEN/lib/libcpuinfo.a $ATEN/lib/libsleef.a $ATEN/lib/libclog.a -Wl,--end-group".}
     
     # MKLDNN is optional, let's check if it's available
-    when staticExec("""[ -f "$ATEN/lib/libmkldnn.a" ] && echo 'true' || echo 'false'""") == "true":
+    when fileExists(atenPath & "/lib/libmkldnn.a"):
       static:
         echo "Using MKL-DNN"
       {.passL: "$ATEN/lib/libmkldnn.a".}
     
     # MKL is very needed (no good performance without it) but optional, let's check if it's available
-    when staticExec("""[ -f "$ATEN/lib/libmkl_core.a" ] && echo 'true' || echo 'false'""") == "true":
+    when fileExists(atenPath & "/lib/libmkl_core.a"):
       static:
         echo "Using Intel MKL"
       {.passL: "-Wl,--start-group $ATEN/lib/libmkl_intel_lp64.a $ATEN/lib/libmkl_gnu_thread.a $ATEN/lib/libmkl_core.a -Wl,--end-group".}

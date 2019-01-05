@@ -1,6 +1,7 @@
 import os, dynlib
 import fragments/ffi/cpp as cpp
 export cpp
+from os import fileExists
 
 defineCppType(ACUDAStream, "at::cuda::CUDAStream", "ATen/cuda/CUDAContext.h")
 
@@ -62,7 +63,7 @@ when defined(linux) or defined(osx):
     const cudaPath* = nvccPath[0..^9]
     const cudaIncludePath* = cudaPath & "include"
     # Figure if cuda installation uses lib or lib64 path
-    when staticExec("[ -f '" & cudaPath & "/lib64/libcudart.so' ] && echo 'true' || echo 'false'") == "true":
+    when fileExists(cudaPath & "/lib64/libcudart.so"):
       const cudaLibPath* = cudaPath & "lib64"
     else:
       const cudaLibPath* = cudaPath & "lib"
@@ -74,10 +75,14 @@ when defined(linux) or defined(osx):
 {.passC: "-I$CUDA_INCLUDE -I$ATEN/include/TH -I$ATEN/include/THC".}
 {.passL: "-L$CUDA_LIB".}
 
+const atenPath = getEnv("ATEN")
+
 when not defined staticlibs:
   {.passL: "-lcuda".}
 
-  when staticExec("""[ -f "$ATEN/lib/libmagma.so" ] && echo 'true' || echo 'false'""") == "true":
+  when fileExists(atenPath & "/lib/libmagma.so"):
+    static:
+      echo "Using cuda magma library"
     {.passL: "-lcublas -lmagma".}
 
   {.passL: "-lc10_cuda -lcaffe2_gpu -Wl,--no-as-needed".}
@@ -87,7 +92,9 @@ else:
   
   {.passL: "$ATEN/lib/libcaffe2_gpu.a $ATEN/lib/libc10_cuda.a $ATEN/lib/libcaffe2.a $ATEN/lib/libc10.a".}
   
-  when staticExec("""[ -f "$ATEN/lib/libmagma.a" ] && echo 'true' || echo 'false'""") == "true":
+  when fileExists(atenPath & "/lib/libmagma.a"):
+    static:
+      echo "Using cuda magma library"
     {.passL: "$ATEN/lib/libmagma.a".}
   
   {.passL: "-Wl,--start-group $CUDA_LIB/liblapack_static.a $CUDA_LIB/libcusparse_static.a $CUDA_LIB/libculibos.a $CUDA_LIB/libcublas_static.a $CUDA_LIB/libcudart_static.a -Wl,--end-group".}
