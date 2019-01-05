@@ -1,13 +1,9 @@
 package:
   name: aten
-  version: "2018.10.23.1506"
+  version: "2018.12.30.1989"
 
 source:
   path: ./
-
-requirements:
-  run:
-    - openblas # [linux]
 
 build:
   script_env:

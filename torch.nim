@@ -1,5 +1,29 @@
+import macros
 import fragments/ffi/cpp, torch/torch_cpp
 export cpp, torch_cpp
+
+macro exportTorch*(procDef: untyped): untyped =
+  procDef.expectKind({ nnkProcDef, nnkFuncDef })
+
+  if procDef.pragma.kind == nnkEmpty:
+    procDef.pragma = nnkPragma.newTree()
+
+  when defined wasm:
+    procDef.pragma.add(
+      nnkExprColonExpr.newTree(ident"codegenDecl", newLit("""extern "C" $# EMSCRIPTEN_KEEPALIVE $#$#""")),
+      ident("exportc")
+    )
+  else:
+    procDef.pragma.add(
+      ident("exportc")
+    )
+
+  return quote do:
+    when defined wasm:
+      {.emit: """/*INCLUDESECTION*/
+      #include <emscripten.h>
+      """.}
+    `procDef`
 
 when defined cuda:
   import torch/torch_cuda_cpp
@@ -171,6 +195,7 @@ when isMainModule:
     assert equal(sliceTest[_, 0], tensor([1.0, 4.0]))
     assert equal(sliceTest[_, ^1], tensor([3.0, 6.0]))
     assert equal(sliceTest[_, 1..^1], tensor([[2.0], [5.0]]))
+    assert sliceTest[1, 1].toFloat32 == 5.0
 
     # Test copying to slice
     var putTest = zeros_like(sliceTest)

@@ -1,8 +1,9 @@
 import fragments/ffi/cpp as cpp
 export cpp
 import os
+from os import fileExists
 
-const version* = "2018.12.15.1820"
+const version* = "2018.12.30.1989"
 
 cppdefines("ATEN_VERSION=" & version)
 
@@ -55,22 +56,58 @@ else:
   when atenPath == "":
     {.error: "Please set $ATEN environment variable to point to the ATen installation path".}
 
+static:
+  # in any case, lets put aten in the path 
+  putEnv("ATEN", atenPath)
+
 cppincludes(atenPath & """/include""")
 cpplibpaths(atenPath & """/lib""")
 cpplibpaths(atenPath & """/lib64""")
 
 type AInt64* {.importcpp: "int64_t", header: "<stdint.h>".} = object
 
+when defined staticlibs:
+  # we use static libraries so the following code is needed to initialize at runtime properly
+  {.emit:"""/*INCLUDESECTION*/
+#include <ATen/detail/CPUGuardImpl.h>
+namespace at {
+namespace detail {
+
+C10_REGISTER_GUARD_IMPL(CPU, CPUGuardImpl);
+
+}} // namespace at::detail
+  """.}
+
 when defined wasm:
   {.passC: "-std=c++11".}
   {.passL: "-lc10 -lcaffe2".}
 
 elif defined windows:
-  cpplibs(
-    atenPath & "/lib/cpuinfo.lib",
-    atenPath & "/lib/c10.lib",
-    atenPath & "/lib/caffe2.lib"
-  )
+  when not defined staticlibs:
+    cpplibs(
+      atenPath & "/lib/cpuinfo.lib",
+      atenPath & "/lib/c10.lib",
+      atenPath & "/lib/caffe2.lib"
+    )
+  
+  else:
+    cpplibs(
+      atenPath & "/lib/cpuinfo.lib",
+      atenPath & "/lib/clog.lib",
+      atenPath & "/lib/c10.lib",
+      atenPath & "/lib/caffe2.lib"
+    )
+  
+    # ADD MKL if avail, it will need the dll for openmp tho sadly anyway (blame intel MKL team)
+    when fileExists(atenPath & "/lib/mkl_core.lib"):
+      cpplibs(
+        atenPath & "/lib/mkl_core.lib",
+        atenPath & "/lib/mkl_intel_thread.lib",
+        atenPath & "/lib/mkl_intel_lp64.lib",
+        atenPath & "/lib/libiomp5md.lib",
+      )
+
+    {.passL: "/MT".}
 
   cppdefines("NOMINMAX")
 
@@ -88,11 +125,14 @@ elif defined windows:
 elif defined osx:
   {.passC: "-std=c++11".}
 
+  when defined staticlibs:
+    {.passL: "-framework Accelerate".}
+
   when not defined ios:
-    {.passL: "-lcpuinfo -lsleef -pthread -lc10 -lcaffe2".}
+    {.passL: "-lcpuinfo -lsleef -lclog -pthread -lc10 -lcaffe2".}
   else:
     import fragments/ffi/ios
-    {.passL: "-lcpuinfo -pthread -lc10 -lcaffe2 ".}
+    {.passL: "-lcpuinfo -lclog -pthread -lc10 -lcaffe2 ".}
   
   # Make sure we allow users to use rpath and be able find ATEN easier
   const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
@@ -108,23 +148,42 @@ elif defined osx:
 else:
   {.passC: "-std=c++11".}
 
-  const hasMkldnn = staticExec("[ -f '" & atenPath & "/lib/libmkldnn.so" & "' ] && echo 'true' || echo 'false'")
-  when hasMkldnn == "true":
-    {.passL: "-lcpuinfo -lsleef -pthread -lrt -lmkldnn -lc10 -lcaffe2".}
-  else:
+  # If we built ATEN with GCC version < 5.0 we might need this
+  # We detect this if we have linking issues with std::string types
+  when defined noCxx11Abi:
+    {.passC: "-D_GLIBCXX_USE_CXX11_ABI=0".}
+
+  when not defined staticlibs: # building using dynamic libraries
+    # MKLDNN is optional, let's check if it's available
+    when fileExists(atenPath & "/lib/libmkldnn.so"):
+      {.passL: "-lmkldnn".}
+    
+    # REQUIRED LIBS
     {.passL: "-lcpuinfo -lsleef -pthread -lrt -lc10 -lcaffe2".}
+
+    # Make sure we allow users to use rpath and be able find ATEN easier
+    const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
+    {.passL: atenEnvRpath.}
+    {.passL: """-Wl,-rpath,'$ORIGIN'""".}
   
-  when defined cuda:
-    const hasMagma = staticExec("[ -f '" & atenPath & "/lib/libmagma.so" & "' ] && echo 'true' || echo 'false'")
-    when hasMagma == "true":
-      {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda -lmagma -lcublas".}
-    else:
-      {.passL: "-lcaffe2_gpu -Wl,--no-as-needed -lcuda".}
-  
-  # Make sure we allow users to use rpath and be able find ATEN easier
-  const atenEnvRpath = """-Wl,-rpath,'""" & atenPath & """/lib'"""
-  {.passL: atenEnvRpath.}
-  {.passL: """-Wl,-rpath,'$ORIGIN'""".}
+  else: # building big static binary
+    # REQUIRED LIBS
+    {.passL: "-Wl,--start-group $ATEN/lib/libcaffe2.a $ATEN/lib/libc10.a $ATEN/lib/libcpuinfo.a $ATEN/lib/libsleef.a $ATEN/lib/libclog.a -Wl,--end-group".}
+    
+    # MKLDNN is optional, let's check if it's available
+    when fileExists(atenPath & "/lib/libmkldnn.a"):
+      static:
+        echo "Using MKL-DNN"
+      {.passL: "$ATEN/lib/libmkldnn.a".}
+    
+    # MKL is very needed (no good performance without it) but optional, let's check if it's available
+    when fileExists(atenPath & "/lib/libmkl_core.a"):
+      static:
+        echo "Using Intel MKL"
+      {.passL: "-Wl,--start-group $ATEN/lib/libmkl_intel_lp64.a $ATEN/lib/libmkl_gnu_thread.a $ATEN/lib/libmkl_core.a -Wl,--end-group".}
+    
+    # REQUIRED FLAGS
+    {.passL: "-pthread -lrt -fopenmp".}
 
   when defined gperftools:
     {.passC: "-DWITHGPERFTOOLS -g".}

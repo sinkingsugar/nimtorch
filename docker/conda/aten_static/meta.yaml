@@ -7,9 +7,10 @@ source:
 
 requirements:
   run:
-    - mkl # [linux]
     - intel-openmp # [win]
 
 build:
   script_env:
     - ATEN
+  features:
+    - static

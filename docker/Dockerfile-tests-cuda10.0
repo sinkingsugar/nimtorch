@@ -1,6 +1,6 @@
 FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
 
-RUN apt-get update && apt-get install -y build-essential git cmake python3-pip libmpfr-dev libgmp-dev wget
+RUN apt-get update && apt-get install -y build-essential git cmake python3-pip libmpfr-dev libgmp-dev wget curl
 
 RUN pip3 install pyyaml
 RUN pip3 install typing
@@ -25,7 +25,7 @@ ENV PATH=$PATH:/home/tester/miniconda3/bin
 
 ARG ATEN
 
-RUN conda install -c fragcolor nim=0.19.9 fragments=0.1.23 ${ATEN} cuda10.0
+RUN conda install -c fragcolor nim=0.19.9.1 fragments=0.1.25 ${ATEN}
 
 ENV ATEN=/home/tester/miniconda3
 
