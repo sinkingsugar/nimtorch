@@ -192,6 +192,7 @@ test:nimtorch:native:
   except:
     changes:
       - .travis.yml
+      - README.md
 
 test:nimtorch:wasm:
   stage: test
@@ -207,6 +208,7 @@ test:nimtorch:wasm:
   except:
     changes:
       - .travis.yml
+      - README.md
   only:
     refs:
       - schedules
@@ -233,6 +235,7 @@ test:nimtorch:macos:
   except:
     changes:
       - .travis.yml
+      - README.md
 
 deploy:nimtorch:
   stage: deploy
