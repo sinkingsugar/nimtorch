@@ -19,7 +19,6 @@ macro autograd*(head, body: untyped): untyped =
 
   let
     name = head
-    nameText = $name
     gradFnSym = genSym(nskLet)
     resultIdent = ident"result"
     forwardResultIdent = ident"fwd_result"
