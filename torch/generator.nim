@@ -349,7 +349,7 @@ block declarations:
       else:
         pragmasStr = "{.inline, noinit.} "
       
-      var convertStr, preCode: string
+      var convertStr, preCode, toType: string
 
       try:
         if not node.hasKey("returns") or node["returns"].len == 0:
@@ -357,12 +357,14 @@ block declarations:
         
         elif node["returns"].len == 1:
           procInfo.nimReturnType = toNimType(node["returns"][0]["dynamic_type"].getStr())
-          convertStr = ".to(" & procInfo.nimReturnType & ")"
+          toType = procInfo.nimReturnType
 
           if procInfo.nimReturnType == "Tensor":
-            convertStr = ".to(ATensor).newTensor()"
+            toType = "ATensor"
+            convertStr = ".newTensor()"
           elif procInfo.nimReturnType == "TensorList":
-            convertStr = ".to(ATensors).newTensors()"
+            toType = "ATensors"
+            convertStr = ".newTensors()"
 
           procInfo.returns.add(ArgInfo(originalName: "", name: "", nimType: procInfo.nimReturnType))
           
@@ -409,7 +411,8 @@ block declarations:
               tupleStr1 &= ", "
               tupleStr2 &= ", "
 
-          convertStr = ".to(StdTuple" & $(returnsHigh + 1) & "[" & tupleStr2 & "]).toNimTuple().newTensors()"
+          toType = fmt"StdTuple{returnsHigh + 1}[{tupleStr2}]"
+          convertStr = ".toNimTuple().newTensors()"
           procInfo.nimReturnType = "tuple[" & tupleStr1 & "]"
          
         else:
@@ -418,27 +421,22 @@ block declarations:
         if node.hasKey("inplace") and node["inplace"].getBool():
           procInfo.isInplace = true
           # For inplace procs, return the input tensor, except if there is no return type
-          if procInfo.nimReturnType == "void":
-            convertStr = ".to(void)"
-          else:
-            convertStr = ".to(void); self"
+          if procInfo.nimReturnType != "void":
+            convertStr = "; self"
+          # Always convert to void, discarding the native result
+          toType = "void"
 
         case kind:
           of Tensor:
             procInfo.argsStr = argsStr1
-            procInfo.expression = fmt"self.tensor.atenMethod(""{procInfo.originalName}""{argsStr2}){convertStr}"
+            procInfo.expression = fmt"self.tensor.atenMethod({toType}, ""{procInfo.originalName}""{argsStr2}){convertStr}"
           of Type:
             # `ty` gets dereferenced here because it's a pointer. this wasn't necessary before splitting modules apart. Some compiler bug with `implicitDeref`?
             procInfo.argsStr = "ty: TensorType; " & argsStr1
-            procInfo.expression = fmt"ty[].atenMethod(""{procInfo.originalName}""{argsStr2}){convertStr}"
+            procInfo.expression = fmt"ty[].atenMethod({toType}, ""{procInfo.originalName}""{argsStr2}){convertStr}"
           of Namespace:
             procInfo.argsStr = argsStr1
-            procInfo.expression = fmt"atenFunction(""at::{procInfo.originalName}""{argsStr2}){convertStr}"
-
-        if procInfo.nimReturnType == "void":
-          procInfo.expression = "checkVoid: " & procInfo.expression
-        else:
-          procInfo.expression = "check: " & procInfo.expression
+            procInfo.expression = fmt"atenFunction({toType}, ""at::{procInfo.originalName}""{argsStr2}){convertStr}"
 
         #output.writeLine(procInfo.kind.procFormatString % [procInfo.name, procInfo.nimReturnType, procInfo.originalName, argsStr1, argsStr2, convertStr, pragmasStr, preCode])
         generatedProcs.add(procInfo)
@@ -697,17 +695,25 @@ block derivatives: # we still need to implement some of the procs in pytorch's '
 import fragments/ffi/cpp
 import torch_cpp
 import tensors
+import macros
 
-template atenMethod*(obj: CppObject, field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = obj.dynamicCppCall(field, args)
-template atenFunction*(field: untyped, args: varargs[CppProxy, CppFromAst]): CppProxy = dynamicCCall(field, args)
-
-template checkVoid(body: untyped): untyped =
-  try: body
+template atenMethod*(obj: CppObject; returnType: type[void]; field: untyped, args: varargs[CppProxy, CppFromAst]): untyped =
+  try: obj.dynamicCppCall(field, args).to(void)
   except StdException as e: raiseAssert($e.what())
 
-template check(body: untyped): untyped =
-  var r: type(body)
-  try: r = body
+template atenMethod*(obj: CppObject; returnType: type; field: untyped, args: varargs[CppProxy, CppFromAst]): untyped =
+  var r: returnType
+  try: r = obj.dynamicCppCall(field, args).to(returnType)
+  except StdException as e: raiseAssert($e.what())
+  r
+
+template atenFunction*(returnType: type[void]; field: untyped, args: varargs[CppProxy, CppFromAst]): untyped =
+  try: dynamicCCall(field, args).to(void)
+  except StdException as e: raiseAssert($e.what())
+
+template atenFunction*(returnType: type; field: untyped, args: varargs[CppProxy, CppFromAst]): untyped =
+  var r: returnType
+  try: r = dynamicCCall(field, args).to(returnType)
   except StdException as e: raiseAssert($e.what())
   r
 """

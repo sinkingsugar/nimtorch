@@ -66,14 +66,22 @@ macro autograd*(head, body: untyped): untyped =
 
       # Simply assign non-tuples
       var
-        resultExpr: NimNode
         requiresGradExpr: NimNode
+
+      let gradExpr = x[1]
 
       if x[0].kind == nnkIdent:
         let inputIdent = x[0]
-        resultExpr = quote do: `resultIdent`[`resultIndex`] 
         requiresGradExpr = quote do: `inputIdent`.requires_grad_internal
         inputIdents.add(x[0])
+
+        # `gradExpr` is either a Tensor or a TensorList. We can simply add either.
+        backwardBody.add quote do:
+          if `requiresGradExpr`:
+            `resultIdent`.add(`gradExpr`)
+          else:
+            `resultIdent`.add(nil)
+
         inc resultIndex
 
       # Deconstruct result tuple
@@ -82,7 +90,7 @@ macro autograd*(head, body: untyped): untyped =
         backwardBody.add quote do:
           var `gradInputMaskIdent`: StdArray[bool, `tupleCount`]
 
-        resultExpr = newPar()
+        var resultExpr = newPar()
         for i, inputIdent in x[0]:
           inputIdent.expectKind(nnkIdent)
           resultExpr.add quote do: `resultIdent`[`resultIndex`]
@@ -93,17 +101,13 @@ macro autograd*(head, body: untyped): untyped =
           inputIdents.add(inputIdent)
           backwardBody.add quote do:
             `gradInputMaskIdent`[`i`] = `inputIdent`.requires_grad_internal
+            
           inc resultIndex
 
-      let gradExpr = x[1]
-
-      backwardBody.add quote do:
-        if `requiresGradExpr`:
-          when type(`gradExpr`) isnot TensorList:
-            #if `varIdent`.requires_grad: `resultIdent`[`resultIndex`] = `gradExpr`
+        backwardBody.add quote do:
+          if `requiresGradExpr`:
+            `resultIdent`.setLen(`resultIdent`.len + `tupleCount`)
             `resultExpr` = `gradExpr`
-          else:
-            `resultIdent`= `gradExpr`
 
   # No grads required
   if inputIdents.len == 0:
@@ -131,7 +135,7 @@ macro autograd*(head, body: untyped): untyped =
 
         let `gradFnSym` = new BackwardFunction
         `gradFnSym`.apply = proc(`gradsIdent`: openarray[Tensor]): seq[Tensor] =
-          `resultIdent`.setLen(`gradFnSym`.inputs.len)
+          `resultIdent` = newSeqOfCap[Tensor](`gradFnSym`.inputs.len)
           `backwardBody`
 
         `addInputsStmts`
