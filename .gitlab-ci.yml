@@ -189,10 +189,6 @@ test:nimtorch:native:
       - docker/
   tags:
     - LINUX, DOCKER, DOCKERNVIDIA
-  except:
-    changes:
-      - .travis.yml
-      - README.md
 
 test:nimtorch:wasm:
   stage: test
@@ -205,10 +201,6 @@ test:nimtorch:wasm:
     - build:aten:wasm
   tags:
     - LINUX, DOCKER
-  except:
-    changes:
-      - .travis.yml
-      - README.md
   only:
     refs:
       - schedules
@@ -232,10 +224,6 @@ test:nimtorch:macos:
     - build:aten:macos
   tags:
     - MACOS, CMAKE, PYTHON, PYYAML, CONDA
-  except:
-    changes:
-      - .travis.yml
-      - README.md
 
 deploy:nimtorch:
   stage: deploy
