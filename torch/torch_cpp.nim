@@ -150,6 +150,9 @@ elif defined osx:
 else:
   {.passC: "-std=c++11".}
 
+  when defined staticlibs:
+    {.passL: "-static-libgcc -static-libstdc++".}
+
   # If we built ATEN with GCC version < 5.0 we might need this
   # We detect this if we have linking issues with std::string types
   when defined noCxx11Abi:
