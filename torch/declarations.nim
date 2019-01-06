@@ -163,12 +163,6 @@ proc th_unfold_impl*(ty: TensorType; self: Tensor; dimension: int; size: int; st
 proc th_unfold_impl*(self: Tensor; dimension: int; size: int; step: int): Tensor {.inline.} = 
   atenFunction(ATensor, "at::_th_unfold", self.toATensor(), dimension, size, step).newTensor()
 
-proc th_arange_impl*(ty: TensorType; start: float; end_special: float; step: float): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_th_arange", start, end_special, step).newTensor()
-
-proc th_arange_impl*(ty: TensorType; end_special: float): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_th_arange", end_special).newTensor()
-
 proc th_scatter_impl_inplace*(ty: TensorType; self: Tensor; dim: int; index: Tensor; src: Tensor): Tensor {.inline, discardable.} = 
   ty[].atenMethod(void, "_th_scatter_", self.toATensor(), dim, index.toATensor(), src.toATensor()); self
 
@@ -1189,12 +1183,6 @@ proc th_getri_single_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} =
 proc th_getri_single_impl*(self: Tensor): Tensor {.inline.} = 
   atenFunction(ATensor, "at::_th_getri_single", self.toATensor()).newTensor()
 
-proc th_potrs_single_impl*(ty: TensorType; self: Tensor; input2: Tensor; upper: bool = true): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_th_potrs_single", self.toATensor(), input2.toATensor(), upper).newTensor()
-
-proc th_potrs_single_impl*(self: Tensor; input2: Tensor; upper: bool = true): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_th_potrs_single", self.toATensor(), input2.toATensor(), upper).newTensor()
-
 proc th_potri_impl*(ty: TensorType; self: Tensor; upper: bool = true): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "_th_potri", self.toATensor(), upper).newTensor()
 
@@ -1705,18 +1693,6 @@ proc thnn_max_unpool3d_backward_impl*(ty: TensorType; grad_output: Tensor; self:
 proc thnn_max_unpool3d_backward_impl*(grad_output: Tensor; self: Tensor; indices: Tensor; output_size: openarray[int]; stride: openarray[int]; padding: openarray[int]): Tensor {.inline.} = 
   atenFunction(ATensor, "at::_thnn_max_unpool3d_backward", grad_output.toATensor(), self.toATensor(), indices.toATensor(), output_size.toAIntList(), stride.toAIntList(), padding.toAIntList()).newTensor()
 
-proc thnn_reflection_pad1d_impl*(ty: TensorType; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_thnn_reflection_pad1d_forward", self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_reflection_pad1d_impl*(self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_thnn_reflection_pad1d_forward", self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_reflection_pad1d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_thnn_reflection_pad1d_backward", grad_output.toATensor(), self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_reflection_pad1d_backward_impl*(grad_output: Tensor; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_thnn_reflection_pad1d_backward", grad_output.toATensor(), self.toATensor(), padding.toAIntList()).newTensor()
-
 proc thnn_reflection_pad2d_impl*(ty: TensorType; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "_thnn_reflection_pad2d_forward", self.toATensor(), padding.toAIntList()).newTensor()
 
@@ -1728,30 +1704,6 @@ proc thnn_reflection_pad2d_backward_impl*(ty: TensorType; grad_output: Tensor; s
 
 proc thnn_reflection_pad2d_backward_impl*(grad_output: Tensor; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
   atenFunction(ATensor, "at::_thnn_reflection_pad2d_backward", grad_output.toATensor(), self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_replication_pad2d_impl*(ty: TensorType; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_thnn_replication_pad2d_forward", self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_replication_pad2d_impl*(self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_thnn_replication_pad2d_forward", self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_replication_pad2d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_thnn_replication_pad2d_backward", grad_output.toATensor(), self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_replication_pad2d_backward_impl*(grad_output: Tensor; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_thnn_replication_pad2d_backward", grad_output.toATensor(), self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_replication_pad3d_impl*(ty: TensorType; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_thnn_replication_pad3d_forward", self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_replication_pad3d_impl*(self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_thnn_replication_pad3d_forward", self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_replication_pad3d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_thnn_replication_pad3d_backward", grad_output.toATensor(), self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_replication_pad3d_backward_impl*(grad_output: Tensor; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_thnn_replication_pad3d_backward", grad_output.toATensor(), self.toATensor(), padding.toAIntList()).newTensor()
 
 proc thnn_upsample_linear1d_impl*(ty: TensorType; self: Tensor; output_size: openarray[int]; align_corners: bool): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "_thnn_upsample_linear1d_forward", self.toATensor(), output_size.toAIntList(), align_corners).newTensor()
@@ -2155,6 +2107,12 @@ proc any*(ty: TensorType; self: Tensor; dim: int; keepdim: bool = false): Tensor
 proc any*(self: Tensor; dim: int; keepdim: bool = false): Tensor {.inline.} = 
   self.tensor.atenMethod(ATensor, "any", dim, keepdim).newTensor()
 
+proc arange*(ty: TensorType; end_special: float; options: TensorOptions = defaultOptions()): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "arange", end_special, options).newTensor()
+
+proc arange*(end_special: float; options: TensorOptions = defaultOptions()): Tensor {.inline.} = 
+  atenFunction(ATensor, "at::arange", end_special, options).newTensor()
+
 proc arange*(ty: TensorType; start: float; end_special: float; options: TensorOptions = defaultOptions()): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "arange", start, end_special, options).newTensor()
 
@@ -2166,12 +2124,6 @@ proc arange*(ty: TensorType; start: float; end_special: float; step: float; opti
 
 proc arange*(start: float; end_special: float; step: float; options: TensorOptions = defaultOptions()): Tensor {.inline.} = 
   atenFunction(ATensor, "at::arange", start, end_special, step, options).newTensor()
-
-proc arange*(ty: TensorType; end_special: float; options: TensorOptions = defaultOptions()): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "arange", end_special, options).newTensor()
-
-proc arange*(end_special: float; options: TensorOptions = defaultOptions()): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::arange", end_special, options).newTensor()
 
 proc dim_arange_impl*(ty: TensorType; like: Tensor; dim: int): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "_dim_arange", like.toATensor(), dim).newTensor()
