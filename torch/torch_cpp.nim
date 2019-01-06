@@ -3,7 +3,7 @@ export cpp
 import os
 from os import fileExists
 
-const version* = "2018.12.30.1989"
+const version* = "2019.01.06.2130"
 
 cppdefines("ATEN_VERSION=" & version)
 
@@ -61,6 +61,7 @@ static:
   putEnv("ATEN", atenPath)
 
 cppincludes(atenPath & """/include""")
+cppincludes(atenPath & """/lib/include""")
 cpplibpaths(atenPath & """/lib""")
 cpplibpaths(atenPath & """/lib64""")
 
@@ -114,6 +115,7 @@ elif defined windows:
   when defined cuda:
     const cudaPath = getEnv("CUDA_PATH")
     cppincludes(cudaPath & """/include""")
+    cppincludes(cudaPath & """/lib/include""")
   
     when sizeof(int) == 8:
       const cudaLibPath = cudaPath & "/lib/x64"
