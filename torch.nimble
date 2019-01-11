@@ -1,6 +1,6 @@
 # Package
 
-version     = "0.2.2"
+version     = "0.2.3"
 author      = "Giovanni Petrantoni"
 description = "A nim flavor of pytorch"
 license     = "MIT"
@@ -9,7 +9,7 @@ skipFiles   = @[".gitlab-ci.yml", ".travis.yml"]
 
 # Deps
 
-requires "nim >= 0.19.9"
+requires "nim >= 0.19.2"
 requires "fragments >= 0.1.25"
 
 task test, "Run cpu tests":
