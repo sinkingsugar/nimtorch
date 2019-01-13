@@ -65,6 +65,7 @@ build:aten:cuda10.0:
     - sed -i -r "s/const version\* = "'"'"[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+"'"'"/const version* = "'"'"`cat version.txt`"'"'"/g" ../torch/torch_cpp.nim
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_lite/meta.yaml
+    - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_static/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" conda/aten_wasm/meta.yaml
     - sed -i -r "s/[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+/`cat version.txt`/g" ../conda/nimtorch/meta.yaml # always needed by the next step
     - docker pull nvidia/cuda:10.0-devel-ubuntu18.04
@@ -80,6 +81,7 @@ build:aten:cuda10.0:
       - docker/version.txt
       - docker/conda/aten/meta.yaml
       - docker/conda/aten_lite/meta.yaml
+      - docker/conda/aten_static/meta.yaml
       - docker/conda/aten_wasm/meta.yaml
       - conda/nimtorch/meta.yaml
   tags:
