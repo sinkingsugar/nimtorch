@@ -1009,30 +1009,6 @@ proc th_dot_impl*(ty: TensorType; self: Tensor; tensor: Tensor): float {.inline.
 proc th_dot_impl*(self: Tensor; tensor: Tensor): float {.inline.} = 
   atenFunction(float, "at::_th_dot", self.toATensor(), tensor.toATensor())
 
-proc th_tril_impl*(ty: TensorType; self: Tensor; diagonal: int = 0): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_th_tril", self.toATensor(), diagonal).newTensor()
-
-proc th_tril_impl*(self: Tensor; diagonal: int = 0): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_th_tril", self.toATensor(), diagonal).newTensor()
-
-proc th_tril_impl_inplace*(ty: TensorType; self: Tensor; diagonal: int = 0): Tensor {.inline, discardable.} = 
-  ty[].atenMethod(void, "_th_tril_", self.toATensor(), diagonal); self
-
-proc th_tril_impl_inplace*(self: Tensor; diagonal: int = 0): Tensor {.inline, discardable.} = 
-  atenFunction(void, "at::_th_tril_", self.toATensor(), diagonal); self
-
-proc th_triu_impl*(ty: TensorType; self: Tensor; diagonal: int = 0): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_th_triu", self.toATensor(), diagonal).newTensor()
-
-proc th_triu_impl*(self: Tensor; diagonal: int = 0): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_th_triu", self.toATensor(), diagonal).newTensor()
-
-proc th_triu_impl_inplace*(ty: TensorType; self: Tensor; diagonal: int = 0): Tensor {.inline, discardable.} = 
-  ty[].atenMethod(void, "_th_triu_", self.toATensor(), diagonal); self
-
-proc th_triu_impl_inplace*(self: Tensor; diagonal: int = 0): Tensor {.inline, discardable.} = 
-  atenFunction(void, "at::_th_triu_", self.toATensor(), diagonal); self
-
 proc th_cross_impl*(ty: TensorType; self: Tensor; other: Tensor; dim: int = -1): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "_th_cross", self.toATensor(), other.toATensor(), dim).newTensor()
 
@@ -1320,12 +1296,6 @@ proc th_dirichlet_grad_impl*(ty: TensorType; x: Tensor; alpha: Tensor; total: Te
 
 proc th_dirichlet_grad_impl*(x: Tensor; alpha: Tensor; total: Tensor): Tensor {.inline.} = 
   atenFunction(ATensor, "at::_th_dirichlet_grad", x.toATensor(), alpha.toATensor(), total.toATensor()).newTensor()
-
-proc th_tensor_impl*(ty: TensorType; storage: AStorage; storageOffset: int; size: openarray[int]; stride: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_th_tensor", storage, storageOffset, size.toAIntList(), stride.toAIntList()).newTensor()
-
-proc th_tensor_impl*(ty: TensorType; size: openarray[int]; stride: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_th_tensor", size.toAIntList(), stride.toAIntList()).newTensor()
 
 proc th_alias_impl*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "_th_alias", self.toATensor()).newTensor()
@@ -1692,18 +1662,6 @@ proc thnn_max_unpool3d_backward_impl*(ty: TensorType; grad_output: Tensor; self:
 
 proc thnn_max_unpool3d_backward_impl*(grad_output: Tensor; self: Tensor; indices: Tensor; output_size: openarray[int]; stride: openarray[int]; padding: openarray[int]): Tensor {.inline.} = 
   atenFunction(ATensor, "at::_thnn_max_unpool3d_backward", grad_output.toATensor(), self.toATensor(), indices.toATensor(), output_size.toAIntList(), stride.toAIntList(), padding.toAIntList()).newTensor()
-
-proc thnn_reflection_pad2d_impl*(ty: TensorType; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_thnn_reflection_pad2d_forward", self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_reflection_pad2d_impl*(self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_thnn_reflection_pad2d_forward", self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_reflection_pad2d_backward_impl*(ty: TensorType; grad_output: Tensor; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  ty[].atenMethod(ATensor, "_thnn_reflection_pad2d_backward", grad_output.toATensor(), self.toATensor(), padding.toAIntList()).newTensor()
-
-proc thnn_reflection_pad2d_backward_impl*(grad_output: Tensor; self: Tensor; padding: openarray[int]): Tensor {.inline.} = 
-  atenFunction(ATensor, "at::_thnn_reflection_pad2d_backward", grad_output.toATensor(), self.toATensor(), padding.toAIntList()).newTensor()
 
 proc thnn_upsample_linear1d_impl*(ty: TensorType; self: Tensor; output_size: openarray[int]; align_corners: bool): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "_thnn_upsample_linear1d_forward", self.toATensor(), output_size.toAIntList(), align_corners).newTensor()
@@ -2977,6 +2935,12 @@ proc isclose*(ty: TensorType; self: Tensor; other: Tensor; rtol: float64; atol: 
 proc isclose*(self: Tensor; other: Tensor; rtol: float64; atol: float64; equal_nan: bool = false): Tensor {.inline.} = 
   self.tensor.atenMethod(ATensor, "isclose", other.toATensor(), rtol, atol, equal_nan).newTensor()
 
+proc isnan*(ty: TensorType; self: Tensor): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "isnan", self.toATensor()).newTensor()
+
+proc isnan*(self: Tensor): Tensor {.inline.} = 
+  atenFunction(ATensor, "at::isnan", self.toATensor()).newTensor()
+
 proc is_distributed*(ty: TensorType; self: Tensor): bool {.inline.} = 
   ty[].atenMethod(bool, "is_distributed", self.toATensor())
 
@@ -3378,6 +3342,12 @@ proc native_batch_norm_backward*(ty: TensorType; grad_out: Tensor; input: Tensor
 
 proc native_batch_norm_backward*(grad_out: Tensor; input: Tensor; weight: Tensor; running_mean: Tensor; running_var: Tensor; save_mean: Tensor; save_invstd: Tensor; train: bool; eps: float64; output_mask: StdArray[bool, 3]): tuple[result0: Tensor, result1: Tensor, result2: Tensor] {.inline.} = 
   atenFunction(StdTuple3[ATensor, ATensor, ATensor], "at::native_batch_norm_backward", grad_out.toATensor(), input.toATensor(), weight.toATensor(), running_mean.toATensor(), running_var.toATensor(), save_mean.toATensor(), save_invstd.toATensor(), train, eps, output_mask).toNimTuple().newTensors()
+
+proc batch_norm_update_stats*(ty: TensorType; input: Tensor; running_mean: Tensor; running_var: Tensor; momentum: float64): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
+  ty[].atenMethod(StdTuple2[ATensor, ATensor], "batch_norm_update_stats", input.toATensor(), running_mean.toATensor(), running_var.toATensor(), momentum).toNimTuple().newTensors()
+
+proc batch_norm_update_stats*(input: Tensor; running_mean: Tensor; running_var: Tensor; momentum: float64): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
+  atenFunction(StdTuple2[ATensor, ATensor], "at::batch_norm_update_stats", input.toATensor(), running_mean.toATensor(), running_var.toATensor(), momentum).toNimTuple().newTensors()
 
 proc ones*(ty: TensorType; size: openarray[int]; options: TensorOptions = defaultOptions()): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "ones", size.toAIntList(), options).newTensor()
