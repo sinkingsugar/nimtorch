@@ -671,6 +671,20 @@ autograd native_batch_norm:
     atenFunction(StdTuple3[ATensor, ATensor, ATensor], "at::native_batch_norm", input.toATensor(), weight.toATensor(), bias.toATensor(), running_mean.toATensor(), running_var.toATensor(), training, momentum, eps).toNimTuple().newTensors()
   (input, weight, bias): native_batch_norm_backward(grad, input, weight, running_mean, running_var, fwd_result[1], fwd_result[2], training, eps, grad_input_mask)
 
+autograd nnpack_spatial_convolution_impl:
+  proc forward*(ty: TensorType; input: Tensor; weight: Tensor; bias: Tensor; padding: openarray[int]): Tensor {.inline.} = 
+    ty[].atenMethod(ATensor, "_nnpack_spatial_convolution", input.toATensor(), weight.toATensor(), bias.toATensor(), padding.toAIntList()).newTensor()
+  input: nnpack_spatial_convolution_backward_input_impl(input, grad, weight, padding)
+  weight: nnpack_spatial_convolution_backward_weight_impl(input, weight.sizes(), grad, padding)
+  bias: grad.contiguous().view([grad.size(0), grad.size(1), -1]).sum(0).sum(1)
+
+autograd nnpack_spatial_convolution_impl:
+  proc forward*(input: Tensor; weight: Tensor; bias: Tensor; padding: openarray[int]): Tensor {.inline.} = 
+    atenFunction(ATensor, "at::_nnpack_spatial_convolution", input.toATensor(), weight.toATensor(), bias.toATensor(), padding.toAIntList()).newTensor()
+  input: nnpack_spatial_convolution_backward_input_impl(input, grad, weight, padding)
+  weight: nnpack_spatial_convolution_backward_weight_impl(input, weight.sizes(), grad, padding)
+  bias: grad.contiguous().view([grad.size(0), grad.size(1), -1]).sum(0).sum(1)
+
 autograd pdist_forward_impl:
   proc forward*(ty: TensorType; self: Tensor; p: float64 = 2): Tensor {.inline.} = 
     ty[].atenMethod(ATensor, "_pdist_forward", self.toATensor(), p).newTensor()
@@ -2327,6 +2341,16 @@ autograd fractional_max_pool2d:
   proc forward*(self: Tensor; kernel_size: openarray[int]; output_size: openarray[int]; random_samples: Tensor): tuple[output: Tensor, indices: Tensor] {.inline.} = 
     atenFunction(StdTuple2[ATensor, ATensor], "at::fractional_max_pool2d", self.toATensor(), kernel_size.toAIntList(), output_size.toAIntList(), random_samples.toATensor()).toNimTuple().newTensors()
   self: fractional_max_pool2d_backward(grad, self, kernel_size, output_size, fwd_result.indices)
+
+autograd fractional_max_pool3d:
+  proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; output_size: openarray[int]; random_samples: Tensor): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+    ty[].atenMethod(StdTuple2[ATensor, ATensor], "fractional_max_pool3d", self.toATensor(), kernel_size.toAIntList(), output_size.toAIntList(), random_samples.toATensor()).toNimTuple().newTensors()
+  self: fractional_max_pool3d_backward(grad, self, kernel_size, output_size, fwd_result.indices)
+
+autograd fractional_max_pool3d:
+  proc forward*(self: Tensor; kernel_size: openarray[int]; output_size: openarray[int]; random_samples: Tensor): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+    atenFunction(StdTuple2[ATensor, ATensor], "at::fractional_max_pool3d", self.toATensor(), kernel_size.toAIntList(), output_size.toAIntList(), random_samples.toATensor()).toNimTuple().newTensors()
+  self: fractional_max_pool3d_backward(grad, self, kernel_size, output_size, fwd_result.indices)
 
 autograd max_pool2d_with_indices:
   proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[output: Tensor, indices: Tensor] {.inline.} = 
