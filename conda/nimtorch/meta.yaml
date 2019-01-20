@@ -8,5 +8,5 @@ source:
 requirements:
   run:
     - nim >=0.19.9.1
-    - fragments >=0.1.25
+    - fragments >=0.1.27
     - aten ==2019.01.19.2361
