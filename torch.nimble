@@ -10,7 +10,7 @@ skipFiles   = @[".gitlab-ci.yml", ".travis.yml"]
 # Deps
 
 requires "nim >= 0.19.2"
-requires "fragments >= 0.1.25"
+requires "fragments >= 0.1.27"
 
 task test, "Run cpu tests":
   exec """nim cpp -r -o:test torch/generator.nim"""

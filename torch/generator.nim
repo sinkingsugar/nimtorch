@@ -697,23 +697,23 @@ import torch_cpp
 import tensors
 import macros
 
-template atenMethod*(obj: CppObject; returnType: type[void]; field: untyped, args: varargs[CppProxy, CppFromAst]): untyped =
-  try: obj.dynamicCppCall(field, args).to(void)
+template atenMethod*(obj: CppObject; returnType: type[void]; field: untyped, args: varargs[CppProxy, cppFromAst]): untyped =
+  try: obj.invoke(field, args).to(void)
   except StdException as e: raiseAssert($e.what())
 
-template atenMethod*(obj: CppObject; returnType: type; field: untyped, args: varargs[CppProxy, CppFromAst]): untyped =
+template atenMethod*(obj: CppObject; returnType: type; field: untyped, args: varargs[CppProxy, cppFromAst]): untyped =
   var r: returnType
-  try: r = obj.dynamicCppCall(field, args).to(returnType)
+  try: r = obj.invoke(field, args).to(returnType)
   except StdException as e: raiseAssert($e.what())
   r
 
-template atenFunction*(returnType: type[void]; field: untyped, args: varargs[CppProxy, CppFromAst]): untyped =
-  try: dynamicCCall(field, args).to(void)
+template atenFunction*(returnType: type[void]; field: untyped, args: varargs[CppProxy, cppFromAst]): untyped =
+  try: invokeFunction(field, args).to(void)
   except StdException as e: raiseAssert($e.what())
 
-template atenFunction*(returnType: type; field: untyped, args: varargs[CppProxy, CppFromAst]): untyped =
+template atenFunction*(returnType: type; field: untyped, args: varargs[CppProxy, cppFromAst]): untyped =
   var r: returnType
-  try: r = dynamicCCall(field, args).to(returnType)
+  try: r = invokeFunction(field, args).to(returnType)
   except StdException as e: raiseAssert($e.what())
   r
 """

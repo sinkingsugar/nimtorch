@@ -199,7 +199,7 @@ proc atan2_backward*(grad, self, other: Tensor; outputMask: StdArray[bool, 2]): 
     result[1] = grad * -self * recip
 
 proc maybe_wrap_dim(dim, size: int): int {.inline.} =
-  return dynamicCCall("at::maybe_wrap_dim", dim, size).to(int)
+  return invokeFunction("at::maybe_wrap_dim", dim, size).to(int)
 
 proc safe_size_impl*(sizes, dim: openarray[int]): int =
   result = 1
