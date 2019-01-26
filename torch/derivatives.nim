@@ -2269,24 +2269,24 @@ autograd adaptive_avg_pool3d_backward:
   self: zeros_like(self)
 
 autograd adaptive_max_pool2d:
-  proc forward*(ty: TensorType; self: Tensor; output_size: openarray[int]): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+  proc forward*(ty: TensorType; self: Tensor; output_size: openarray[int]): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     ty[].atenMethod(StdTuple2[ATensor, ATensor], "adaptive_max_pool2d", self.toATensor(), output_size.toAIntList()).toNimTuple().newTensors()
-  self: adaptive_max_pool2d_backward(grad, self, fwd_result.indices)
+  self: adaptive_max_pool2d_backward(grad, self, fwd_result[1])
 
 autograd adaptive_max_pool2d:
-  proc forward*(self: Tensor; output_size: openarray[int]): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+  proc forward*(self: Tensor; output_size: openarray[int]): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     atenFunction(StdTuple2[ATensor, ATensor], "at::adaptive_max_pool2d", self.toATensor(), output_size.toAIntList()).toNimTuple().newTensors()
-  self: adaptive_max_pool2d_backward(grad, self, fwd_result.indices)
+  self: adaptive_max_pool2d_backward(grad, self, fwd_result[1])
 
 autograd adaptive_max_pool3d:
-  proc forward*(ty: TensorType; self: Tensor; output_size: openarray[int]): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+  proc forward*(ty: TensorType; self: Tensor; output_size: openarray[int]): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     ty[].atenMethod(StdTuple2[ATensor, ATensor], "adaptive_max_pool3d", self.toATensor(), output_size.toAIntList()).toNimTuple().newTensors()
-  self: adaptive_max_pool3d_backward(grad, self, fwd_result.indices)
+  self: adaptive_max_pool3d_backward(grad, self, fwd_result[1])
 
 autograd adaptive_max_pool3d:
-  proc forward*(self: Tensor; output_size: openarray[int]): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+  proc forward*(self: Tensor; output_size: openarray[int]): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     atenFunction(StdTuple2[ATensor, ATensor], "at::adaptive_max_pool3d", self.toATensor(), output_size.toAIntList()).toNimTuple().newTensors()
-  self: adaptive_max_pool3d_backward(grad, self, fwd_result.indices)
+  self: adaptive_max_pool3d_backward(grad, self, fwd_result[1])
 
 autograd avg_pool2d:
   proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; ceil_mode: bool = false; count_include_pad: bool = true): Tensor {.inline.} = 
@@ -2333,14 +2333,14 @@ autograd avg_pool3d_backward:
   self: zeros_like(self)
 
 autograd fractional_max_pool2d:
-  proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; output_size: openarray[int]; random_samples: Tensor): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+  proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; output_size: openarray[int]; random_samples: Tensor): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     ty[].atenMethod(StdTuple2[ATensor, ATensor], "fractional_max_pool2d", self.toATensor(), kernel_size.toAIntList(), output_size.toAIntList(), random_samples.toATensor()).toNimTuple().newTensors()
-  self: fractional_max_pool2d_backward(grad, self, kernel_size, output_size, fwd_result.indices)
+  self: fractional_max_pool2d_backward(grad, self, kernel_size, output_size, fwd_result[1])
 
 autograd fractional_max_pool2d:
-  proc forward*(self: Tensor; kernel_size: openarray[int]; output_size: openarray[int]; random_samples: Tensor): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+  proc forward*(self: Tensor; kernel_size: openarray[int]; output_size: openarray[int]; random_samples: Tensor): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     atenFunction(StdTuple2[ATensor, ATensor], "at::fractional_max_pool2d", self.toATensor(), kernel_size.toAIntList(), output_size.toAIntList(), random_samples.toATensor()).toNimTuple().newTensors()
-  self: fractional_max_pool2d_backward(grad, self, kernel_size, output_size, fwd_result.indices)
+  self: fractional_max_pool2d_backward(grad, self, kernel_size, output_size, fwd_result[1])
 
 autograd fractional_max_pool3d:
   proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; output_size: openarray[int]; random_samples: Tensor): tuple[output: Tensor, indices: Tensor] {.inline.} = 
@@ -2353,24 +2353,24 @@ autograd fractional_max_pool3d:
   self: fractional_max_pool3d_backward(grad, self, kernel_size, output_size, fwd_result.indices)
 
 autograd max_pool2d_with_indices:
-  proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+  proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     ty[].atenMethod(StdTuple2[ATensor, ATensor], "max_pool2d_with_indices", self.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).toNimTuple().newTensors()
-  self: max_pool2d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices)
+  self: max_pool2d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result[1])
 
 autograd max_pool2d_with_indices:
-  proc forward*(self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+  proc forward*(self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     atenFunction(StdTuple2[ATensor, ATensor], "at::max_pool2d_with_indices", self.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).toNimTuple().newTensors()
-  self: max_pool2d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices)
+  self: max_pool2d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result[1])
 
 autograd max_pool3d_with_indices:
-  proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+  proc forward*(ty: TensorType; self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     ty[].atenMethod(StdTuple2[ATensor, ATensor], "max_pool3d_with_indices", self.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).toNimTuple().newTensors()
-  self: max_pool3d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices)
+  self: max_pool3d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result[1])
 
 autograd max_pool3d_with_indices:
-  proc forward*(self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[output: Tensor, indices: Tensor] {.inline.} = 
+  proc forward*(self: Tensor; kernel_size: openarray[int]; stride: openarray[int]; padding: openarray[int] = [0]; dilation: openarray[int] = [1]; ceil_mode: bool = false): tuple[result0: Tensor, result1: Tensor] {.inline.} = 
     atenFunction(StdTuple2[ATensor, ATensor], "at::max_pool3d_with_indices", self.toATensor(), kernel_size.toAIntList(), stride.toAIntList(), padding.toAIntList(), dilation.toAIntList(), ceil_mode).toNimTuple().newTensors()
-  self: max_pool3d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result.indices)
+  self: max_pool3d_with_indices_backward(grad, self, kernel_size, stride, padding, dilation, ceil_mode, fwd_result[1])
 
 autograd max_unpool2d:
   proc forward*(ty: TensorType; self: Tensor; indices: Tensor; output_size: openarray[int]): Tensor {.inline.} = 

@@ -3,7 +3,7 @@ export cpp
 import os
 from os import fileExists
 
-const version* = "2019.01.21.2416"
+const version* = "2019.01.26.2467"
 
 cppdefines("ATEN_VERSION=" & version)
 
