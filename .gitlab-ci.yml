@@ -129,6 +129,9 @@ build:aten:macos:
   before_script:
     - conda env remove -n aten_build || true
   script:
+    - conda create -n aten_build mkl mkl-include intel-openmp
+    - source activate aten_build
+    - export LDFLAGS="-L$CONDA_PREFIX/lib"
     # Fix up versions
     - export PYTORCH_COMMIT=`cat torch/commit.txt`
     - sed -E -i bak "s/const version\* = "'"'"[12][0-9]{3}.[01][0-9].[0-3][0-9].[0-9]+"'"'"/const version* = "'"'"`cat docker/version.txt`"'"'"/g" torch/torch_cpp.nim
@@ -143,8 +146,8 @@ build:aten:macos:
     - git submodule update --init --recursive
     - mkdir built || true
     - cd built
-    - cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
-    - make -j 5
+    - cmake -DCMAKE_C_COMPILER=/usr/local/opt/llvm/bin/clang -DCMAKE_CXX_COMPILER=/usr/local/opt/llvm/bin/clang++ -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DUSE_MKLDNN=OFF -DBLAS=MKL -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DHAS_GCC_ATOMICS=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
+    - make -j 4
     - make install
     - make clean
     - cp ../tools/autograd/derivatives.yaml `pwd`/output/share/
@@ -154,6 +157,9 @@ build:aten:macos:
     - conda build purge-all
     - conda build aten
     - anaconda -t $CONDA_TOKEN upload ~/miniconda3/conda-bld/osx-64/aten-*.tar.bz2
+  after_script:
+    - conda clean --all
+    - conda env remove -n aten_build || true
   dependencies:
     - prepare:aten:merged
     - prepare:aten:fast
@@ -162,7 +168,7 @@ build:aten:macos:
       - conda/nimtorch/meta.yaml
       - torch/torch_cpp.nim
   tags:
-    - MACOS, CMAKE, PYTHON, PYYAML, CONDA
+    - MACOS, CMAKE, PYTHON, PYYAML, CONDA, BREWLLVM
   only:
     refs:
       - schedules
