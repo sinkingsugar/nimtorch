@@ -62,7 +62,6 @@ matrix:
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
-    - export PYTHON_EXECUTABLE=$HOME/miniconda/bin/python
     - hash -r
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda
@@ -77,7 +76,7 @@ matrix:
     - git submodule update --init --recursive
     - mkdir built
     - cd built
-    - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
+    - cmake -DPYTHON_EXECUTABLE=python -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
     - make -j 10
     - make install
     - make clean

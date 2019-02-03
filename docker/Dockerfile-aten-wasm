@@ -26,16 +26,13 @@ cd pytorch && \
 git submodule init && \
 git submodule update
 
-ENV PYTORCH_PYTHON=python3
-ENV PYTHON_EXECUTABLE=/root/miniconda3/bin/python
-
 RUN source /etc/profile.d/emscripten.sh && \
 cd && \
 cd pytorch && \
 mkdir built && \
 cd built && \
 emcc --version && \
-emconfigure cmake -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
+emconfigure cmake -DPYTHON_EXECUTABLE=python -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
 
 RUN source /etc/profile.d/emscripten.sh && \
 cd && \

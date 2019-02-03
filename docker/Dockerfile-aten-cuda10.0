@@ -28,9 +28,6 @@ RUN cd && \
 cd pytorch && \
 git submodule update --init --recursive
 
-ENV PYTORCH_PYTHON=python3
-ENV PYTHON_EXECUTABLE=/root/miniconda3/bin/python
-
 RUN conda create -n deps mkl mkl-include intel-openmp
 
 # download magma 2.4.0 pre built using same docker images - dynamic version
@@ -42,7 +39,7 @@ cd pytorch && \
 mkdir built && \
 cd built && \
 source activate deps && \
-cmake -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DOpenMP_libiomp5_LIBRARY="libiomp5" -DOpenMP_CXX_LIB_NAMES="libiomp5" -DOpenMP_C_LIB_NAMES="libiomp5" -DOpenMP_EXE_LINKER_FLAGS="-liomp5 -L$CONDA_PREFIX/lib" -DOpenMP_CXX_FLAGS="-fopenmp" -DOpenMP_C_FLAGS="-fopenmp" -DUSE_MKLDNN=OFF -DUSE_MKL=ON -DBLAS=MKL -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
+cmake -DPYTHON_EXECUTABLE=python -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DOpenMP_libiomp5_LIBRARY="libiomp5" -DOpenMP_CXX_LIB_NAMES="libiomp5" -DOpenMP_C_LIB_NAMES="libiomp5" -DOpenMP_EXE_LINKER_FLAGS="-liomp5 -L$CONDA_PREFIX/lib" -DOpenMP_CXX_FLAGS="-fopenmp" -DOpenMP_C_FLAGS="-fopenmp" -DUSE_MKLDNN=OFF -DUSE_MKL=ON -DBLAS=MKL -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../ && \
 make install -j10 && \
 make clean && \
 cp ../tools/autograd/derivatives.yaml `pwd`/output/share/

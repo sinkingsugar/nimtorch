@@ -129,7 +129,6 @@ build:aten:macos:
   before_script:
     - conda env remove -n aten_build || true
   script:
-    - export PYTHON_EXECUTABLE=$HOME/miniconda3/bin/python3
     - conda create -n aten_build mkl mkl-include intel-openmp
     - source activate aten_build
     - export LDFLAGS="-L$CONDA_PREFIX/lib"
@@ -147,7 +146,7 @@ build:aten:macos:
     - git submodule update --init --recursive
     - mkdir built || true
     - cd built
-    - cmake -DCMAKE_C_COMPILER=/usr/local/opt/llvm/bin/clang -DCMAKE_CXX_COMPILER=/usr/local/opt/llvm/bin/clang++ -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DUSE_MKLDNN=OFF -DBLAS=MKL -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DHAS_GCC_ATOMICS=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
+    - cmake -DPYTHON_EXECUTABLE=python -DCMAKE_C_COMPILER=/usr/local/opt/llvm/bin/clang -DCMAKE_CXX_COMPILER=/usr/local/opt/llvm/bin/clang++ -DCMAKE_INCLUDE_PATH=$CONDA_PREFIX/include -DCMAKE_LIBRARY_PATH=$CONDA_PREFIX/lib -DUSE_MKLDNN=OFF -DBLAS=MKL -DUSE_OPENMP=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_ATEN_ONLY=ON -DHAS_GCC_ATOMICS=ON -DCMAKE_INSTALL_PREFIX=`pwd`/output ../
     - make -j 4
     - make install
     - make clean
