@@ -2855,6 +2855,12 @@ proc index_copy_inplace*(ty: TensorType; self: Tensor; dim: int; index: Tensor; 
 
 proc index_copy_inplace*(self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline, discardable.}
 
+proc index_copy*(ty: TensorType; self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "index_copy", self.toATensor(), dim, index.toATensor(), source.toATensor()).newTensor()
+
+proc index_copy*(self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline.} = 
+  self.tensor.atenMethod(ATensor, "index_copy", dim, index.toATensor(), source.toATensor()).newTensor()
+
 proc index_put*(ty: TensorType; self: Tensor; indices: openarray[Tensor]; values: Tensor; accumulate: bool = false): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "index_put", self.toATensor(), indices.toATensors(), values.toATensor(), accumulate).newTensor()
 
@@ -2864,6 +2870,42 @@ proc index_put*(self: Tensor; indices: openarray[Tensor]; values: Tensor; accumu
 proc index_put_inplace*(ty: TensorType; self: Tensor; indices: openarray[Tensor]; values: Tensor; accumulate: bool = false): Tensor {.inline, discardable.}
 
 proc index_put_inplace*(self: Tensor; indices: openarray[Tensor]; values: Tensor; accumulate: bool = false): Tensor {.inline, discardable.}
+
+proc index_add*(ty: TensorType; self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "index_add", self.toATensor(), dim, index.toATensor(), source.toATensor()).newTensor()
+
+proc index_add*(self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline.} = 
+  self.tensor.atenMethod(ATensor, "index_add", dim, index.toATensor(), source.toATensor()).newTensor()
+
+proc index_fill*(ty: TensorType; self: Tensor; dim: int; index: Tensor; source: float): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "index_fill", self.toATensor(), dim, index.toATensor(), source).newTensor()
+
+proc index_fill*(self: Tensor; dim: int; index: Tensor; source: float): Tensor {.inline.} = 
+  self.tensor.atenMethod(ATensor, "index_fill", dim, index.toATensor(), source).newTensor()
+
+proc scatter*(ty: TensorType; self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "scatter", self.toATensor(), dim, index.toATensor(), source.toATensor()).newTensor()
+
+proc scatter*(self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline.} = 
+  self.tensor.atenMethod(ATensor, "scatter", dim, index.toATensor(), source.toATensor()).newTensor()
+
+proc scatter_add*(ty: TensorType; self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "scatter_add", self.toATensor(), dim, index.toATensor(), source.toATensor()).newTensor()
+
+proc scatter_add*(self: Tensor; dim: int; index: Tensor; source: Tensor): Tensor {.inline.} = 
+  self.tensor.atenMethod(ATensor, "scatter_add", dim, index.toATensor(), source.toATensor()).newTensor()
+
+proc masked_scatter*(ty: TensorType; self: Tensor; mask: Tensor; source: Tensor): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "masked_scatter", self.toATensor(), mask.toATensor(), source.toATensor()).newTensor()
+
+proc masked_scatter*(self: Tensor; mask: Tensor; source: Tensor): Tensor {.inline.} = 
+  self.tensor.atenMethod(ATensor, "masked_scatter", mask.toATensor(), source.toATensor()).newTensor()
+
+proc masked_fill*(ty: TensorType; self: Tensor; mask: Tensor; source: float): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "masked_fill", self.toATensor(), mask.toATensor(), source).newTensor()
+
+proc masked_fill*(self: Tensor; mask: Tensor; source: float): Tensor {.inline.} = 
+  self.tensor.atenMethod(ATensor, "masked_fill", mask.toATensor(), source).newTensor()
 
 proc instance_norm*(ty: TensorType; input: Tensor; weight: Tensor; bias: Tensor; running_mean: Tensor; running_var: Tensor; use_input_stats: bool; momentum: float64; eps: float64; cudnn_enabled: bool): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "instance_norm", input.toATensor(), weight.toATensor(), bias.toATensor(), running_mean.toATensor(), running_var.toATensor(), use_input_stats, momentum, eps, cudnn_enabled).newTensor()
@@ -3352,6 +3394,12 @@ proc pairwise_distance*(ty: TensorType; x1: Tensor; x2: Tensor; p: float64 = 2; 
 
 proc pairwise_distance*(x1: Tensor; x2: Tensor; p: float64 = 2; eps: float64; keepdim: bool = false): Tensor {.inline.} = 
   atenFunction(ATensor, "at::pairwise_distance", x1.toATensor(), x2.toATensor(), p, eps, keepdim).newTensor()
+
+proc cdist*(ty: TensorType; x1: Tensor; x2: Tensor; p: float64 = 2): Tensor {.inline.} = 
+  ty[].atenMethod(ATensor, "cdist", x1.toATensor(), x2.toATensor(), p).newTensor()
+
+proc cdist*(x1: Tensor; x2: Tensor; p: float64 = 2): Tensor {.inline.} = 
+  atenFunction(ATensor, "at::cdist", x1.toATensor(), x2.toATensor(), p).newTensor()
 
 proc pdist*(ty: TensorType; self: Tensor; p: float64 = 2): Tensor {.inline.} = 
   ty[].atenMethod(ATensor, "pdist", self.toATensor(), p).newTensor()
