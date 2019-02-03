@@ -29,6 +29,7 @@ cd pytorch && \
 git submodule update --init --recursive
 
 ENV PYTORCH_PYTHON=python3
+ENV PYTHON_EXECUTABLE=/root/miniconda3/bin/python
 
 RUN conda create -n deps mkl mkl-include intel-openmp
 

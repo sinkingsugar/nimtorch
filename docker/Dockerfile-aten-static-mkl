@@ -29,6 +29,7 @@ cd pytorch && \
 git submodule update --init --recursive
 
 ENV PYTORCH_PYTHON=python3
+ENV PYTHON_EXECUTABLE=/root/miniconda3/bin/python
 
 RUN cd && \
 wget https://dist.ipfs.io/ipget/v0.3.0/ipget_v0.3.0_linux-amd64.tar.gz && \

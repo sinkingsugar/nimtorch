@@ -129,6 +129,7 @@ build:aten:macos:
   before_script:
     - conda env remove -n aten_build || true
   script:
+    - export PYTHON_EXECUTABLE=$HOME/miniconda3/bin/python3
     - conda create -n aten_build mkl mkl-include intel-openmp
     - source activate aten_build
     - export LDFLAGS="-L$CONDA_PREFIX/lib"
