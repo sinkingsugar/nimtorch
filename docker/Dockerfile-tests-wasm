@@ -1,6 +1,6 @@
-FROM base/devel
+FROM archlinux/base
 
-RUN pacman -Syu --noconfirm && pacman -S --noconfirm git cmake python python-pip mpfr gmp emscripten wget
+RUN pacman -Syu --noconfirm && pacman -S --noconfirm base-devel git cmake python python-pip mpfr gmp emscripten wget
 
 RUN pip install pyyaml
 RUN pip install typing
