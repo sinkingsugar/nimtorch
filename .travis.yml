@@ -131,6 +131,5 @@ matrix:
     name: "WASM Tests"
     os: linux
     script:
-    - docker pull base/devel
     - docker build -f docker/Dockerfile-tests-wasm -t nimtorch-test --build-arg USER_ID=`id -u` --build-arg GROUP_ID=`id -g` --build-arg ATEN=`cat conda/nimtorch/meta.yaml | grep -o "aten ==[12][0-9]*.[01][0-9]*.[0-3][0-9]*.[0-9]*" | sed -r "s/aten /aten/g"` .
     - docker run --rm -t -u`id -u`:`id -g` nimtorch-test:latest /bin/bash -c "source /etc/profile.d/emscripten.sh && nimble test_wasm"
