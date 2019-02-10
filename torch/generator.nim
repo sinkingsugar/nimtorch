@@ -48,7 +48,7 @@ proc toNimType(typeName: string): string =
   of "real", "accreal": return "float"
   of "double": return "float64"
   of "Generator*", "Generator *", "Generator": return "Generator"
-  of "IntList": return "IntList"
+  of "IntArrayRef": return "IntList"
   of "void": return "void"
   of "void*": return "pointer"
   of "Scalar": return "float"
@@ -232,7 +232,7 @@ block declarations:
           dynType == "real" or
           dynType == "double" or
           dynType == "Generator*" or dynType == "Generator *" or
-          dynType == "IntList" or
+          dynType == "IntArrayRef" or
           dynType == "accreal" or
           dynType == "Scalar" or
           dynType == "TensorOptions" or
@@ -274,7 +274,7 @@ block declarations:
           of "{}":
             case arguments[i]["dynamic_type"].getStr():
               of "TensorOptions": defaultStr = " = defaultOptions()"
-              of "IntList, TensorList": defaultStr = " = []"
+              of "IntArrayRef, TensorList": defaultStr = " = []"
               else: discard
         else:
           # skipping defaults, might cause integration issues tho
