@@ -147,7 +147,7 @@ proc `-`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = sub(a, b.float)
 
 proc `-`*(a: SomeNumber; b: Tensor): Tensor {.inline, noinit.} = -b + a.float
 
-proc `==`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = eq(a, b)
+proc `==`*(a: Tensor; b: SomeNumber): Tensor {.inline, noinit.} = eq(a, b.float)
 
 proc `==`*(a, b: Tensor): Tensor {.inline.} = eq(a, b)
 

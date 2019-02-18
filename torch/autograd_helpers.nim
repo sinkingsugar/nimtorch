@@ -201,13 +201,6 @@ proc atan2_backward*(grad, self, other: Tensor; outputMask: StdArray[bool, 2]): 
 proc maybe_wrap_dim(dim, size: int): int {.inline.} =
   return invokeFunction("at::maybe_wrap_dim", dim, size).to(int)
 
-proc safe_size_impl*(sizes, dim: openarray[int]): int =
-  result = 1
-  if sizes.len > 0:
-    for d in dim:
-      let wd = maybe_wrap_dim(d, sizes.len)
-      result *= sizes[wd]
-
 proc split_with_sizes_backward*(grads: openarray[Tensor]; split_sizes: openarray[int]; dim: int; sizes: IntList; tensorType: TensorType): Tensor {.noinit.} =
   let ndim = maybe_wrap_dim(dim, sizes.len())
   var allDefinedList: TensorList

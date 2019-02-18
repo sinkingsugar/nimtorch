@@ -85,6 +85,7 @@ const customNames = [
   "contiguous",
   "chunk",
   "expand_as",
+  "unsqueeze_to",
 
   "softmax",
   "log_softmax",
@@ -129,6 +130,9 @@ const customNames = [
   # We use our own gradient information
   "detach",
   "detach_",
+
+  "sum_backward",
+  "slice_backward"
 ]
 
 # add some known procs we created in torch.nim, don't care about args
