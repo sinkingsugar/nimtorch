@@ -1,8 +1,8 @@
 ![NimTorch](media/NimTorchBanner.png)
 
-| Master | Release |  |
-|-------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [![Build Status](https://travis-ci.com/fragcolor-xyz/nimtorch.svg?branch=master)  ](https://travis-ci.com/fragcolor-xyz/nimtorch  ) | [![Build Status](https://travis-ci.com/fragcolor-xyz/nimtorch.svg?branch=release)  ](https://travis-ci.com/fragcolor-xyz/nimtorch  ) | [![](https://img.shields.io/badge/Chat-on%20discord-green.svg)](https://discord.gg/gUCKYqE) |
+| Master | Release |
+|-------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------
+| [![Build Status](https://travis-ci.com/fragcolor-xyz/nimtorch.svg?branch=master)  ](https://travis-ci.com/fragcolor-xyz/nimtorch  ) | [![Build Status](https://travis-ci.com/fragcolor-xyz/nimtorch.svg?branch=release)  ](https://travis-ci.com/fragcolor-xyz/nimtorch  )
 
 
 Pytorch - Py + Nim
